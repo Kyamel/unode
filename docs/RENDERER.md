@@ -54,14 +54,16 @@ JavaScript bridge
   └── applies returned IrPatchOps to the adapter store
 
 Framework adapter
-  ├── React adapter exists today
-  ├── Svelte/Vue adapters can consume the same IR contract
+  ├── React adapter is maintained today
+  ├── Svelte adapter is maintained today
+  ├── Vue/custom adapters can consume the same IR contract
   └── renderer components subscribe by node key, not by global revision
 ```
 
-The current proof lives in `runtimes/web-react`. React is an
-adapter choice, not a core dependency. The Rust web host owns normalization,
-dependency tracking, state snapshots, and patch planning.
+The maintained web proofs live in `runtimes/web-react` and
+`runtimes/web-svelte`. React and Svelte are adapter choices, not core
+dependencies. The Rust web host owns normalization, dependency tracking, state
+snapshots, and patch planning.
 
 ### Keyed reactivity
 
@@ -106,6 +108,7 @@ activation as host state, not component-local state.
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
 nix-shell --run 'node runtimes/web-react/scripts/smoke.mjs'
+nix-shell --run 'node runtimes/web-svelte/scripts/smoke.mjs'
 ```
 
 ---

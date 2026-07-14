@@ -46,6 +46,10 @@ fetched from the network under nix. It emits `./pkg` (core bindings) and
 Click **Increment** — only the big number re-renders. `render()` is never called
 again; the update is pure patch re-application, planned in Rust.
 
+The demo does not implement a full route registry yet. It mounts the one bundled
+plugin at `/plugins/web-counter`; if opened at `/`, `demo/main.tsx` replaces the
+browser URL with that plugin route before mounting.
+
 ## Verifying without a browser
 
 Three layers are checked without a DOM:

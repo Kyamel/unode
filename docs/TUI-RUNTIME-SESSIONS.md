@@ -95,4 +95,6 @@ The target architecture is:
 - deterministic reset rules for robustness
 - no renderer-specific assumptions in the runtime
 
-That keeps the TUI runtime compatible with the same plugin ABI and lifecycle model that the future web runtime will use, while still respecting the different host implementation details.
+That keeps the TUI runtime compatible with the same plugin ABI and lifecycle
+model used by the maintained web runtimes, while still respecting the different
+host implementation details.

@@ -65,11 +65,11 @@ Two implementations, one contract:
 - Emits IR and `IrPatchOp`s to a framework adapter
 - Enforces permissions before providing host functions or host-call operations
 
-**Web framework adapter (React in the current slice)**
+**Web framework adapters (React and Svelte in the current slices)**
 - Consumes the IR returned by `unode-web-host`
 - Maintains a keyed `ScreenStore`
 - Subscribes components by node key and applies patch ops
-- Can be replaced by Svelte, Vue, or another adapter without changing the core
+- Can be extended with Vue or another adapter without changing the core
 
 **TUI renderer (Rust)**
 - Instantiates plugin `.wasm` via Wasmtime
@@ -165,10 +165,10 @@ compiles to `.wasm` for the plugin SDK and to native code for the TUI renderer.
 
 Unode should be easy to embed in an existing React, Svelte, Vue, or custom web
 application. The browser integration is therefore split in two: `unode-web-host`
-owns the Rust core pipeline and JavaScript owns framework glue. The current
-vertical slice uses React because it is a small proof that keyed IR patches work
-in a mainstream framework. A Svelte adapter should consume the same IR and patch
-ops instead of reimplementing normalization or reactivity.
+owns the Rust core pipeline and JavaScript owns framework glue. The maintained
+React and Svelte slices prove that keyed IR patches are not tied to one
+framework. Additional adapters should consume the same IR and patch ops instead
+of reimplementing normalization or reactivity.
 
 ### Why Ratatui for TUI instead of Notcurses
 

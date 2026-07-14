@@ -36,11 +36,11 @@ App Bridge (Rust, compiled to .wasm)
   ├── Domain models (WorkSummary, ChapterSummary)
   └── Permission metadata per method
 
-Web Host + Adapter
+Web Host + Adapters
   ├── Loads plugin .wasm via WebAssembly.instantiate()
   ├── Loads unode_web_host.wasm via wasm-bindgen
   ├── Runs normalize, dependency tracking, and patch planning in Rust
-  ├── Mounts IR through a framework adapter (React today; Svelte/Vue possible)
+  ├── Mounts IR through maintained framework adapters (React and Svelte today)
   └── Dispatches ActionRef back to the plugin WASM
 
 TUI Renderer (Rust)

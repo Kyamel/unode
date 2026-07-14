@@ -24,7 +24,8 @@ embedded in applications written with React, Svelte, Vue, or another framework.
 | `crates/mugens-domain` / `crates/mugens-sdk` | Example/domain bridge crates for app-specific models, permissions, and UI sugar. |
 | `crates/mgn` | Example native Rust TUI application that wires the runtime, renderer, and Mugens bridge together. |
 | `plugins/` | Rust WASM example plugins, including `web-counter`. |
-| `runtimes/web-react` | Current React web adapter and JS bridge for `plugin.wasm + unode_web_host.wasm`. |
+| `runtimes/web-react` | Maintained React web adapter and JS bridge for `plugin.wasm + unode_web_host.wasm`. |
+| `runtimes/web-svelte` | Maintained Svelte web adapter using the same plugin, host WASM, bridge shape, and keyed patch store. |
 | `ts-implementation/` | Deprecated legacy TypeScript prototype kept only as migration reference. |
 | `docs/` | Architecture, runtime, ABI, reactivity, permissions, and migration documentation. |
 
@@ -36,12 +37,12 @@ The current browser proof of concept runs two WASM modules side by side:
 plugin.wasm              unode_web_host.wasm
 render/dispatch -> JSON  normalize -> track -> plan patches
         \                 /
-         JavaScript bridge -> keyed ScreenStore -> React adapter
+         JavaScript bridge -> keyed ScreenStore -> React/Svelte adapter
 ```
 
-React is the first adapter, not a hard requirement. The intended boundary is
-framework-agnostic: web adapters consume IR and patch ops, while Rust owns the
-core semantics.
+React and Svelte are maintained adapters over the same framework-agnostic
+boundary. Web adapters consume IR and patch ops, while Rust owns the core
+semantics.
 
 ## Why Web Has `unode-web-host`
 
@@ -66,6 +67,7 @@ cargo test --workspace
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
 nix-shell --run ./runtimes/web-react/build.sh
+nix-shell --run ./runtimes/web-svelte/build.sh
 ```
 
 See `docs/README.md` for the document map and `AGENTS.md` for contributor

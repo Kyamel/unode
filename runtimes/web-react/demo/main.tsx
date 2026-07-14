@@ -22,7 +22,22 @@ import webHostWasmUrl from "../pkg/unode_web_host_bg.wasm?url";
 // The plugin wasm, served as a URL by Vite.
 import pluginWasmUrl from "./web_counter_plugin.wasm?url";
 
-const ROUTE = { pattern: "/plugins/web-counter", params: {}, query: {} };
+const PLUGIN_ROUTE_PATTERN = "/plugins/web-counter";
+
+function routeForCurrentLocation() {
+  const url = new URL(window.location.href);
+
+  if (url.pathname === "/") {
+    window.history.replaceState(null, "", `${PLUGIN_ROUTE_PATTERN}${url.search}${url.hash}`);
+    url.pathname = PLUGIN_ROUTE_PATTERN;
+  }
+
+  return {
+    pattern: PLUGIN_ROUTE_PATTERN,
+    params: {},
+    query: Object.fromEntries(url.searchParams.entries()),
+  };
+}
 
 function App() {
   const [state, setState] = useState<{ store: ScreenStore; runtime: WebRuntime } | null>(null);
@@ -42,7 +57,13 @@ function App() {
         const sink = new StateWriteSink();
         const plugin = await PluginInstance.instantiate(await fetch(pluginWasmUrl), sink.handler);
 
-        const runtime = new WebRuntime({ plugin, session, sink, route: ROUTE, locale: "en" });
+        const runtime = new WebRuntime({
+          plugin,
+          session,
+          sink,
+          route: routeForCurrentLocation(),
+          locale: "en",
+        });
         const store = runtime.mount();
         setState({ store, runtime });
       } catch (e) {

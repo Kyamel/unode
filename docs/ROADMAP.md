@@ -12,9 +12,9 @@ The current web proof runs:
 - a Rust plugin compiled to `wasm32-unknown-unknown`;
 - `unode_web_host.wasm`, built from `crates/unode-web-host`;
 - JavaScript glue that wires plugin `host_call` operations;
-- a keyed React adapter over `IrScreen` and `IrPatchOp`.
+- keyed React and Svelte adapters over `IrScreen` and `IrPatchOp`.
 
-React is the first adapter, not the framework requirement. Svelte, Vue, or a
+React and Svelte are maintained adapters, not framework requirements. Vue or a
 custom adapter should consume the same IR contract.
 
 ## Near-Term Priorities
@@ -35,9 +35,11 @@ custom adapter should consume the same IR contract.
 
 ### 3. Package The Web Host Model
 
-- Promote the React slice from proof-of-concept into a reusable package shape.
+- Promote the React and Svelte slices from proofs-of-concept into reusable
+  package shapes.
 - Keep framework adapters thin: IR in, patch ops applied, user actions out.
-- Add documentation for embedding in React and for writing alternate adapters.
+- Add documentation for embedding in React/Svelte and for writing alternate
+  adapters.
 - Avoid reimplementing core semantics in TypeScript.
 
 ### 4. Build The Domain Bridge Pattern
@@ -57,9 +59,10 @@ custom adapter should consume the same IR contract.
 ## Legacy TypeScript Role
 
 `ts-implementation/` is deprecated reference and migration material. The current
-web React runtime slice lives in `runtimes/web-react`. The old same-process
-TypeScript plugin runtime should not be treated as the target security model
-because it does not provide the WASM sandbox boundary Unode needs.
+web React and Svelte runtime slices live in `runtimes/web-react` and
+`runtimes/web-svelte`. The old same-process TypeScript plugin runtime should not
+be treated as the target security model because it does not provide the WASM
+sandbox boundary Unode needs.
 
 ## What Should Not Change
 

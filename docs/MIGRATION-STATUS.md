@@ -31,9 +31,10 @@ Unode should provide:
 - `crates/unode-web-host` is the browser-side Rust core compiled through
   `wasm-bindgen`. It owns the web session pipeline: normalize, seed state, track
   dependencies, lower to IR, and plan patch ops.
-- `runtimes/web-react` is the current browser vertical slice.
-  It instantiates both `plugin.wasm` and `unode_web_host.wasm`, wires host calls,
-  stores keyed IR, and renders through React.
+- `runtimes/web-react` and `runtimes/web-svelte` are the maintained browser
+  vertical slices.
+  They instantiate both `plugin.wasm` and `unode_web_host.wasm`, wire host
+  calls, store keyed IR, and render through framework adapters.
 - `plugins/web-counter` is the end-to-end proof plugin for web reactivity.
 - `crates/unode-web-runtime` and `crates/unode-tui-runtime` contain runtime
   boundary helpers for loading, memory, host calls, ABI bridges, and TUI plugin
@@ -45,7 +46,7 @@ Unode should provide:
 
 ## What Changed Recently
 
-The untracked work in this tree adds the first working web runtime slice:
+The current tree has working React and Svelte web runtime slices:
 
 - `crates/unode-web-host`
   - plain Rust `WebSessionCore` plus a `wasm-bindgen` `WebSession` wrapper;
@@ -59,6 +60,11 @@ The untracked work in this tree adds the first working web runtime slice:
   - typed host-session wrapper over `unode-web-host`;
   - bridge that drains plugin host calls into state writes;
   - keyed `ScreenStore` and React adapter.
+- `runtimes/web-svelte`
+  - same plugin host, host-session wrapper, dispatch bridge, and keyed
+    `ScreenStore` shape as the React slice;
+  - Svelte adapter that subscribes by node key through `createSubscriber`;
+  - validates that the same `plugins/web-counter` artifact is framework-neutral.
 - `plugins/web-counter`
   - Rust WASM plugin that renders a reactive counter;
   - dispatch crosses the sandbox via `host_call("state.set", ...)`;
@@ -75,7 +81,7 @@ manifest/load/render/dispatch  normalize/track/lower/plan
            JavaScript bridge and host-call dispatcher
                          |
                   framework adapter
-              React today, Svelte/Vue later
+              React and Svelte today, Vue/custom later
 ```
 
 This keeps the semantics in Rust and the framework integration replaceable.
@@ -123,4 +129,6 @@ cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
 nix-shell --run 'node runtimes/web-react/scripts/smoke.mjs'
 nix-shell --run 'cd runtimes/web-react && pnpm run typecheck'
+nix-shell --run 'node runtimes/web-svelte/scripts/smoke.mjs'
+nix-shell --run 'cd runtimes/web-svelte && pnpm run typecheck'
 ```

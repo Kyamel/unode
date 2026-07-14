@@ -18,7 +18,9 @@ and render the result through environment-specific runtimes.
 - There is no `unode-tui-host` crate because the TUI host is already Rust
   native. The web host crate exists to expose Rust core behavior across the
   browser's JS/WASM boundary.
-- `runtimes/web-react` contains the current React web adapter and JS bridge.
+- `runtimes/web-react` contains the maintained React web adapter and JS bridge.
+- `runtimes/web-svelte` contains the maintained Svelte web adapter using the
+  same plugin and web host WASM as the React adapter.
 - `crates/mgn` is an example/application binary, not the reusable TUI runtime.
 - `plugins/` contains example WASM plugins.
 - `ts-implementation/` contains deprecated legacy TypeScript code kept only as
@@ -32,8 +34,8 @@ and render the result through environment-specific runtimes.
   domain models do not belong in `crates/unode`.
 - Keep plugins sandboxed. Plugin capabilities must cross explicit host calls and
   permission checks.
-- Keep the web bridge framework-agnostic. React is the current adapter; it should
-  not leak into core semantics.
+- Keep the web bridge framework-agnostic. React and Svelte are maintained
+  adapters; neither should leak into core semantics.
 - Prefer stable explicit node IDs for interactive, stateful, or plugin-extension
   anchors.
 
@@ -41,7 +43,8 @@ and render the result through environment-specific runtimes.
 
 Update `docs/` when changing protocol, runtime, ABI, permission, or reactivity
 behavior. Do not add new implementation work under `ts-implementation/`; promote
-current web work under `runtimes/web-react` or a future package.
+current web work under `runtimes/web-react`, `runtimes/web-svelte`, or a future
+runtime package.
 
 ## Verification
 
