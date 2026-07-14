@@ -11,7 +11,9 @@ tui-renderer = { path = "../renderer" }
 unode-runtime = { path = "../unode-runtime" }
 unode-tui-runtime = { path = "../unode-tui-runtime" }
 unode-sdk = { path = "../unode-sdk" }
+unode = { path = "../unode" }
 anyhow.workspace = true
 ratatui.workspace = true
 crossterm.workspace = true
+serde.workspace = true
 serde_json.workspace = true
