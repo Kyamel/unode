@@ -2,5 +2,10 @@
     "cSpell.words": [
         "mugens",
         "Pressable"
+    ],
+    "rust-analyzer.linkedProjects": [
+        "Cargo.toml",
+        "plugins/web-counter/Cargo.toml",
+        "plugins/sanity-check/Cargo.toml"
     ]
 }

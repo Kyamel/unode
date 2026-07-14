@@ -1,10 +1,13 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
+  RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
+
   packages = with pkgs; [
     cargo
     rustc
     rustfmt
+    rustPlatform.rustLibSrc
     lld              # provides wasm-ld for the wasm32-unknown-unknown target
     wasmtime
 
