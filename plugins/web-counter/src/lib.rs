@@ -68,19 +68,17 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
             (COUNT_PATH.to_string(), json!(0)),
             (LABEL_PATH.to_string(), json!(label_for(0))),
         ]))
-        .children([
+        .children(ui::nodes![
             // The one reactive node: its content is a binding, so the host
             // tracks it and patches only this line when `ui.countLabel` changes.
             ui::text(expr::binding::<String>(LABEL_PATH))
                 .id("web-counter.value")
                 .role(TextRole::Title)
-                .tone(Tone::Info)
-                .into_node(),
+                .tone(Tone::Info),
             ui::text("The number above is host state; the buttons dispatch intents.")
                 .id("web-counter.hint")
                 .role(TextRole::Caption)
-                .tone(Tone::Muted)
-                .into_node(),
+                .tone(Tone::Muted),
             ui::actions()
                 .id("web-counter.actions")
                 .children([

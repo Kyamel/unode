@@ -2250,7 +2250,7 @@ impl IntoChildren for SlotBuilder {
 // --- Macro ---
 
 #[macro_export]
-macro_rules! ui_children {
+macro_rules! nodes {
     ($($expr:expr),* $(,)?) => {{
         let mut nodes = Vec::new();
         $(
@@ -2259,3 +2259,4 @@ macro_rules! ui_children {
         nodes
     }};
 }
+pub use crate::nodes;

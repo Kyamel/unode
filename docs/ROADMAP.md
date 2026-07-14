@@ -42,14 +42,59 @@ custom adapter should consume the same IR contract.
   adapters.
 - Avoid reimplementing core semantics in TypeScript.
 
-### 4. Build The Domain Bridge Pattern
+### 4. Refine Reactivity Granularity
+
+The current reactivity model is intentionally closer to Solid-style
+targeted updates than to classic virtual DOM diffing:
+
+- plugin UI is rendered once into a serializable AST/IR;
+- `expr::binding("path")` records a dependency from state path to node key;
+- `state.set("path", value)` wakes only subscribers of that path;
+- patch planning re-resolves affected nodes and lowers them to compact IR patch
+  ops.
+
+This is a strong baseline, but there are known granularity limits to track:
+
+- **Path breadth:** bindings to broad objects such as `work` will wake on writes
+  to nested paths such as `work.title`. Prefer narrow bindings where possible,
+  and consider typed `StatePath` helpers to make intent clearer.
+- **Node-level re-resolution:** patches currently target node fields, not
+  arbitrary subexpressions inside a field. Composite text or richer computed
+  props may re-resolve more than the exact changed fragment.
+- **Explicit bindings only:** values computed inside plugin Rust and emitted as
+  literals are opaque to the host. Host-side reactivity requires dependencies to
+  remain visible in the AST as expressions/bindings.
+- **Indexed list paths:** paths such as `items.0.title` are useful but fragile
+  when insertion or reordering changes indices. Lists need a stronger keyed
+  identity story, similar in spirit to React `key`, Svelte keyed `each`, or
+  Solid list helpers.
+- **Stable node IDs:** precise patches depend on stable node keys. Generated
+  keys can work, but interactive/stateful/plugin-extension anchors should keep
+  explicit IDs.
+
+Known framework parallels:
+
+- Solid gets very fine updates by tracking signal reads at computation time; it
+  still benefits from splitting large objects into smaller signals.
+- Svelte compiles assignments into direct updates; complex object mutation still
+  needs careful state shape and reassignment discipline.
+- Vue proxies can track nested properties, but object/array shape and identity
+  still affect update precision.
+- React usually re-renders component subtrees and relies on reconciliation and
+  `key`s; Unode should avoid that full-tree diff path where the binding graph can
+  produce direct patches.
+
+Future work should keep the protocol serializable while improving authoring
+ergonomics around paths, computed bindings, and keyed collections.
+
+### 5. Build The Domain Bridge Pattern
 
 - Flesh out app-specific bridge crates such as `mugens-domain` and `mugens-sdk`.
 - Add domain models, method-level permission metadata, and host-call bindings.
 - Keep domain UI sugar out of `crates/unode`.
 - Document plugin anchors and shell slots as app-owned extension points.
 
-### 5. Continue The TUI Runtime
+### 6. Continue The TUI Runtime
 
 - Connect `unode-tui-runtime` session/loading helpers to a full Ratatui loop.
 - Render the same IR/canonical semantics in terminal form.
