@@ -1,0 +1,25 @@
+{
+  "name": "@unode/web-react-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "React adapter + wasm-bindgen glue for the unode web runtime (vertical slice).",
+  "scripts": {
+    "build:wasm": "./build.sh",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0"
+  }
+}

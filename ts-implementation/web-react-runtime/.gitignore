@@ -1,0 +1,4 @@
+node_modules/
+pkg/
+demo/dist/
+demo/*.wasm

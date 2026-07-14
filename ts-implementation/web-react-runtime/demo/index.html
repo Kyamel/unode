@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>unode · web slice · counter</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { margin: 0; display: grid; place-items: center; min-height: 100vh; }
+      .unode-screen { width: min(28rem, 90vw); padding: 2rem; }
+      .unode-title { font-size: 1.5rem; margin: 0 0 1rem; }
+      .unode-text--title { font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0; }
+      .unode-text--caption { opacity: 0.6; font-size: 0.85rem; }
+      .unode-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
+      .unode-action { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid currentColor; background: transparent; cursor: pointer; font: inherit; }
+      .unode-action--primary { background: SteelBlue; color: white; border-color: SteelBlue; }
+      .unode-error { color: crimson; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>
