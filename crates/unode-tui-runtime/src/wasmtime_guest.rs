@@ -19,6 +19,8 @@ use crate::host_call::{TuiHostCallDispatcher, TuiHostCallError};
 use crate::loader::{PreparedTuiPlugin, TuiPluginSource};
 use crate::memory::{TuiMemoryError, read_bytes};
 
+const GUEST_CALL_FUEL: u64 = 10_000_000;
+
 #[derive(Debug)]
 struct WasmtimeStoreState {
     last_host_result_len: u32,
@@ -40,6 +42,7 @@ pub struct WasmtimeGuest {
     plugin_render_result_len: TypedFunc<(), u32>,
     plugin_dispatch: TypedFunc<(u32, u32), u32>,
     plugin_dispatch_result_len: TypedFunc<(), u32>,
+    enable_fuel_metering: bool,
 }
 
 #[derive(Debug, Error)]
@@ -194,7 +197,7 @@ impl CompiledWasmtimePlugin {
             },
         );
         if self.enable_fuel_metering {
-            store.set_fuel(10_000_000)?;
+            store.set_fuel(GUEST_CALL_FUEL)?;
         }
 
         let instance = linker.instantiate(&mut store, &self.module)?;
@@ -238,6 +241,7 @@ impl CompiledWasmtimePlugin {
             plugin_render_result_len,
             plugin_dispatch,
             plugin_dispatch_result_len,
+            enable_fuel_metering: self.enable_fuel_metering,
         };
 
         Ok(TuiPluginBridge::new(
@@ -249,6 +253,17 @@ impl CompiledWasmtimePlugin {
                     .clone(),
             ),
         ))
+    }
+}
+
+impl WasmtimeGuest {
+    fn refuel_export_call(&mut self) -> Result<(), TuiAbiBridgeError> {
+        if self.enable_fuel_metering {
+            self.store
+                .set_fuel(GUEST_CALL_FUEL)
+                .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))?;
+        }
+        Ok(())
     }
 }
 
@@ -264,24 +279,28 @@ impl TuiGuestInstance for WasmtimeGuest {
     }
 
     fn alloc(&mut self, len: u32) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.alloc
             .call(&mut self.store, len)
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
     fn dealloc(&mut self, ptr: u32, len: u32) -> Result<(), TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.dealloc
             .call(&mut self.store, (ptr, len))
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
     fn plugin_manifest(&mut self) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_manifest
             .call(&mut self.store, ())
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
     fn plugin_manifest_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_manifest_len
             .call(&mut self.store, ())
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
@@ -292,6 +311,7 @@ impl TuiGuestInstance for WasmtimeGuest {
         request_ptr: u32,
         request_len: u32,
     ) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_render
             .call(&mut self.store, (request_ptr, request_len))
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
@@ -302,18 +322,21 @@ impl TuiGuestInstance for WasmtimeGuest {
         request_ptr: u32,
         request_len: u32,
     ) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_load
             .call(&mut self.store, (request_ptr, request_len))
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
     fn plugin_load_result_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_load_result_len
             .call(&mut self.store, ())
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
     fn plugin_render_result_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_render_result_len
             .call(&mut self.store, ())
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
@@ -324,12 +347,14 @@ impl TuiGuestInstance for WasmtimeGuest {
         request_ptr: u32,
         request_len: u32,
     ) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_dispatch
             .call(&mut self.store, (request_ptr, request_len))
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
     fn plugin_dispatch_result_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
         self.plugin_dispatch_result_len
             .call(&mut self.store, ())
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))

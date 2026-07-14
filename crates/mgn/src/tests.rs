@@ -281,3 +281,53 @@ fn app_registers_web_counter_and_applies_state_set_host_calls() {
         Some("Count: 1")
     );
 }
+
+#[test]
+fn web_counter_survives_many_increment_cycles() {
+    let mut app = match App::new() {
+        Ok(app) => app,
+        Err(_) => return,
+    };
+
+    let Some(plugin_index) = app
+        .plugins
+        .iter()
+        .position(|plugin| plugin.runtime_plugin.manifest().manifest.id == "dev.unode.web-counter")
+    else {
+        return;
+    };
+    let plugin_route = app.plugins[plugin_index].route.clone();
+
+    app.navigate_to(plugin_route);
+    app.focused_pane = TuiFocusedPane::Main;
+
+    for expected in 1..=1_000 {
+        let increment_index = app
+            .main_interactions
+            .iter()
+            .position(|interaction| interaction.label.contains("Increment"))
+            .unwrap_or_else(|| {
+                panic!(
+                    "increment interaction not found at {expected}: {:?}",
+                    app.main_interactions
+                )
+            });
+        app.selected_main_interaction = Some(increment_index);
+        app.activate_main_interaction()
+            .unwrap_or_else(|err| panic!("increment {expected} failed: {err}"));
+
+        let snapshot = app.plugins[plugin_index].state.snapshot();
+        assert_eq!(
+            snapshot.get("ui.count").and_then(JsonValue::as_i64),
+            Some(expected),
+            "snapshot after increment {expected}: {snapshot:?}"
+        );
+
+        match &app.main_panel {
+            TuiMainContent::Panel(panel) => {
+                panic!("plugin panel fallback at {expected}: {:?}", panel.lines)
+            }
+            TuiMainContent::Screen(_) => {}
+        }
+    }
+}

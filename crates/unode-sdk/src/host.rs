@@ -61,8 +61,22 @@ mod wasm {
     pub(super) fn send(bytes: &[u8]) {
         let len = u32::try_from(bytes.len()).expect("host call payload exceeds u32 length");
         unsafe {
-            let _response_ptr = host_call(bytes.as_ptr() as u32, len);
-            let _response_len = host_call_result_len();
+            let response_ptr = host_call(bytes.as_ptr() as u32, len);
+            let response_len = host_call_result_len();
+            dealloc_response(response_ptr, response_len);
+        }
+    }
+
+    unsafe fn dealloc_response(ptr: u32, len: u32) {
+        if ptr == 0 {
+            return;
+        }
+
+        let size = (len as usize).max(1);
+        let layout = std::alloc::Layout::from_size_align(size, std::mem::align_of::<u8>())
+            .expect("valid host-call response allocation layout");
+        unsafe {
+            std::alloc::dealloc(ptr as *mut u8, layout);
         }
     }
 }
