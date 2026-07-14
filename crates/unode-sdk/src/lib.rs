@@ -1,10 +1,11 @@
 pub mod abi;
+pub mod host;
 pub mod i18n;
 pub mod manifest;
 pub mod permissions;
 
 pub use abi::{
-    EXPORT_PLUGIN_ABI_VERSION, EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN,
+    AbiError, EXPORT_PLUGIN_ABI_VERSION, EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN,
     EXPORT_PLUGIN_LOAD, EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST,
     EXPORT_PLUGIN_MANIFEST_LEN, EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN,
     EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC, HostCallEnvelope, IMPORT_HOST_CALL,
@@ -13,6 +14,7 @@ pub use abi::{
     REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION, UNODE_PLUGIN_ABI_VERSION_BYTES, WasmPtrLen,
     decode_json_bytes, encode_json_bytes,
 };
+pub use host::{call_host, state_set, try_call_host, try_state_set};
 pub use i18n::{
     I18nCatalogRegistrationEvent, I18nError, I18nInspector, I18nLookupEvent, I18nText,
     LocaleSource, MessageCatalog, MessageCatalogs, MessageEntry, MessageValue, MessageValues,
@@ -26,15 +28,16 @@ pub use permissions::{
 
 pub mod prelude {
     pub use crate::abi::{
-        EXPORT_PLUGIN_ABI_VERSION, EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN,
-        EXPORT_PLUGIN_LOAD, EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST,
-        EXPORT_PLUGIN_MANIFEST_LEN, EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN,
-        EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC, HostCallEnvelope, IMPORT_HOST_CALL,
-        IMPORT_HOST_CALL_RESULT_LEN, PluginDispatchOutcome, PluginDispatchRequest,
-        PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
-        REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION, UNODE_PLUGIN_ABI_VERSION_BYTES, WasmPtrLen,
-        decode_json_bytes, encode_json_bytes,
+        AbiError, EXPORT_PLUGIN_ABI_VERSION, EXPORT_PLUGIN_DISPATCH,
+        EXPORT_PLUGIN_DISPATCH_RESULT_LEN, EXPORT_PLUGIN_LOAD, EXPORT_PLUGIN_LOAD_RESULT_LEN,
+        EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_MANIFEST_LEN, EXPORT_PLUGIN_RENDER,
+        EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC,
+        HostCallEnvelope, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN, PluginDispatchOutcome,
+        PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
+        PluginRenderRequest, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION,
+        UNODE_PLUGIN_ABI_VERSION_BYTES, WasmPtrLen, decode_json_bytes, encode_json_bytes,
     };
+    pub use crate::host;
     pub use crate::i18n::{
         I18nInspector, I18nText, LocaleSource, MessageCatalog, MessageCatalogs, MessageEntry,
         MessageValue, MessageValues, PluginI18n, PluginTranslator, msg, msg_with,

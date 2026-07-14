@@ -2,9 +2,9 @@
 //!
 //! It renders one reactive line bound to `ui.countLabel` plus three actions.
 //! On dispatch it reads the current count from the `state_snapshot` the host
-//! passed in, computes the next value, and requests state writes through the
-//! `host_call` import. The host applies them to its store, which produces a
-//! single patch op re-rendering only the bound line.
+//! passed in, computes the next value, and requests state writes through the SDK
+//! host-call helper. The host applies them to its store, which produces a single
+//! patch op re-rendering only the bound line.
 //!
 //! State never lives inside the plugin's linear memory — it is owned by the
 //! host store and handed back each dispatch. That is the sandbox boundary: the
@@ -15,74 +15,14 @@ use std::collections::BTreeMap;
 use serde_json::{json, Value as JsonValue};
 
 use unode_sdk::prelude::{
-    self as ui, encode_json_bytes, expr, ActionIntent, ActionRef, ActionType,
-    HostCallEnvelope, IntoNode, PluginDispatchOutcome, PluginDispatchRequest, PluginLoadRequest,
-    PluginDispatchResponse, PluginManifestEnvelope, PluginRenderRequest, ScreenNode, TextRole,
-    Tone, UNODE_PLUGIN_ABI_VERSION,
+    self as ui, expr, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
+    PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
+    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION,
 };
-
-/// The `host_call` boundary — the only way state leaves the plugin sandbox.
-///
-/// On wasm these are real imports the host provides (module `unode`, matching
-/// `crates/unode-tui-runtime` and `pluginHost.ts`). On the host toolchain they
-/// are stubs that record the calls so the dispatch logic stays unit-testable.
-#[cfg(target_arch = "wasm32")]
-mod host_import {
-    #[link(wasm_import_module = "unode")]
-    unsafe extern "C" {
-        pub fn host_call(ptr: u32, len: u32) -> u32;
-        pub fn host_call_result_len() -> u32;
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-mod host_import {
-    use std::cell::RefCell;
-
-    use unode_sdk::prelude::{decode_json_bytes, HostCallEnvelope};
-
-    thread_local! {
-        /// Host calls captured during a native test run.
-        pub static RECORDED: RefCell<Vec<HostCallEnvelope>> = const { RefCell::new(Vec::new()) };
-    }
-
-    /// Native stand-in for the `host_call` boundary: decode and record the
-    /// envelope. No pointer round-trip (native pointers are 64-bit).
-    pub fn record(bytes: &[u8]) {
-        if let Ok(env) = decode_json_bytes::<HostCallEnvelope>(bytes) {
-            RECORDED.with(|recorded| recorded.borrow_mut().push(env));
-        }
-    }
-}
-
-/// Request a single state write through the sandbox boundary. The host owns the
-/// store; the plugin only expresses intent.
-fn host_state_set(path: &str, value: JsonValue) {
-    let envelope = HostCallEnvelope {
-        operation: "state.set".to_string(),
-        params: [("path".to_string(), json!(path)), ("value".to_string(), value)]
-            .into_iter()
-            .collect(),
-    };
-    let bytes = encode_json_bytes(&envelope).expect("encode host call");
-
-    #[cfg(target_arch = "wasm32")]
-    unsafe {
-        let ptr = unode_alloc(bytes.len()) as u32;
-        std::ptr::copy_nonoverlapping(bytes.as_ptr(), ptr as *mut u8, bytes.len());
-        // The host writes a response we don't need for `state.set`; draining the
-        // length keeps the ABI contract symmetric with other host calls.
-        let _response_ptr = host_import::host_call(ptr, bytes.len() as u32);
-        let _response_len = host_import::host_call_result_len();
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    host_import::record(&bytes);
-}
 
 const PLUGIN_ID: &str = "dev.unode.web-counter";
 const PLUGIN_NAME: &str = "Web Counter";
-#[cfg_attr(not(test), allow(dead_code))]
+#[cfg(test)]
 const ROUTE_PATH: &str = "/plugins/web-counter";
 const COUNT_PATH: &str = "ui.count";
 const LABEL_PATH: &str = "ui.countLabel";
@@ -183,8 +123,8 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
         Some(count) => {
             // Writes cross the sandbox boundary as capability calls — the plugin
             // never returns UI state in its response.
-            host_state_set(COUNT_PATH, json!(count));
-            host_state_set(LABEL_PATH, json!(label_for(count)));
+            ui::host::state_set(COUNT_PATH, json!(count));
+            ui::host::state_set(LABEL_PATH, json!(label_for(count)));
             PluginDispatchResponse {
                 handled: true,
                 outcome: PluginDispatchOutcome::None,
@@ -232,23 +172,20 @@ mod tests {
     }
 
     fn recorded_state_sets() -> Vec<(String, JsonValue)> {
-        host_import::RECORDED.with(|recorded| {
-            recorded
-                .borrow()
-                .iter()
-                .filter(|env| env.operation == "state.set")
-                .map(|env| {
-                    (
-                        env.params["path"].as_str().unwrap_or_default().to_string(),
-                        env.params["value"].clone(),
-                    )
-                })
-                .collect()
-        })
+        ui::host::recorded_host_calls()
+            .iter()
+            .filter(|env| env.operation == "state.set")
+            .map(|env| {
+                (
+                    env.params["path"].as_str().unwrap_or_default().to_string(),
+                    env.params["value"].clone(),
+                )
+            })
+            .collect()
     }
 
     fn clear_recorded() {
-        host_import::RECORDED.with(|recorded| recorded.borrow_mut().clear());
+        ui::host::clear_recorded_host_calls();
     }
 
     #[test]
