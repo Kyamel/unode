@@ -59,12 +59,15 @@ pub fn with_route_tabs(mut screen: ScreenNode, route_tabs: ScreenRouteTabsMeta) 
 }
 
 pub fn read_route_tabs_meta(screen: &ScreenNode) -> Option<&ScreenRouteTabsMeta> {
-    screen.route_tabs.as_ref().filter(|route_tabs| route_tabs.kind == "route-tabs")
+    screen
+        .route_tabs
+        .as_ref()
+        .filter(|route_tabs| route_tabs.kind == "route-tabs")
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{create_route_tabs_meta, read_route_tabs_meta, with_route_tabs, ScreenRouteTab};
+    use super::{ScreenRouteTab, create_route_tabs_meta, read_route_tabs_meta, with_route_tabs};
     use crate::core::ast::{NodeBase, ScreenNode};
 
     #[test]

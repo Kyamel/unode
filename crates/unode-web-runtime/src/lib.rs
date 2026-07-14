@@ -23,5 +23,8 @@ impl<Ctx> WebRuntime<Ctx> {
 
 pub use bridge::{WebAbiBridgeError, WebGuestInstance, WebHostImportAdapter, WebPluginBridge};
 pub use host_call::{WebHostCallDispatcher, WebHostCallError};
-pub use loader::{PreparedWebPlugin, WebLoaderConfig, WebLoaderError, WebPluginDescriptor, WebPluginLoader, WebPluginSource};
-pub use memory::{read_bytes, read_json, write_bytes, write_json, WebMemoryError};
+pub use loader::{
+    PreparedWebPlugin, WebLoaderConfig, WebLoaderError, WebPluginDescriptor, WebPluginLoader,
+    WebPluginSource,
+};
+pub use memory::{WebMemoryError, read_bytes, read_json, write_bytes, write_json};

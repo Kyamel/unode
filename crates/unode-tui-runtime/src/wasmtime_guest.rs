@@ -3,19 +3,21 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use thiserror::Error;
-use wasmtime::{Caller, Config, Engine, Extern, Instance, Linker, Memory, Module, Store, TypedFunc};
+use wasmtime::{
+    Caller, Config, Engine, Extern, Instance, Linker, Memory, Module, Store, TypedFunc,
+};
 
 use unode_sdk::{
-    EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN,
-    EXPORT_PLUGIN_LOAD, EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST,
-    EXPORT_PLUGIN_MANIFEST_LEN, EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN,
-    EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN,
+    EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN, EXPORT_PLUGIN_LOAD,
+    EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_MANIFEST_LEN,
+    EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_UNODE_ALLOC,
+    EXPORT_UNODE_DEALLOC, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN,
 };
 
 use crate::bridge::{TuiAbiBridgeError, TuiGuestInstance, TuiHostImportAdapter, TuiPluginBridge};
 use crate::host_call::{TuiHostCallDispatcher, TuiHostCallError};
 use crate::loader::{PreparedTuiPlugin, TuiPluginSource};
-use crate::memory::{read_bytes, TuiMemoryError};
+use crate::memory::{TuiMemoryError, read_bytes};
 
 #[derive(Debug)]
 struct WasmtimeStoreState {
@@ -86,7 +88,9 @@ impl WasmtimeGuest {
         })
     }
 
-    pub fn compile_wasm_file(path: impl AsRef<Path>) -> Result<CompiledWasmtimePlugin, WasmtimeGuestError> {
+    pub fn compile_wasm_file(
+        path: impl AsRef<Path>,
+    ) -> Result<CompiledWasmtimePlugin, WasmtimeGuestError> {
         let prepared = PreparedTuiPlugin {
             descriptor: crate::loader::TuiPluginDescriptor {
                 source: TuiPluginSource::File(path.as_ref().to_path_buf()),
@@ -149,12 +153,18 @@ impl CompiledWasmtimePlugin {
             linker.func_wrap(
                 "unode",
                 IMPORT_HOST_CALL,
-                move |mut caller: Caller<'_, WasmtimeStoreState>, request_ptr: u32, request_len: u32| -> Result<u32, wasmtime::Error> {
+                move |mut caller: Caller<'_, WasmtimeStoreState>,
+                      request_ptr: u32,
+                      request_len: u32|
+                      -> Result<u32, wasmtime::Error> {
                     let memory = get_memory(&mut caller)?;
-                    let request_bytes = read_memory_from_caller(&caller, &memory, request_ptr, request_len)?;
+                    let request_bytes =
+                        read_memory_from_caller(&caller, &memory, request_ptr, request_len)?;
 
                     let response_bytes = {
-                        let mut locked = dispatcher.lock().map_err(|_| wasmtime::Error::msg("dispatcher mutex poisoned"))?;
+                        let mut locked = dispatcher
+                            .lock()
+                            .map_err(|_| wasmtime::Error::msg("dispatcher mutex poisoned"))?;
                         locked
                             .dispatch_bytes(&request_bytes)
                             .map(|bytes| bytes.to_vec())
@@ -254,7 +264,9 @@ impl TuiGuestInstance for WasmtimeGuest {
     }
 
     fn alloc(&mut self, len: u32) -> Result<u32, TuiAbiBridgeError> {
-        self.alloc.call(&mut self.store, len).map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
+        self.alloc
+            .call(&mut self.store, len)
+            .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
     fn dealloc(&mut self, ptr: u32, len: u32) -> Result<(), TuiAbiBridgeError> {
@@ -275,13 +287,21 @@ impl TuiGuestInstance for WasmtimeGuest {
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
-    fn plugin_render(&mut self, request_ptr: u32, request_len: u32) -> Result<u32, TuiAbiBridgeError> {
+    fn plugin_render(
+        &mut self,
+        request_ptr: u32,
+        request_len: u32,
+    ) -> Result<u32, TuiAbiBridgeError> {
         self.plugin_render
             .call(&mut self.store, (request_ptr, request_len))
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
-    fn plugin_load(&mut self, request_ptr: u32, request_len: u32) -> Result<u32, TuiAbiBridgeError> {
+    fn plugin_load(
+        &mut self,
+        request_ptr: u32,
+        request_len: u32,
+    ) -> Result<u32, TuiAbiBridgeError> {
         self.plugin_load
             .call(&mut self.store, (request_ptr, request_len))
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
@@ -299,7 +319,11 @@ impl TuiGuestInstance for WasmtimeGuest {
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
 
-    fn plugin_dispatch(&mut self, request_ptr: u32, request_len: u32) -> Result<u32, TuiAbiBridgeError> {
+    fn plugin_dispatch(
+        &mut self,
+        request_ptr: u32,
+        request_len: u32,
+    ) -> Result<u32, TuiAbiBridgeError> {
         self.plugin_dispatch
             .call(&mut self.store, (request_ptr, request_len))
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))

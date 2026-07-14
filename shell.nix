@@ -4,6 +4,7 @@ pkgs.mkShell {
   packages = with pkgs; [
     cargo
     rustc
+    rustfmt
     lld              # provides wasm-ld for the wasm32-unknown-unknown target
     wasmtime
 

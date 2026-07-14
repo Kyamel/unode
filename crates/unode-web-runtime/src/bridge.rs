@@ -1,12 +1,10 @@
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use thiserror::Error;
 use unode_sdk::abi::AbiError;
-use unode_sdk::{
-    decode_json_bytes, encode_json_bytes, PluginManifestEnvelope, WasmPtrLen,
-};
+use unode_sdk::{PluginManifestEnvelope, WasmPtrLen, decode_json_bytes, encode_json_bytes};
 
 use crate::host_call::{WebHostCallDispatcher, WebHostCallError};
-use crate::memory::{read_bytes, write_bytes, WebMemoryError};
+use crate::memory::{WebMemoryError, read_bytes, write_bytes};
 
 pub trait WebGuestInstance {
     fn memory(&self) -> &[u8];
@@ -14,7 +12,11 @@ pub trait WebGuestInstance {
     fn alloc(&mut self, len: u32) -> Result<u32, WebAbiBridgeError>;
     fn plugin_manifest(&mut self) -> Result<u32, WebAbiBridgeError>;
     fn plugin_manifest_len(&mut self) -> Result<u32, WebAbiBridgeError>;
-    fn plugin_render(&mut self, request_ptr: u32, request_len: u32) -> Result<u32, WebAbiBridgeError>;
+    fn plugin_render(
+        &mut self,
+        request_ptr: u32,
+        request_len: u32,
+    ) -> Result<u32, WebAbiBridgeError>;
     fn plugin_render_result_len(&mut self) -> Result<u32, WebAbiBridgeError>;
 }
 
@@ -107,7 +109,10 @@ impl<G: WebGuestInstance> WebPluginBridge<G> {
         decode_json_bytes(&bytes).map_err(WebAbiBridgeError::from)
     }
 
-    pub fn call_plugin_render<Req, Resp>(&mut self, request: &Req) -> Result<Resp, WebAbiBridgeError>
+    pub fn call_plugin_render<Req, Resp>(
+        &mut self,
+        request: &Req,
+    ) -> Result<Resp, WebAbiBridgeError>
     where
         Req: Serialize,
         Resp: DeserializeOwned,
@@ -130,7 +135,9 @@ impl<G: WebGuestInstance> WebPluginBridge<G> {
         request_ptr: u32,
         request_len: u32,
     ) -> Result<WasmPtrLen, WebAbiBridgeError> {
-        let ptr = self.imports.host_call(&mut self.guest, request_ptr, request_len)?;
+        let ptr = self
+            .imports
+            .host_call(&mut self.guest, request_ptr, request_len)?;
         Ok(WasmPtrLen {
             ptr,
             len: self.imports.host_call_result_len(),
@@ -142,9 +149,12 @@ impl<G: WebGuestInstance> WebPluginBridge<G> {
 mod tests {
     use std::collections::BTreeMap;
 
-    use serde_json::{json, Value as JsonValue};
+    use serde_json::{Value as JsonValue, json};
     use unode::core::runtime::ResolvedRoute;
-    use unode_sdk::{plugin_manifest, HostCallEnvelope, PluginManifestEnvelope, PluginRenderRequest, UNODE_PLUGIN_ABI_VERSION};
+    use unode_sdk::{
+        HostCallEnvelope, PluginManifestEnvelope, PluginRenderRequest, UNODE_PLUGIN_ABI_VERSION,
+        plugin_manifest,
+    };
 
     use super::{WebAbiBridgeError, WebGuestInstance, WebHostImportAdapter, WebPluginBridge};
     use crate::host_call::WebHostCallDispatcher;
@@ -202,9 +212,13 @@ mod tests {
             Ok(self.manifest_len)
         }
 
-        fn plugin_render(&mut self, request_ptr: u32, request_len: u32) -> Result<u32, WebAbiBridgeError> {
-            let request =
-                read_json::<PluginRenderRequest>(&self.memory, request_ptr, request_len).expect("render request");
+        fn plugin_render(
+            &mut self,
+            request_ptr: u32,
+            request_len: u32,
+        ) -> Result<u32, WebAbiBridgeError> {
+            let request = read_json::<PluginRenderRequest>(&self.memory, request_ptr, request_len)
+                .expect("render request");
             let response = json!({
                 "screenKind": request.route.pattern,
                 "title": request.data["title"].clone(),
@@ -271,7 +285,10 @@ mod tests {
         })
         .expect("host call request");
 
-        let request_ptr = bridge.guest_mut().alloc(request.len() as u32).expect("alloc");
+        let request_ptr = bridge
+            .guest_mut()
+            .alloc(request.len() as u32)
+            .expect("alloc");
         write_bytes(bridge.guest_mut().memory_mut(), request_ptr, &request).expect("write request");
 
         let response = bridge
@@ -279,7 +296,8 @@ mod tests {
             .expect("host call");
 
         let response_json =
-            read_json::<JsonValue>(bridge.guest().memory(), response.ptr, response.len).expect("response json");
+            read_json::<JsonValue>(bridge.guest().memory(), response.ptr, response.len)
+                .expect("response json");
         assert_eq!(response_json["ok"], true);
         assert_eq!(response_json["to"], "/app/mangas/hot");
         assert_eq!(bridge.imports().host_call_result_len(), response.len);

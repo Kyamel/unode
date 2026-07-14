@@ -80,7 +80,11 @@ pub fn track_reactive_bindings(
     })
 }
 
-fn walk_screen(screen: &CanonicalScreen, resolver: &mut DefaultExprResolver, ctx: &ResolverContext<'_>) {
+fn walk_screen(
+    screen: &CanonicalScreen,
+    resolver: &mut DefaultExprResolver,
+    ctx: &ResolverContext<'_>,
+) {
     if matches!(screen.meta.subtree_reactivity, NodeReactivity::Static) {
         return;
     }
@@ -105,7 +109,11 @@ fn walk_screen(screen: &CanonicalScreen, resolver: &mut DefaultExprResolver, ctx
     }
 }
 
-fn walk_node(node: &CanonicalUiNode, resolver: &mut DefaultExprResolver, ctx: &ResolverContext<'_>) {
+fn walk_node(
+    node: &CanonicalUiNode,
+    resolver: &mut DefaultExprResolver,
+    ctx: &ResolverContext<'_>,
+) {
     if matches!(node.meta().subtree_reactivity, NodeReactivity::Static) {
         return;
     }
@@ -175,13 +183,21 @@ fn walk_node(node: &CanonicalUiNode, resolver: &mut DefaultExprResolver, ctx: &R
     }
 }
 
-fn walk_nodes(nodes: &[CanonicalUiNode], resolver: &mut DefaultExprResolver, ctx: &ResolverContext<'_>) {
+fn walk_nodes(
+    nodes: &[CanonicalUiNode],
+    resolver: &mut DefaultExprResolver,
+    ctx: &ResolverContext<'_>,
+) {
     for node in nodes {
         walk_node(node, resolver, ctx);
     }
 }
 
-fn walk_item(node: &CanonicalItemNode, resolver: &mut DefaultExprResolver, ctx: &ResolverContext<'_>) {
+fn walk_item(
+    node: &CanonicalItemNode,
+    resolver: &mut DefaultExprResolver,
+    ctx: &ResolverContext<'_>,
+) {
     if matches!(node.meta.subtree_reactivity, NodeReactivity::Static) {
         return;
     }
@@ -193,7 +209,11 @@ fn walk_item(node: &CanonicalItemNode, resolver: &mut DefaultExprResolver, ctx: 
     walk_nodes(&node.trailing, resolver, ctx);
 }
 
-fn walk_action(node: &CanonicalActionNode, resolver: &mut DefaultExprResolver, ctx: &ResolverContext<'_>) {
+fn walk_action(
+    node: &CanonicalActionNode,
+    resolver: &mut DefaultExprResolver,
+    ctx: &ResolverContext<'_>,
+) {
     resolver.clear_tracking(&node.meta.key);
     if is_reactive_expr(&node.label) {
         resolver.resolve_string(&node.label, ctx, Some(&node.meta.key));
@@ -458,7 +478,8 @@ mod tests {
         };
         let mut resolver = DefaultExprResolver::default();
 
-        let subscriptions = track_reactive_bindings(&screen, &mut resolver, &ctx, &mut state, |_| {}).unwrap();
+        let subscriptions =
+            track_reactive_bindings(&screen, &mut resolver, &ctx, &mut state, |_| {}).unwrap();
 
         assert_eq!(
             subscriptions.path_to_nodes.get("work.title"),

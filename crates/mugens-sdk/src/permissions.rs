@@ -1,4 +1,4 @@
-pub use unode_sdk::{permission as custom_permission, PermissionRequestBuilder};
+pub use unode_sdk::{PermissionRequestBuilder, permission as custom_permission};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MugensPermission {
@@ -28,7 +28,7 @@ pub fn mugens_permission(permission: MugensPermission) -> PermissionRequestBuild
 }
 
 pub mod mugens {
-    use super::{mugens_permission, MugensPermission, PermissionRequestBuilder};
+    use super::{MugensPermission, PermissionRequestBuilder, mugens_permission};
 
     pub fn catalog_read() -> PermissionRequestBuilder {
         mugens_permission(MugensPermission::CatalogRead)

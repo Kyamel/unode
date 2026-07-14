@@ -12,11 +12,18 @@ It depends on the domain bridge, the TUI renderer, and `unode-tui-runtime` to
 prove that a plugin screen can be loaded, rendered, navigated, and dispatched in
 a native terminal host.
 
+The app registers built-in shell routes plus runtime-loaded WASM plugins from
+`plugins/`. Today it knows how to register both `sanity-check` and
+`web-counter` when their `.wasm` artifacts have been built. Plugin registration,
+artifact discovery, host-call dispatch, and the small host-owned state map used
+for `state.set` live in `src/plugin_registry.rs`.
+
 ## Owns
 
 - terminal application startup and event loop composition;
 - app-level navigation and screen lifecycle decisions;
 - integration between Mugens domain crates and Unode runtime crates;
+- local plugin registration for the demo shell;
 - smoke/integration tests for repeated plugin navigation cycles.
 
 ## Does Not Own

@@ -4,11 +4,15 @@ use std::sync::Arc;
 use serde_json::Value as JsonValue;
 use thiserror::Error;
 use unode_sdk::abi::AbiError;
-use unode_sdk::{decode_json_bytes, encode_json_bytes, HostCallEnvelope, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN};
+use unode_sdk::{
+    HostCallEnvelope, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN, decode_json_bytes,
+    encode_json_bytes,
+};
 
-use crate::memory::{read_bytes, TuiMemoryError};
+use crate::memory::{TuiMemoryError, read_bytes};
 
-type HostCallHandler = Arc<dyn Fn(&BTreeMap<String, JsonValue>) -> Result<JsonValue, TuiHostCallError> + Send + Sync>;
+type HostCallHandler =
+    Arc<dyn Fn(&BTreeMap<String, JsonValue>) -> Result<JsonValue, TuiHostCallError> + Send + Sync>;
 
 #[derive(Debug, Error)]
 pub enum TuiHostCallError {
@@ -52,12 +56,18 @@ impl TuiHostCallDispatcher {
 
     pub fn register<F>(&mut self, operation: impl Into<String>, handler: F)
     where
-        F: Fn(&BTreeMap<String, JsonValue>) -> Result<JsonValue, TuiHostCallError> + Send + Sync + 'static,
+        F: Fn(&BTreeMap<String, JsonValue>) -> Result<JsonValue, TuiHostCallError>
+            + Send
+            + Sync
+            + 'static,
     {
         self.handlers.insert(operation.into(), Arc::new(handler));
     }
 
-    pub fn dispatch_envelope(&mut self, envelope: &HostCallEnvelope) -> Result<&[u8], TuiHostCallError> {
+    pub fn dispatch_envelope(
+        &mut self,
+        envelope: &HostCallEnvelope,
+    ) -> Result<&[u8], TuiHostCallError> {
         let handler = self
             .handlers
             .get(&envelope.operation)
@@ -100,7 +110,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     use serde_json::json;
-    use unode_sdk::{decode_json_bytes, HostCallEnvelope};
+    use unode_sdk::{HostCallEnvelope, decode_json_bytes};
 
     use super::{TuiHostCallDispatcher, TuiHostCallError};
     use crate::memory::write_bytes;

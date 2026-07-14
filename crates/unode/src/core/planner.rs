@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use serde_json::{json, Value as JsonValue};
+use serde_json::{Value as JsonValue, json};
 
 use crate::core::ast::{BoolOrExpr, CollectionContinuation, OneOrExpr, UiExpr};
 use crate::core::canonical::*;
@@ -70,11 +70,26 @@ fn find_in_node<'a>(node: &'a CanonicalUiNode, key: &str) -> Option<CanonicalTar
     }
 
     match node {
-        CanonicalUiNode::Section(node) => node.children.iter().find_map(|child| find_in_node(child, key)),
-        CanonicalUiNode::Stack(node) => node.children.iter().find_map(|child| find_in_node(child, key)),
-        CanonicalUiNode::Inline(node) => node.children.iter().find_map(|child| find_in_node(child, key)),
-        CanonicalUiNode::Grid(node) => node.children.iter().find_map(|child| find_in_node(child, key)),
-        CanonicalUiNode::Scroll(node) => node.children.iter().find_map(|child| find_in_node(child, key)),
+        CanonicalUiNode::Section(node) => node
+            .children
+            .iter()
+            .find_map(|child| find_in_node(child, key)),
+        CanonicalUiNode::Stack(node) => node
+            .children
+            .iter()
+            .find_map(|child| find_in_node(child, key)),
+        CanonicalUiNode::Inline(node) => node
+            .children
+            .iter()
+            .find_map(|child| find_in_node(child, key)),
+        CanonicalUiNode::Grid(node) => node
+            .children
+            .iter()
+            .find_map(|child| find_in_node(child, key)),
+        CanonicalUiNode::Scroll(node) => node
+            .children
+            .iter()
+            .find_map(|child| find_in_node(child, key)),
         CanonicalUiNode::Pressable(node) => find_in_node(&node.child, key),
         CanonicalUiNode::Item(node) => find_in_item(node, key),
         CanonicalUiNode::List(node) => node.items.iter().find_map(|item| find_in_item(item, key)),
@@ -82,12 +97,27 @@ fn find_in_node<'a>(node: &'a CanonicalUiNode, key: &str) -> Option<CanonicalTar
             .children
             .iter()
             .find_map(|action| find_in_action(action, key)),
-        CanonicalUiNode::Disclosure(node) => node.children.iter().find_map(|child| find_in_node(child, key)),
-        CanonicalUiNode::Form(node) => node.children.iter().find_map(|child| find_in_node(child, key)),
-        CanonicalUiNode::Status(node) => node.actions.iter().find_map(|action| find_in_action(action, key)),
-        CanonicalUiNode::Empty(node) => node.actions.iter().find_map(|action| find_in_action(action, key)),
-        CanonicalUiNode::Conditional(node) => find_in_node(&node.r#then, key)
-            .or_else(|| node.r#else.as_ref().and_then(|child| find_in_node(child, key))),
+        CanonicalUiNode::Disclosure(node) => node
+            .children
+            .iter()
+            .find_map(|child| find_in_node(child, key)),
+        CanonicalUiNode::Form(node) => node
+            .children
+            .iter()
+            .find_map(|child| find_in_node(child, key)),
+        CanonicalUiNode::Status(node) => node
+            .actions
+            .iter()
+            .find_map(|action| find_in_action(action, key)),
+        CanonicalUiNode::Empty(node) => node
+            .actions
+            .iter()
+            .find_map(|action| find_in_action(action, key)),
+        CanonicalUiNode::Conditional(node) => find_in_node(&node.r#then, key).or_else(|| {
+            node.r#else
+                .as_ref()
+                .and_then(|child| find_in_node(child, key))
+        }),
         CanonicalUiNode::Slot(node) => node
             .fallback
             .as_ref()
@@ -276,7 +306,10 @@ fn field_patch(
 ) -> Option<PatchOp> {
     let value = match target {
         CanonicalTarget::Screen(screen) => match field {
-            ReactiveField::Title => screen.title.as_ref().map(|value| resolve_string(value, resolver, ctx, key)),
+            ReactiveField::Title => screen
+                .title
+                .as_ref()
+                .map(|value| resolve_string(value, resolver, ctx, key)),
             ReactiveField::Subtitle => screen
                 .subtitle
                 .as_ref()
@@ -285,7 +318,10 @@ fn field_patch(
         },
         CanonicalTarget::Node(node) => match node {
             CanonicalUiNode::Section(node) => match field {
-                ReactiveField::Title => node.title.as_ref().map(|value| resolve_string(value, resolver, ctx, key)),
+                ReactiveField::Title => node
+                    .title
+                    .as_ref()
+                    .map(|value| resolve_string(value, resolver, ctx, key)),
                 ReactiveField::Description => node
                     .description
                     .as_ref()
@@ -305,15 +341,23 @@ fn field_patch(
                 _ => None,
             },
             CanonicalUiNode::Divider(node) => match field {
-                ReactiveField::Label => node.label.as_ref().map(|value| resolve_string(value, resolver, ctx, key)),
+                ReactiveField::Label => node
+                    .label
+                    .as_ref()
+                    .map(|value| resolve_string(value, resolver, ctx, key)),
                 _ => None,
             },
             CanonicalUiNode::Pressable(node) => match field {
-                ReactiveField::Label => node.label.as_ref().map(|value| resolve_string(value, resolver, ctx, key)),
+                ReactiveField::Label => node
+                    .label
+                    .as_ref()
+                    .map(|value| resolve_string(value, resolver, ctx, key)),
                 _ => None,
             },
             CanonicalUiNode::Disclosure(node) => match field {
-                ReactiveField::BindingState => Some(resolve_binding_state(&node.binding, resolver, ctx, key)),
+                ReactiveField::BindingState => {
+                    Some(resolve_binding_state(&node.binding, resolver, ctx, key))
+                }
                 ReactiveField::Label => Some(resolve_string(&node.label, resolver, ctx, key)),
                 ReactiveField::LabelExpanded => node
                     .label_expanded
@@ -349,7 +393,10 @@ fn field_patch(
                 _ => None,
             },
             CanonicalUiNode::Status(node) => match field {
-                ReactiveField::Title => node.title.as_ref().map(|value| resolve_string(value, resolver, ctx, key)),
+                ReactiveField::Title => node
+                    .title
+                    .as_ref()
+                    .map(|value| resolve_string(value, resolver, ctx, key)),
                 ReactiveField::Message => Some(resolve_string(&node.message, resolver, ctx, key)),
                 _ => None,
             },
@@ -362,7 +409,10 @@ fn field_patch(
                 _ => None,
             },
             CanonicalUiNode::Loading(node) => match field {
-                ReactiveField::Label => node.label.as_ref().map(|value| resolve_string(value, resolver, ctx, key)),
+                ReactiveField::Label => node
+                    .label
+                    .as_ref()
+                    .map(|value| resolve_string(value, resolver, ctx, key)),
                 ReactiveField::Progress => node
                     .progress
                     .as_ref()
@@ -370,17 +420,15 @@ fn field_patch(
                 _ => None,
             },
             CanonicalUiNode::Grid(node) => match field {
-                ReactiveField::Continuation => node
-                    .continuation
-                    .as_ref()
-                    .map(|value| PatchValue::Json(resolve_continuation_json(value, resolver, ctx, key))),
+                ReactiveField::Continuation => node.continuation.as_ref().map(|value| {
+                    PatchValue::Json(resolve_continuation_json(value, resolver, ctx, key))
+                }),
                 _ => None,
             },
             CanonicalUiNode::List(node) => match field {
-                ReactiveField::Continuation => node
-                    .continuation
-                    .as_ref()
-                    .map(|value| PatchValue::Json(resolve_continuation_json(value, resolver, ctx, key))),
+                ReactiveField::Continuation => node.continuation.as_ref().map(|value| {
+                    PatchValue::Json(resolve_continuation_json(value, resolver, ctx, key))
+                }),
                 _ => None,
             },
             CanonicalUiNode::Conditional(_)
@@ -429,7 +477,11 @@ fn resolve_string(
     ctx: &ResolverContext<'_>,
     key: &str,
 ) -> PatchValue {
-    PatchValue::String(OneOrExpr::Value(resolver.resolve_string(value, ctx, Some(key))))
+    PatchValue::String(OneOrExpr::Value(resolver.resolve_string(
+        value,
+        ctx,
+        Some(key),
+    )))
 }
 
 fn resolve_bool(
@@ -438,7 +490,11 @@ fn resolve_bool(
     ctx: &ResolverContext<'_>,
     key: &str,
 ) -> PatchValue {
-    PatchValue::Bool(OneOrExpr::Value(resolver.resolve_bool(value, ctx, Some(key))))
+    PatchValue::Bool(OneOrExpr::Value(resolver.resolve_bool(
+        value,
+        ctx,
+        Some(key),
+    )))
 }
 
 fn resolve_number(
@@ -447,9 +503,11 @@ fn resolve_number(
     ctx: &ResolverContext<'_>,
     key: &str,
 ) -> PatchValue {
-    PatchValue::Number(OneOrExpr::Value(
-        resolver.resolve_number(value, ctx, Some(key)),
-    ))
+    PatchValue::Number(OneOrExpr::Value(resolver.resolve_number(
+        value,
+        ctx,
+        Some(key),
+    )))
 }
 
 fn resolve_primitive(
@@ -458,9 +516,11 @@ fn resolve_primitive(
     ctx: &ResolverContext<'_>,
     key: &str,
 ) -> PatchValue {
-    PatchValue::Primitive(OneOrExpr::Value(
-        resolver.resolve_primitive(value, ctx, Some(key)),
-    ))
+    PatchValue::Primitive(OneOrExpr::Value(resolver.resolve_primitive(
+        value,
+        ctx,
+        Some(key),
+    )))
 }
 
 fn resolve_binding_state(
@@ -614,7 +674,9 @@ mod tests {
         };
         let mut resolver = DefaultExprResolver::default();
 
-        let dirty = ["hero-title".to_string()].into_iter().collect::<BTreeSet<_>>();
+        let dirty = ["hero-title".to_string()]
+            .into_iter()
+            .collect::<BTreeSet<_>>();
         let planned = plan_patch_ops(&screen, &dirty, &mut resolver, &ctx);
 
         assert_eq!(

@@ -71,7 +71,10 @@ pub struct PermissionProfile {
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum PermissionError {
     #[error("permission denied for plugin `{plugin_id}`: `{permission}`")]
-    PermissionDenied { plugin_id: String, permission: String },
+    PermissionDenied {
+        plugin_id: String,
+        permission: String,
+    },
     #[error("origin not allowed for plugin `{plugin_id}`: `{url}`")]
     OriginNotAllowed { plugin_id: String, url: String },
 }
@@ -129,7 +132,10 @@ impl PermissionGuard {
         let origin = extract_origin(url).unwrap_or(url);
         let allowed = self.approved_origins(CoreBuiltinPermission::HttpFetch.as_str());
 
-        if allowed.iter().any(|candidate| candidate == "*" || candidate == origin) {
+        if allowed
+            .iter()
+            .any(|candidate| candidate == "*" || candidate == origin)
+        {
             Ok(())
         } else {
             Err(PermissionError::OriginNotAllowed {
@@ -143,13 +149,17 @@ impl PermissionGuard {
 fn extract_origin(url: &str) -> Option<&str> {
     let scheme_end = url.find("://")?;
     let after_scheme = &url[(scheme_end + 3)..];
-    let path_start = after_scheme.find(&['/', '?', '#'][..]).unwrap_or(after_scheme.len());
+    let path_start = after_scheme
+        .find(&['/', '?', '#'][..])
+        .unwrap_or(after_scheme.len());
     Some(&url[..scheme_end + 3 + path_start])
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{CoreBuiltinPermission, PermissionError, PermissionGrant, PermissionGuard, PermissionProfile};
+    use super::{
+        CoreBuiltinPermission, PermissionError, PermissionGrant, PermissionGuard, PermissionProfile,
+    };
 
     fn guard(grants: Vec<PermissionGrant>) -> PermissionGuard {
         PermissionGuard::new(PermissionProfile {
@@ -176,8 +186,16 @@ mod tests {
             allowed_origins: vec!["https://api.example.com".to_string()],
         }]);
 
-        assert!(guard.assert_origin("https://api.example.com/works/1").is_ok());
-        assert!(guard.assert_origin("https://evil.example.com/works/1").is_err());
+        assert!(
+            guard
+                .assert_origin("https://api.example.com/works/1")
+                .is_ok()
+        );
+        assert!(
+            guard
+                .assert_origin("https://evil.example.com/works/1")
+                .is_err()
+        );
     }
 
     #[test]
@@ -189,6 +207,10 @@ mod tests {
             allowed_origins: vec![],
         }]);
 
-        assert!(guard.assert_origin("https://wherever.example.com/works/1").is_ok());
+        assert!(
+            guard
+                .assert_origin("https://wherever.example.com/works/1")
+                .is_ok()
+        );
     }
 }

@@ -1,8 +1,8 @@
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui::Frame;
 use unode::core::ast::{ActionNode, ActionsNode};
 
 use crate::util::{action_style, render_string_or_expr};
@@ -55,9 +55,14 @@ pub fn action_label(node: &ActionNode) -> String {
 }
 
 pub fn button_width(node: &ActionNode) -> u16 {
-    (action_label(node).chars().count() as u16).saturating_add(4).max(10)
+    (action_label(node).chars().count() as u16)
+        .saturating_add(4)
+        .max(10)
 }
 
 fn is_disabled(node: &ActionNode) -> bool {
-    matches!(node.disabled, Some(unode::core::ast::OneOrExpr::Value(true)))
+    matches!(
+        node.disabled,
+        Some(unode::core::ast::OneOrExpr::Value(true))
+    )
 }

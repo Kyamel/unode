@@ -23,10 +23,7 @@ pub fn permission(permission: impl Into<String>) -> PermissionRequestBuilder {
 /// Plugin authors normally expose the built manifest through the WASM ABI
 /// `plugin_manifest` export. Hosts read it before instantiation to validate API
 /// compatibility and requested permissions.
-pub fn plugin_manifest(
-    id: impl Into<String>,
-    name: impl Into<String>,
-) -> PluginManifestBuilder {
+pub fn plugin_manifest(id: impl Into<String>, name: impl Into<String>) -> PluginManifestBuilder {
     let mut manifest = PluginManifest::default();
     manifest.id = id.into();
     manifest.name = name.into();

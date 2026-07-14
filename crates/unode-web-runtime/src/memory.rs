@@ -1,5 +1,5 @@
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use thiserror::Error;
 use unode_sdk::abi::AbiError;
 use unode_sdk::{decode_json_bytes, encode_json_bytes};
@@ -38,7 +38,11 @@ pub fn read_bytes(memory: &[u8], ptr: u32, len: u32) -> Result<Vec<u8>, WebMemor
     Ok(memory[start..end].to_vec())
 }
 
-pub fn read_json<T: DeserializeOwned>(memory: &[u8], ptr: u32, len: u32) -> Result<T, WebMemoryError> {
+pub fn read_json<T: DeserializeOwned>(
+    memory: &[u8],
+    ptr: u32,
+    len: u32,
+) -> Result<T, WebMemoryError> {
     let bytes = read_bytes(memory, ptr, len)?;
     decode_json_bytes(&bytes).map_err(WebMemoryError::from)
 }
@@ -61,7 +65,11 @@ pub fn write_bytes(memory: &mut Vec<u8>, ptr: u32, bytes: &[u8]) -> Result<(), W
     Ok(())
 }
 
-pub fn write_json<T: Serialize>(memory: &mut Vec<u8>, ptr: u32, value: &T) -> Result<usize, WebMemoryError> {
+pub fn write_json<T: Serialize>(
+    memory: &mut Vec<u8>,
+    ptr: u32,
+    value: &T,
+) -> Result<usize, WebMemoryError> {
     let bytes = encode_json_bytes(value)?;
     let len = bytes.len();
     write_bytes(memory, ptr, &bytes)?;
@@ -72,7 +80,7 @@ pub fn write_json<T: Serialize>(memory: &mut Vec<u8>, ptr: u32, value: &T) -> Re
 mod tests {
     use serde_json::json;
 
-    use super::{read_bytes, read_json, write_bytes, write_json, WebMemoryError};
+    use super::{WebMemoryError, read_bytes, read_json, write_bytes, write_json};
 
     #[test]
     fn reads_and_writes_linear_memory() {

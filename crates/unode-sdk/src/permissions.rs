@@ -1,13 +1,15 @@
 use crate::manifest::PermissionRequestBuilder;
 
-pub use unode::core::permissions::{CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile, PermissionRequest};
+pub use unode::core::permissions::{
+    CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile, PermissionRequest,
+};
 
 pub fn core_permission(permission: CoreBuiltinPermission) -> PermissionRequestBuilder {
     crate::manifest::permission(permission.as_str())
 }
 
 pub mod core {
-    use super::{core_permission, CoreBuiltinPermission, PermissionRequestBuilder};
+    use super::{CoreBuiltinPermission, PermissionRequestBuilder, core_permission};
 
     pub fn http_fetch() -> PermissionRequestBuilder {
         core_permission(CoreBuiltinPermission::HttpFetch)

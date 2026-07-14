@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value as JsonValue;
 use thiserror::Error;
 use unode::core::ast::ActionRef;
@@ -313,12 +313,12 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        decode_json_bytes, encode_json_bytes, HostCallEnvelope, PluginDispatchOutcome,
-        PluginDispatchRequest, PluginDispatchResponse, PluginManifestEnvelope,
-        PluginRenderRequest, UNODE_PLUGIN_ABI_VERSION,
+        HostCallEnvelope, PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse,
+        PluginManifestEnvelope, PluginRenderRequest, UNODE_PLUGIN_ABI_VERSION, decode_json_bytes,
+        encode_json_bytes,
     };
     use crate::plugin_manifest;
-    use unode::core::ast::{ActionType, ActionRef};
+    use unode::core::ast::{ActionRef, ActionType};
     use unode::core::runtime::ResolvedRoute;
 
     #[test]

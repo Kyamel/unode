@@ -1,13 +1,13 @@
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
-use ratatui::Frame;
 use unode::core::ast::{
     ActionNode, ActionRef, BoolOrExpr, ItemNode, ListNode, NodeBase, ScreenNode, StatusNode,
     StringOrExpr, UiNode,
 };
-use unode::core::chrome::{read_route_tabs_meta, ScreenRouteTab, ScreenRouteTabsMeta};
+use unode::core::chrome::{ScreenRouteTab, ScreenRouteTabsMeta, read_route_tabs_meta};
 
 use crate::nodes::{actions, list, section, stack, status, text};
 use crate::util::render_string_or_expr;
@@ -63,11 +63,17 @@ pub fn collect_screen_interactions(screen: &ScreenNode) -> Vec<TuiInteractiveEle
     let mut interactions = Vec::new();
 
     if let Some(route_tabs) = read_route_tabs_meta(screen) {
-        interactions.extend(route_tabs.tabs.iter().cloned().map(|tab| TuiInteractiveElement {
-            node_id: Some(format!("route-tab:{}", tab.id)),
-            label: tab.label,
-            kind: TuiInteractiveKind::RouteTab { to: tab.to },
-        }));
+        interactions.extend(
+            route_tabs
+                .tabs
+                .iter()
+                .cloned()
+                .map(|tab| TuiInteractiveElement {
+                    node_id: Some(format!("route-tab:{}", tab.id)),
+                    label: tab.label,
+                    kind: TuiInteractiveKind::RouteTab { to: tab.to },
+                }),
+        );
     }
 
     for child in &screen.children {
@@ -84,7 +90,11 @@ pub fn render_tui_screen(frame: &mut Frame, area: Rect, view: &TuiScreenView) {
 
     let route_tabs = read_route_tabs_meta(&view.screen);
     let top_constraints = if route_tabs.is_some() {
-        vec![Constraint::Length(2), Constraint::Length(3), Constraint::Min(0)]
+        vec![
+            Constraint::Length(2),
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ]
     } else {
         vec![Constraint::Length(2), Constraint::Min(0)]
     };
@@ -110,10 +120,7 @@ pub fn render_tui_screen(frame: &mut Frame, area: Rect, view: &TuiScreenView) {
             title,
             Style::default().add_modifier(Modifier::BOLD),
         )),
-        Line::from(Span::styled(
-            subtitle,
-            Style::default().fg(Color::Gray),
-        )),
+        Line::from(Span::styled(subtitle, Style::default().fg(Color::Gray))),
     ]);
     frame.render_widget(header, sections[0]);
 
@@ -130,15 +137,33 @@ pub fn render_tui_screen(frame: &mut Frame, area: Rect, view: &TuiScreenView) {
 
 fn collect_node_interactions(node: &UiNode, interactions: &mut Vec<TuiInteractiveElement>) {
     match node {
-        UiNode::Action(node) => push_action_interaction(&node.base, &node.label, &node.action, !is_disabled(node), interactions),
+        UiNode::Action(node) => push_action_interaction(
+            &node.base,
+            &node.label,
+            &node.action,
+            !is_disabled(node),
+            interactions,
+        ),
         UiNode::Actions(node) => {
             for child in &node.children {
-                push_action_interaction(&child.base, &child.label, &child.action, !is_disabled(child), interactions);
+                push_action_interaction(
+                    &child.base,
+                    &child.label,
+                    &child.action,
+                    !is_disabled(child),
+                    interactions,
+                );
             }
         }
         UiNode::Status(node) => {
             for action in &node.actions {
-                push_action_interaction(&action.base, &action.label, &action.action, !is_disabled(action), interactions);
+                push_action_interaction(
+                    &action.base,
+                    &action.label,
+                    &action.action,
+                    !is_disabled(action),
+                    interactions,
+                );
             }
         }
         UiNode::List(node) => collect_list_interactions(node, interactions),
@@ -248,7 +273,12 @@ fn render_route_tab_span(tab: &ScreenRouteTab, active: bool, focused: bool) -> S
     Span::styled(label, style)
 }
 
-fn render_children(frame: &mut Frame, area: Rect, children: &[UiNode], ctx: &mut ScreenRenderContext) {
+fn render_children(
+    frame: &mut Frame,
+    area: Rect,
+    children: &[UiNode],
+    ctx: &mut ScreenRenderContext,
+) {
     if children.is_empty() || area.height == 0 || area.width == 0 {
         return;
     }
@@ -348,12 +378,7 @@ fn render_actions_group(
     }
 }
 
-fn render_status(
-    frame: &mut Frame,
-    area: Rect,
-    node: &StatusNode,
-    ctx: &mut ScreenRenderContext,
-) {
+fn render_status(frame: &mut Frame, area: Rect, node: &StatusNode, ctx: &mut ScreenRenderContext) {
     let focus = if node.actions.is_empty() {
         None
     } else {
@@ -468,7 +493,12 @@ fn render_section(
     }
 }
 
-fn render_inline(frame: &mut Frame, area: Rect, children: &[UiNode], ctx: &mut ScreenRenderContext) {
+fn render_inline(
+    frame: &mut Frame,
+    area: Rect,
+    children: &[UiNode],
+    ctx: &mut ScreenRenderContext,
+) {
     if children.is_empty() {
         return;
     }
@@ -522,10 +552,10 @@ fn list_item_label(item: &ItemNode) -> String {
 mod tests {
     use serde_json::json;
     use unode::core::ast::{ActionType, CoreActionType, NodeBase};
-    use unode::core::chrome::{create_route_tabs_meta, with_route_tabs, ScreenRouteTab};
+    use unode::core::chrome::{ScreenRouteTab, create_route_tabs_meta, with_route_tabs};
     use unode::core::dsl::{self as ui, IntoNode};
 
-    use super::{collect_screen_interactions, TuiInteractiveKind};
+    use super::{TuiInteractiveKind, collect_screen_interactions};
 
     #[test]
     fn collects_route_tabs_and_actions_in_render_order() {

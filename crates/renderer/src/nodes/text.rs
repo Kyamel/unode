@@ -1,5 +1,5 @@
 use ratatui::widgets::{Paragraph, Wrap};
-use ratatui::{layout::Rect, Frame};
+use ratatui::{Frame, layout::Rect};
 use unode::core::ast::TextNode;
 
 use crate::util::{render_string_or_expr, tone_style};

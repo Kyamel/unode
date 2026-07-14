@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 use serde_json::json;
 
-use unode::core::dsl::{self as ui, expr, IntoNode};
+use unode::core::dsl::{self as ui, IntoNode, expr};
 use unode_web_host::WebSessionCore;
 
 /// A screen with one reactive line (bound to `ui.count`) and one static line.
@@ -132,7 +132,11 @@ fn unrelated_write_produces_no_patches() {
 /// Walk an IR JSON tree collecting every node key (`p._k`).
 fn collect_keys(node: &serde_json::Value) -> Vec<String> {
     let mut out = Vec::new();
-    if let Some(key) = node.get("p").and_then(|p| p.get("_k")).and_then(|k| k.as_str()) {
+    if let Some(key) = node
+        .get("p")
+        .and_then(|p| p.get("_k"))
+        .and_then(|k| k.as_str())
+    {
         out.push(key.to_string());
     }
     if let Some(children) = node.get("c").and_then(|c| c.as_array()) {

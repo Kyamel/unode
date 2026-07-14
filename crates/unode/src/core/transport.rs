@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::core::ast::UNODE_AST_VERSION;
 use crate::core::canonical::CanonicalScreen;
-use crate::core::ir::{lower_screen, IrScreen};
+use crate::core::ir::{IrScreen, lower_screen};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,7 +27,10 @@ pub struct SerializeOptions {
 ///
 /// The envelope carries the AST/protocol version and an optional screen kind so
 /// hosts can reject incompatible payloads before handing data to a renderer.
-pub fn screen_to_json(screen: &IrScreen, options: &SerializeOptions) -> Result<String, serde_json::Error> {
+pub fn screen_to_json(
+    screen: &IrScreen,
+    options: &SerializeOptions,
+) -> Result<String, serde_json::Error> {
     let envelope = ScreenEnvelope {
         r#type: "unode-screen".into(),
         v: UNODE_AST_VERSION.into(),

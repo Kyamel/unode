@@ -1,6 +1,6 @@
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Block, Borders};
-use ratatui::Frame;
 use unode::core::ast::SectionNode;
 
 use crate::util::render_string_or_expr;

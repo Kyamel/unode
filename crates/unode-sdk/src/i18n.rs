@@ -250,7 +250,11 @@ impl PluginI18n {
     pub fn resolve_text(&self, text: &I18nText) -> String {
         match text {
             I18nText::Literal(value) => value.clone(),
-            I18nText::Key { key, values, fallback } => self.t(key, Some(values), fallback.as_deref()),
+            I18nText::Key {
+                key,
+                values,
+                fallback,
+            } => self.t(key, Some(values), fallback.as_deref()),
         }
     }
 
@@ -326,7 +330,10 @@ fn resolve_template<'a>(
     }
 }
 
-fn find_catalog<'a>(catalogs: &'a MessageCatalogs, locale: &str) -> Option<(String, &'a MessageCatalog)> {
+fn find_catalog<'a>(
+    catalogs: &'a MessageCatalogs,
+    locale: &str,
+) -> Option<(String, &'a MessageCatalog)> {
     let normalized = normalize_locale(locale);
 
     if let Some((key, catalog)) = catalogs
@@ -348,7 +355,12 @@ fn find_catalog<'a>(catalogs: &'a MessageCatalogs, locale: &str) -> Option<(Stri
         .iter()
         .find(|(key, _)| normalize_locale(key) == "en")
         .map(|(key, catalog)| (key.clone(), catalog))
-        .or_else(|| catalogs.iter().next().map(|(key, catalog)| (key.clone(), catalog)))
+        .or_else(|| {
+            catalogs
+                .iter()
+                .next()
+                .map(|(key, catalog)| (key.clone(), catalog))
+        })
 }
 
 fn normalize_locale(locale: &str) -> String {
@@ -409,8 +421,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        msg, msg_with, I18nCatalogRegistrationEvent, I18nInspector, I18nLookupEvent, MessageCatalogs,
-        MessageValues, PluginI18n,
+        I18nCatalogRegistrationEvent, I18nInspector, I18nLookupEvent, MessageCatalogs,
+        MessageValues, PluginI18n, msg, msg_with,
     };
 
     fn sample_catalogs() -> MessageCatalogs {
@@ -432,7 +444,11 @@ mod tests {
 
     #[test]
     fn resolves_exact_locale_and_interpolates() {
-        let i18n = PluginI18n::with_catalogs("demo.plugin", Arc::new(|| "pt-BR".to_string()), sample_catalogs());
+        let i18n = PluginI18n::with_catalogs(
+            "demo.plugin",
+            Arc::new(|| "pt-BR".to_string()),
+            sample_catalogs(),
+        );
         let mut values = MessageValues::new();
         values.insert("kind".into(), json!("mangas"));
 
@@ -441,7 +457,11 @@ mod tests {
 
     #[test]
     fn falls_back_to_english_when_locale_is_missing() {
-        let i18n = PluginI18n::with_catalogs("demo.plugin", Arc::new(|| "es-ES".to_string()), sample_catalogs());
+        let i18n = PluginI18n::with_catalogs(
+            "demo.plugin",
+            Arc::new(|| "es-ES".to_string()),
+            sample_catalogs(),
+        );
         let mut values = MessageValues::new();
         values.insert("kind".into(), json!("mangas"));
 
@@ -450,13 +470,21 @@ mod tests {
 
     #[test]
     fn msg_helper_resolves_lazy_text() {
-        let i18n = PluginI18n::with_catalogs("demo.plugin", Arc::new(|| "en".to_string()), sample_catalogs());
+        let i18n = PluginI18n::with_catalogs(
+            "demo.plugin",
+            Arc::new(|| "en".to_string()),
+            sample_catalogs(),
+        );
         let mut values = MessageValues::new();
         values.insert("kind".into(), json!("works"));
 
         assert_eq!(i18n.resolve_text(&msg("title")), "Hot");
         assert_eq!(
-            i18n.resolve_text(&msg_with("nav.browse", values, Some("fallback".to_string()))),
+            i18n.resolve_text(&msg_with(
+                "nav.browse",
+                values,
+                Some("fallback".to_string())
+            )),
             "Browse works"
         );
     }
@@ -471,7 +499,10 @@ mod tests {
 
         impl I18nInspector for Recorder {
             fn on_register(&self, event: &I18nCatalogRegistrationEvent) {
-                self.registrations.lock().expect("registrations").push(event.clone());
+                self.registrations
+                    .lock()
+                    .expect("registrations")
+                    .push(event.clone());
             }
 
             fn on_lookup(&self, event: &I18nLookupEvent) {
@@ -488,7 +519,10 @@ mod tests {
 
         let registrations = recorder.registrations.lock().expect("registrations");
         assert_eq!(registrations.len(), 1);
-        assert_eq!(registrations[0].locales, vec!["en".to_string(), "pt-BR".to_string()]);
+        assert_eq!(
+            registrations[0].locales,
+            vec!["en".to_string(), "pt-BR".to_string()]
+        );
         drop(registrations);
 
         let lookups = recorder.lookups.lock().expect("lookups");

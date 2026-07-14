@@ -27,10 +27,10 @@ use serde_json::Value as JsonValue;
 
 use unode::core::ast::ScreenNode;
 use unode::core::canonical::CanonicalScreen;
-use unode::core::ir::{lower_patch_ops, lower_screen, IrPatchOp, IrScreen};
+use unode::core::ir::{IrPatchOp, IrScreen, lower_patch_ops, lower_screen};
 use unode::core::normalize::normalize_screen;
 use unode::core::planner::plan_patch_ops;
-use unode::core::reactive::{track_reactive_bindings, BindingSubscriptions};
+use unode::core::reactive::{BindingSubscriptions, track_reactive_bindings};
 use unode::core::resolver::{DefaultExprResolver, ResolverContext};
 use unode::core::runtime::ResolvedRoute;
 use unode::core::state::{MemoryStateStore, StateStore};
@@ -105,8 +105,13 @@ impl WebSessionCore {
         // Populates `resolver` with the path -> node dependency edges. We drive
         // patches manually, so the live subscription's callback is a no-op; we
         // keep the handle only to tear it down on the next mount.
-        let subscriptions =
-            track_reactive_bindings(&canonical, &mut self.resolver, &ctx, &mut self.state, |_| {})?;
+        let subscriptions = track_reactive_bindings(
+            &canonical,
+            &mut self.resolver,
+            &ctx,
+            &mut self.state,
+            |_| {},
+        )?;
 
         let ir = lower_screen(&canonical);
         self.screen = Some(canonical);

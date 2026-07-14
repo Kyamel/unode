@@ -1,10 +1,10 @@
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
-use ratatui::Frame;
 
-use crate::screen::{render_tui_screen, TuiScreenView};
+use crate::screen::{TuiScreenView, render_tui_screen};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TuiNavItem {
@@ -85,10 +85,12 @@ pub fn render_tui_shell(frame: &mut Frame, view: &TuiShellView) {
     let nav_items = view
         .nav_items
         .iter()
-        .map(|item| ListItem::new(Line::from(vec![
-            Span::styled("• ", Style::default().fg(Color::DarkGray)),
-            Span::raw(item.label.clone()),
-        ])))
+        .map(|item| {
+            ListItem::new(Line::from(vec![
+                Span::styled("• ", Style::default().fg(Color::DarkGray)),
+                Span::raw(item.label.clone()),
+            ]))
+        })
         .collect::<Vec<_>>();
 
     let nav_list = List::new(nav_items)
@@ -102,7 +104,10 @@ pub fn render_tui_shell(frame: &mut Frame, view: &TuiShellView) {
 
     let mut nav_state = ListState::default();
     if !view.nav_items.is_empty() {
-        nav_state.select(Some(view.selected_nav.min(view.nav_items.len().saturating_sub(1))));
+        nav_state.select(Some(
+            view.selected_nav
+                .min(view.nav_items.len().saturating_sub(1)),
+        ));
     }
     frame.render_stateful_widget(nav_list, body[0], &mut nav_state);
 

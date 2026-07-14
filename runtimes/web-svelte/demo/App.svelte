@@ -4,21 +4,26 @@
   import webHostWasmUrl from "../pkg/unode_web_host_bg.wasm?url";
   import {
     HostSession,
-    PluginInstance,
     ScreenStore,
     StateWriteSink,
     UnodeScreen,
+    WebPluginRegistry,
     WebRuntime,
   } from "../src";
   import pluginWasmUrl from "./web_counter_plugin.wasm?url";
 
   const PLUGIN_ROUTE_PATTERN = "/plugins/web-counter";
+  const pluginRegistry = new WebPluginRegistry().register({
+    id: "dev.unode.web-counter",
+    routePattern: PLUGIN_ROUTE_PATTERN,
+    loadWasm: () => fetch(pluginWasmUrl),
+  });
 
   let store: ScreenStore | null = $state(null);
   let runtime: WebRuntime | null = $state(null);
   let error: string | null = $state(null);
 
-  function routeForCurrentLocation() {
+  function routeTargetForCurrentLocation() {
     const url = new URL(window.location.href);
 
     if (url.pathname === "/") {
@@ -27,8 +32,7 @@
     }
 
     return {
-      pattern: PLUGIN_ROUTE_PATTERN,
-      params: {},
+      pathname: url.pathname,
       query: Object.fromEntries(url.searchParams.entries()),
     };
   }
@@ -44,12 +48,17 @@
           "en",
         );
         const sink = new StateWriteSink();
-        const plugin = await PluginInstance.instantiate(await fetch(pluginWasmUrl), sink.handler);
+        const pluginTarget = routeTargetForCurrentLocation();
+        const { plugin, route } = await pluginRegistry.instantiateForPath(
+          pluginTarget.pathname,
+          pluginTarget.query,
+          sink.handler,
+        );
         const nextRuntime = new WebRuntime({
           plugin,
           session,
           sink,
-          route: routeForCurrentLocation(),
+          route,
           locale: "en",
         });
         const nextStore = nextRuntime.mount();

@@ -4,7 +4,9 @@ use unode::core::ast::{ActionIntent, StringOrExpr, Tone};
 pub fn render_string_or_expr(value: &StringOrExpr) -> String {
     match value {
         StringOrExpr::Value(text) => text.clone(),
-        StringOrExpr::Expr(expr) => serde_json::to_string(expr).unwrap_or_else(|_| "<expr>".to_string()),
+        StringOrExpr::Expr(expr) => {
+            serde_json::to_string(expr).unwrap_or_else(|_| "<expr>".to_string())
+        }
     }
 }
 

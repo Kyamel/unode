@@ -2,7 +2,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Number as JsonNumber, Value as JsonValue};
 
-use crate::core::ast::{BoolOrExpr, NumberOrExpr, Primitive, PrimitiveOrExpr, StringOrExpr, UiExpr};
+use crate::core::ast::{
+    BoolOrExpr, NumberOrExpr, Primitive, PrimitiveOrExpr, StringOrExpr, UiExpr,
+};
 use crate::core::runtime::ResolvedRoute;
 use crate::core::state::{MemoryStateStore, StateStore};
 
@@ -130,10 +132,7 @@ impl DefaultExprResolver {
                 if let Some(node_key) = node_key {
                     self.track(node_key, path);
                 }
-                ctx.state
-                    .get(path)
-                    .map(json_to_string)
-                    .unwrap_or_default()
+                ctx.state.get(path).map(json_to_string).unwrap_or_default()
             }
             crate::core::ast::OneOrExpr::Expr(UiExpr::Param { name }) => ctx
                 .route
@@ -297,7 +296,10 @@ mod tests {
         let value = resolver.resolve_string(&expr, &ctx, Some("hero-title"));
         assert_eq!(value, "Blue Box");
         assert_eq!(resolver.dependencies_of("hero-title"), vec!["work.title"]);
-        assert_eq!(resolver.subscribers_of("work.title"), vec!["hero-title".to_string()]);
+        assert_eq!(
+            resolver.subscribers_of("work.title"),
+            vec!["hero-title".to_string()]
+        );
     }
 
     #[test]
@@ -305,7 +307,9 @@ mod tests {
         let state = MemoryStateStore::new(None);
         let route = ResolvedRoute {
             pattern: "/works/:id".to_string(),
-            params: [("id".to_string(), "123".to_string())].into_iter().collect(),
+            params: [("id".to_string(), "123".to_string())]
+                .into_iter()
+                .collect(),
             query: BTreeMap::new(),
         };
         let ctx = ResolverContext {

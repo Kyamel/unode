@@ -1,44 +1,43 @@
-use std::collections::BTreeMap;
-use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Context, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
 };
-use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
-use serde_json::{json, Value as JsonValue};
-use unode_runtime::{
-    CommandResult, DeferredText, RegisteredCommand, RegisteredNavigationItem, RegisteredRoute,
-    ShellContext,
+use ratatui::backend::CrosstermBackend;
+use serde_json::{Value as JsonValue, json};
+use tui_renderer::{
+    TuiCommandBar, TuiFocusedPane, TuiInteractiveElement, TuiInteractiveKind, TuiMainContent,
+    TuiMainPanel, TuiNavItem, TuiScreenView, TuiShellView, collect_screen_interactions,
+    render_tui_shell,
+};
+use unode_runtime::{CommandResult, ShellContext};
+use unode_sdk::prelude::{
+    ActionRef, ActionType, CoreActionType, PermissionProfile, ResolvedRoute, ScreenNode,
 };
 use unode_sdk::{
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
     PluginRenderRequest,
 };
-use unode_sdk::prelude::{ActionRef, ActionType, CoreActionType, PermissionProfile, ResolvedRoute, ScreenNode};
-use unode_tui_runtime::{CachedTuiPlugin, PluginSession, TuiHostCallDispatcher, TuiRuntime};
-use tui_renderer::{
-    collect_screen_interactions, render_tui_shell, TuiCommandBar, TuiFocusedPane,
-    TuiInteractiveElement, TuiInteractiveKind, TuiMainContent, TuiMainPanel, TuiNavItem,
-    TuiScreenView, TuiShellView,
-};
+use unode_tui_runtime::{PluginSession, TuiRuntime};
+
+mod plugin_registry;
+mod route;
+mod shell_registry;
+#[cfg(test)]
+mod tests;
+
+use plugin_registry::{LoadedPlugin, load_runtime_plugins, resolve_screen_state};
+use route::parse_route;
+use shell_registry::register_builtin_shell;
 
 fn main() -> Result<()> {
     let mut app = App::new()?;
     app.run()
-}
-
-struct LoadedPlugin {
-    runtime_plugin: CachedTuiPlugin,
-    route: String,
-    display_source: String,
-    source_newer_than_wasm: bool,
 }
 
 struct ActivePluginSession {
@@ -263,8 +262,16 @@ impl App {
         self.current_route = route.clone();
         let parsed = parse_route(&route);
         self.shell.route = self.runtime.inner.routes.resolve(&parsed.pathname);
-        self.shell.plugin_id = self.shell.route.as_ref().map(|route| route.plugin_id.clone());
-        self.shell.screen_kind = self.shell.route.as_ref().map(|route| route.screen_kind.clone());
+        self.shell.plugin_id = self
+            .shell
+            .route
+            .as_ref()
+            .map(|route| route.plugin_id.clone());
+        self.shell.screen_kind = self
+            .shell
+            .route
+            .as_ref()
+            .map(|route| route.screen_kind.clone());
         self.status = format!("Navigated to {}", self.current_route);
         self.refresh_main_panel();
         if !self.main_interactions.is_empty() {
@@ -313,6 +320,7 @@ impl App {
         let manifest = plugin.runtime_plugin.manifest().clone();
         let display_source = plugin.display_source.clone();
         let source_newer_than_wasm = plugin.source_newer_than_wasm;
+        let state_snapshot = plugin.state.snapshot();
         let request = PluginRenderRequest {
             route: ResolvedRoute {
                 pattern: parsed.pathname,
@@ -328,7 +336,7 @@ impl App {
                 "title": "Smoke test",
                 "hostMessage": format!("Loaded from {}", display_source),
             }),
-            state_snapshot: BTreeMap::new(),
+            state_snapshot,
             locale,
         };
 
@@ -345,21 +353,27 @@ impl App {
                     title: format!("Plugin error: {}", manifest.manifest.name),
                     subtitle: Some(manifest.manifest.id.clone()),
                     lines: vec![
-                        "The plugin loaded, but the runtime could not start a plugin session.".to_string(),
+                        "The plugin loaded, but the runtime could not start a plugin session."
+                            .to_string(),
                         err.to_string(),
                     ],
-                    footer: Some("Check the wasm artifact and runtime session lifecycle.".to_string()),
-                }))
+                    footer: Some(
+                        "Check the wasm artifact and runtime session lifecycle.".to_string(),
+                    ),
+                }));
             }
         };
 
         Some(match session.render::<ScreenNode>(&request) {
-            Ok(screen) => TuiMainContent::Screen(TuiScreenView {
-                plugin_id: manifest.manifest.id.clone(),
-                source: display_source,
-                screen,
-                focused_interaction: None,
-            }),
+            Ok(mut screen) => {
+                resolve_screen_state(&mut screen, &self.plugins[plugin_index].state);
+                TuiMainContent::Screen(TuiScreenView {
+                    plugin_id: manifest.manifest.id.clone(),
+                    source: display_source,
+                    screen,
+                    focused_interaction: None,
+                })
+            }
             Err(err) => TuiMainContent::Panel(TuiMainPanel {
                 title: format!("Plugin error: {}", manifest.manifest.name),
                 subtitle: Some(manifest.manifest.id.clone()),
@@ -405,7 +419,7 @@ impl App {
         if !reuse_existing {
             let request = PluginLoadRequest {
                 route: resolved_route.clone(),
-                state_snapshot: BTreeMap::new(),
+                state_snapshot: self.plugins[plugin_index].state.snapshot(),
                 locale,
             };
             let session = self.plugins[plugin_index]
@@ -504,7 +518,9 @@ impl App {
     }
 
     fn focus_next_pane(&mut self) {
-        self.focused_pane = if self.focused_pane == TuiFocusedPane::Navigation && !self.main_interactions.is_empty() {
+        self.focused_pane = if self.focused_pane == TuiFocusedPane::Navigation
+            && !self.main_interactions.is_empty()
+        {
             TuiFocusedPane::Main
         } else {
             TuiFocusedPane::Navigation
@@ -600,7 +616,12 @@ impl App {
                 query: parsed.query,
             },
             action,
-            state_snapshot: BTreeMap::new(),
+            state_snapshot: self
+                .plugins
+                .iter()
+                .find(|plugin| plugin.runtime_plugin.manifest().manifest.id == plugin_id)
+                .map(|plugin| plugin.state.snapshot())
+                .unwrap_or_default(),
             locale: self.shell.locale.clone(),
         };
 
@@ -610,7 +631,13 @@ impl App {
             .position(|plugin| plugin.runtime_plugin.manifest().manifest.id == plugin_id)
             .with_context(|| format!("plugin `{plugin_id}` not loaded"))?;
         let session = self
-            .ensure_plugin_session(plugin, &plugin_id, &self.current_route.clone(), &request.route, request.locale.clone())
+            .ensure_plugin_session(
+                plugin,
+                &plugin_id,
+                &self.current_route.clone(),
+                &request.route,
+                request.locale.clone(),
+            )
             .with_context(|| format!("failed to start plugin session for `{plugin_id}`"))?;
         let response = session
             .dispatch::<PluginDispatchResponse>(&request)
@@ -659,6 +686,10 @@ impl App {
             PluginDispatchOutcome::Navigate { to } => self.navigate_to(to),
         }
 
+        if response.handled {
+            self.refresh_main_panel();
+        }
+
         self.status = response.message.unwrap_or_else(|| {
             if response.handled {
                 format!("Handled action `{label}`")
@@ -666,484 +697,5 @@ impl App {
                 format!("Plugin ignored action `{label}`")
             }
         });
-    }
-}
-
-#[derive(Debug, Clone)]
-struct ParsedRoute {
-    pathname: String,
-    query: BTreeMap<String, String>,
-}
-
-fn parse_route(route: &str) -> ParsedRoute {
-    let (pathname, raw_query) = route.split_once('?').map_or((route, ""), |(path, query)| (path, query));
-    let query = raw_query
-        .split('&')
-        .filter(|pair| !pair.is_empty())
-        .map(|pair| {
-            let (key, value) = pair.split_once('=').map_or((pair, ""), |(key, value)| (key, value));
-            (key.to_string(), value.to_string())
-        })
-        .collect::<BTreeMap<_, _>>();
-
-    ParsedRoute {
-        pathname: pathname.to_string(),
-        query,
-    }
-}
-
-fn register_builtin_shell(runtime: &mut TuiRuntime<()>) {
-    runtime.inner.routes.register(RegisteredRoute {
-        plugin_id: "org.mugens.core.home".to_string(),
-        pattern: "/home".to_string(),
-        screen_kind: "org.mugens.core.home".to_string(),
-        priority: 100,
-    });
-    runtime.inner.routes.register(RegisteredRoute {
-        plugin_id: "org.mugens.core.mangas.hot".to_string(),
-        pattern: "/mangas/hot".to_string(),
-        screen_kind: "org.mugens.core.mangas.hot".to_string(),
-        priority: 100,
-    });
-    runtime.inner.routes.register(RegisteredRoute {
-        plugin_id: "org.mugens.core.mangas.recent".to_string(),
-        pattern: "/mangas/recent".to_string(),
-        screen_kind: "org.mugens.core.mangas.recent".to_string(),
-        priority: 100,
-    });
-
-    runtime.inner.navigation.register(RegisteredNavigationItem {
-        id: "nav.home".to_string(),
-        plugin_id: "org.mugens.core.home".to_string(),
-        label: DeferredText::from("Home"),
-        short_label: None,
-        to: "/home".to_string(),
-        icon: None,
-        section: Some("main".to_string()),
-        priority: 300,
-        when: None,
-    });
-    runtime.inner.navigation.register(RegisteredNavigationItem {
-        id: "nav.mangas.hot".to_string(),
-        plugin_id: "org.mugens.core.mangas.hot".to_string(),
-        label: DeferredText::from("Mangas Hot"),
-        short_label: None,
-        to: "/mangas/hot".to_string(),
-        icon: None,
-        section: Some("main".to_string()),
-        priority: 200,
-        when: None,
-    });
-    runtime.inner.navigation.register(RegisteredNavigationItem {
-        id: "nav.mangas.recent".to_string(),
-        plugin_id: "org.mugens.core.mangas.recent".to_string(),
-        label: DeferredText::from("Mangas Recent"),
-        short_label: None,
-        to: "/mangas/recent".to_string(),
-        icon: None,
-        section: Some("main".to_string()),
-        priority: 100,
-        when: None,
-    });
-
-    runtime.inner.commands.register(RegisteredCommand {
-        id: "goto.home".to_string(),
-        plugin_id: "org.mugens.core.home".to_string(),
-        title: DeferredText::from("Go to Home"),
-        category: Some(DeferredText::from("Navigation")),
-        keywords: vec!["home".to_string()],
-        when: None,
-        run: std::sync::Arc::new(|_| CommandResult::Navigate("/home".to_string())),
-    });
-    runtime.inner.commands.register(RegisteredCommand {
-        id: "goto.mangas.hot".to_string(),
-        plugin_id: "org.mugens.core.mangas.hot".to_string(),
-        title: DeferredText::from("Go to Mangas Hot"),
-        category: Some(DeferredText::from("Navigation")),
-        keywords: vec!["mangas".to_string(), "hot".to_string()],
-        when: None,
-        run: std::sync::Arc::new(|_| CommandResult::Navigate("/mangas/hot".to_string())),
-    });
-    runtime.inner.commands.register(RegisteredCommand {
-        id: "goto.mangas.recent".to_string(),
-        plugin_id: "org.mugens.core.mangas.recent".to_string(),
-        title: DeferredText::from("Go to Mangas Recent"),
-        category: Some(DeferredText::from("Navigation")),
-        keywords: vec!["mangas".to_string(), "recent".to_string()],
-        when: None,
-        run: std::sync::Arc::new(|_| CommandResult::Navigate("/mangas/recent".to_string())),
-    });
-}
-
-fn load_runtime_plugins(runtime: &mut TuiRuntime<()>) -> Result<(Vec<LoadedPlugin>, Vec<String>)> {
-    let mut messages = Vec::new();
-    let mut plugins = Vec::new();
-
-    let plugin_root = workspace_root().join("plugins/sanity-check");
-    let Some(wasm_path) = find_plugin_wasm(&plugin_root) else {
-        messages.push(
-            "Sanity plugin not built yet. Run `cargo build --manifest-path plugins/sanity-check/Cargo.toml --target wasm32-unknown-unknown`.".to_string(),
-        );
-        return Ok((plugins, messages));
-    };
-    let source_newer_than_wasm = plugin_source_is_newer_than_wasm(&plugin_root, &wasm_path);
-
-    let mut dispatcher = TuiHostCallDispatcher::new();
-    dispatcher.register("system.ping", |_| Ok(json!({ "pong": true })));
-    dispatcher.register("navigation.navigate", |params| {
-        Ok(json!({
-            "ok": true,
-            "to": params.get("to").cloned().unwrap_or(JsonValue::Null)
-        }))
-    });
-
-    let runtime_plugin = CachedTuiPlugin::from_wasm_file(&wasm_path, dispatcher)
-        .with_context(|| format!("failed to instantiate plugin at {}", wasm_path.display()))?;
-    let manifest = runtime_plugin.manifest().clone();
-
-    let route = format!("/plugins/{}", plugin_slug(&manifest.manifest.id));
-
-    runtime.inner.routes.register(RegisteredRoute {
-        plugin_id: manifest.manifest.id.clone(),
-        pattern: route.clone(),
-        screen_kind: format!("{}.screen", manifest.manifest.id),
-        priority: 500,
-    });
-    runtime.inner.navigation.register(RegisteredNavigationItem {
-        id: format!("nav.{}", manifest.manifest.id),
-        plugin_id: manifest.manifest.id.clone(),
-        label: DeferredText::from(manifest.manifest.name.clone()),
-        short_label: None,
-        to: route.clone(),
-        icon: None,
-        section: Some("plugins".to_string()),
-        priority: 400,
-        when: None,
-    });
-    runtime.inner.commands.register(RegisteredCommand {
-        id: format!("open.{}", manifest.manifest.id),
-        plugin_id: manifest.manifest.id.clone(),
-        title: DeferredText::from(format!("Open {}", manifest.manifest.name)),
-        category: Some(DeferredText::from("Plugins")),
-        keywords: vec!["plugin".to_string(), plugin_slug(&manifest.manifest.id)],
-        when: None,
-        run: {
-            let route = route.clone();
-            std::sync::Arc::new(move |_| CommandResult::Navigate(route.clone()))
-        },
-    });
-
-    let display_source = display_path_for_ui(&wasm_path);
-    messages.push(format!(
-        "Loaded {} from {}",
-        manifest.manifest.name,
-        display_source
-    ));
-    if source_newer_than_wasm {
-        messages.push(format!(
-            "Warning: {} source changed after the wasm build. Rebuild the plugin inside `nix-shell`.",
-            manifest.manifest.name
-        ));
-    }
-    plugins.push(LoadedPlugin {
-        runtime_plugin,
-        route,
-        display_source,
-        source_newer_than_wasm,
-    });
-
-    Ok((plugins, messages))
-}
-
-fn find_plugin_wasm(plugin_root: &Path) -> Option<PathBuf> {
-    let candidates = [
-        plugin_root.join("target/wasm32-unknown-unknown/debug/sanity_check_plugin.wasm"),
-        plugin_root.join("target/wasm32-unknown-unknown/release/sanity_check_plugin.wasm"),
-    ];
-
-    candidates
-        .into_iter()
-        .filter_map(|path| {
-            let modified = fs::metadata(&path).ok()?.modified().ok()?;
-            Some((modified, path))
-        })
-        .max_by_key(|(modified, _)| *modified)
-        .map(|(_, path)| path)
-}
-
-fn plugin_source_is_newer_than_wasm(plugin_root: &Path, wasm_path: &Path) -> bool {
-    let Ok(wasm_modified) = fs::metadata(wasm_path).and_then(|metadata| metadata.modified()) else {
-        return false;
-    };
-
-    latest_modified_in(plugin_root.join("src"))
-        .into_iter()
-        .chain(
-            [
-                plugin_root.join("Cargo.toml"),
-                plugin_root.join("Cargo.lock"),
-            ]
-            .into_iter()
-            .filter_map(|path| fs::metadata(path).ok())
-            .filter_map(|metadata| metadata.modified().ok()),
-        )
-        .any(|modified| modified > wasm_modified)
-}
-
-fn latest_modified_in(path: PathBuf) -> Vec<std::time::SystemTime> {
-    let Ok(metadata) = fs::metadata(&path) else {
-        return vec![];
-    };
-
-    if metadata.is_file() {
-        return metadata.modified().ok().into_iter().collect();
-    }
-
-    let Ok(entries) = fs::read_dir(path) else {
-        return vec![];
-    };
-
-    entries
-        .filter_map(Result::ok)
-        .flat_map(|entry| latest_modified_in(entry.path()))
-        .collect()
-}
-
-fn plugin_slug(plugin_id: &str) -> String {
-    plugin_id
-        .split('.')
-        .next_back()
-        .unwrap_or(plugin_id)
-        .to_string()
-}
-
-fn workspace_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
-}
-
-fn display_path_for_ui(path: &Path) -> String {
-    path.strip_prefix(workspace_root())
-        .unwrap_or(path)
-        .display()
-        .to_string()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{find_plugin_wasm, plugin_slug, App, TuiFocusedPane};
-    use std::collections::BTreeMap;
-    use std::fs;
-    use std::path::PathBuf;
-    use std::thread::sleep;
-    use std::time::Duration;
-
-    use serde_json::{json, Value as JsonValue};
-    use unode_sdk::{
-        PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginRenderRequest,
-    };
-    use unode_sdk::prelude::{ActionRef, ActionType, PermissionProfile, ResolvedRoute, ScreenNode};
-    use unode_tui_runtime::{TuiHostCallDispatcher, WasmtimeGuest};
-    use tui_renderer::TuiMainContent;
-
-    fn route_for(plugin_id: &str) -> String {
-        format!("/plugins/{}", plugin_slug(plugin_id))
-    }
-
-    fn test_dispatcher() -> TuiHostCallDispatcher {
-        let mut dispatcher = TuiHostCallDispatcher::new();
-        dispatcher.register("system.ping", |_| Ok(json!({ "pong": true })));
-        dispatcher.register("navigation.navigate", |params| {
-            Ok(json!({
-                "ok": true,
-                "to": params.get("to").cloned().unwrap_or(JsonValue::Null)
-            }))
-        });
-        dispatcher
-    }
-
-    #[test]
-    fn sanity_plugin_survives_render_dispatch_render_sequence() {
-        let plugin_root = PathBuf::from("plugins/sanity-check");
-        let Some(wasm_path) = find_plugin_wasm(&plugin_root) else {
-            return;
-        };
-
-        let mut bridge = WasmtimeGuest::from_wasm_file(&wasm_path, test_dispatcher()).expect("instantiate wasm");
-        let manifest = bridge.call_plugin_manifest().expect("manifest");
-        let route = route_for(&manifest.manifest.id);
-
-        bridge
-            .call_plugin_load::<_, JsonValue>(&PluginLoadRequest {
-                route: ResolvedRoute {
-                    pattern: route.clone(),
-                    params: BTreeMap::new(),
-                    query: BTreeMap::new(),
-                },
-                state_snapshot: BTreeMap::new(),
-                locale: Some("en".to_string()),
-            })
-            .expect("load");
-
-        let overview = bridge
-            .call_plugin_render::<_, ScreenNode>(&PluginRenderRequest {
-                route: ResolvedRoute {
-                    pattern: route.clone(),
-                    params: BTreeMap::new(),
-                    query: BTreeMap::new(),
-                },
-                data: json!({
-                    "title": "Smoke test",
-                    "hostMessage": format!("Loaded from {}", wasm_path.display()),
-                }),
-                state_snapshot: BTreeMap::new(),
-                locale: Some("en".to_string()),
-            })
-            .expect("overview render");
-        assert!(overview.title.is_some());
-
-        let inspect = bridge
-            .call_plugin_render::<_, ScreenNode>(&PluginRenderRequest {
-                route: ResolvedRoute {
-                    pattern: route.clone(),
-                    params: BTreeMap::new(),
-                    query: BTreeMap::from([("view".to_string(), "inspect".to_string())]),
-                },
-                data: json!({
-                    "title": "Smoke test",
-                    "hostMessage": format!("Loaded from {}", wasm_path.display()),
-                }),
-                state_snapshot: BTreeMap::new(),
-                locale: Some("en".to_string()),
-            })
-            .expect("inspect render");
-        assert!(inspect.subtitle.is_some());
-
-        let dispatch = bridge
-            .call_plugin_dispatch::<PluginDispatchResponse>(&PluginDispatchRequest {
-                route: ResolvedRoute {
-                    pattern: route.clone(),
-                    params: BTreeMap::new(),
-                    query: BTreeMap::from([("view".to_string(), "inspect".to_string())]),
-                },
-                action: ActionRef {
-                    r#type: ActionType::Custom("sanity.go-home".to_string()),
-                    params: None,
-                    confirm: None,
-                },
-                state_snapshot: BTreeMap::new(),
-                locale: Some("en".to_string()),
-            })
-            .expect("dispatch");
-        assert!(dispatch.handled);
-
-        let rerender = bridge
-            .call_plugin_render::<_, ScreenNode>(&PluginRenderRequest {
-                route: ResolvedRoute {
-                    pattern: route,
-                    params: BTreeMap::new(),
-                    query: BTreeMap::new(),
-                },
-                data: json!({
-                    "title": "Smoke test",
-                    "hostMessage": format!("Loaded from {}", wasm_path.display()),
-                }),
-                state_snapshot: BTreeMap::new(),
-                locale: Some("en".to_string()),
-            })
-            .expect("rerender after dispatch");
-        assert!(rerender.title.is_some());
-    }
-
-    #[test]
-    fn warns_when_plugin_source_is_newer_than_wasm() {
-        let plugin_root = PathBuf::from("plugins/sanity-check");
-        let Some(wasm_path) = find_plugin_wasm(&plugin_root) else {
-            return;
-        };
-
-        let _ = PermissionProfile {
-            plugin_id: "mgn.shell".to_string(),
-            grants: vec![],
-        };
-        assert!(wasm_path.exists());
-    }
-
-    #[test]
-    fn prefers_newest_wasm_artifact() {
-        let plugin_root = std::env::temp_dir().join(format!("mgn-test-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&plugin_root);
-        let debug_path = plugin_root.join("target/wasm32-unknown-unknown/debug/sanity_check_plugin.wasm");
-        let release_path = plugin_root.join("target/wasm32-unknown-unknown/release/sanity_check_plugin.wasm");
-
-        fs::create_dir_all(debug_path.parent().expect("debug parent")).expect("debug dir");
-        fs::create_dir_all(release_path.parent().expect("release parent")).expect("release dir");
-
-        fs::write(&debug_path, b"debug").expect("write debug");
-        sleep(Duration::from_millis(10));
-        fs::write(&release_path, b"release").expect("write release");
-
-        let selected = find_plugin_wasm(&plugin_root).expect("selected wasm");
-        assert_eq!(selected, release_path);
-        let _ = fs::remove_dir_all(&plugin_root);
-    }
-
-    #[test]
-    fn app_survives_three_full_plugin_navigation_cycles() {
-        let mut app = match App::new() {
-            Ok(app) => app,
-            Err(_) => return,
-        };
-
-        let plugin_route = app
-            .plugins
-            .first()
-            .map(|plugin| plugin.route.clone())
-            .expect("sanity plugin route");
-
-        for _ in 0..3 {
-            app.navigate_to(plugin_route.clone());
-            app.focused_pane = TuiFocusedPane::Main;
-            if app.main_interactions.is_empty() {
-                match &app.main_panel {
-                    TuiMainContent::Panel(panel) => panic!("plugin panel fallback: {:?}", panel.lines),
-                    TuiMainContent::Screen(screen) => panic!("screen without interactions: {:?}", screen.screen),
-                }
-            }
-
-            let inspect_index = app
-                .main_interactions
-                .iter()
-                .position(|interaction| interaction.label.contains("Inspect"))
-                .unwrap_or_else(|| panic!("inspect interaction not found: {:?}", app.main_interactions));
-            app.selected_main_interaction = Some(inspect_index);
-            app.activate_main_interaction().expect("open inspect tab");
-            assert_eq!(app.current_route, format!("{plugin_route}?view=inspect"));
-
-            let go_home_index = app
-                .main_interactions
-                .iter()
-                .position(|interaction| interaction.label.contains("Go home via plugin dispatch"))
-                .unwrap_or_else(|| panic!("go-home interaction not found: {:?}", app.main_interactions));
-            app.selected_main_interaction = Some(go_home_index);
-            app.activate_main_interaction().expect("go home");
-            assert_eq!(app.current_route, "/home");
-        }
-
-        app.navigate_to(plugin_route.clone());
-        app.focused_pane = TuiFocusedPane::Main;
-        if app.main_interactions.is_empty() {
-            match &app.main_panel {
-                TuiMainContent::Panel(panel) => panic!("plugin panel fallback: {:?}", panel.lines),
-                TuiMainContent::Screen(screen) => panic!("screen without interactions: {:?}", screen.screen),
-            }
-        }
-        let inspect_index = app
-            .main_interactions
-            .iter()
-            .position(|interaction| interaction.label.contains("Inspect"))
-            .unwrap_or_else(|| panic!("inspect interaction not found: {:?}", app.main_interactions));
-        app.selected_main_interaction = Some(inspect_index);
-        app.activate_main_interaction().expect("open inspect tab 4th");
-        assert_eq!(app.current_route, format!("{plugin_route}?view=inspect"));
     }
 }

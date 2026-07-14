@@ -1239,11 +1239,7 @@ impl IntoChildren for DividerBuilder {
 }
 
 /// Creates a media node that delegates rendering details to the platform renderer.
-pub fn media(
-    r#ref: MediaRef,
-    media_kind: MediaKind,
-    alt: impl Into<String>,
-) -> MediaBuilder {
+pub fn media(r#ref: MediaRef, media_kind: MediaKind, alt: impl Into<String>) -> MediaBuilder {
     MediaBuilder {
         id: None,
         r#ref,
@@ -1664,10 +1660,7 @@ impl IntoChildren for ActionsBuilder {
 }
 
 /// Creates an inline disclosure region controlled by local state.
-pub fn disclosure(
-    binding: impl Into<String>,
-    label: impl Into<StringOrExpr>,
-) -> DisclosureBuilder {
+pub fn disclosure(binding: impl Into<String>, label: impl Into<StringOrExpr>) -> DisclosureBuilder {
     DisclosureBuilder {
         id: None,
         binding: binding.into(),

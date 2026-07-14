@@ -9,10 +9,10 @@ import { createRoot } from "react-dom/client";
 
 import {
   HostSession,
-  PluginInstance,
   ScreenStore,
   StateWriteSink,
   UnodeScreen,
+  WebPluginRegistry,
   WebRuntime,
 } from "../src";
 
@@ -23,8 +23,13 @@ import webHostWasmUrl from "../pkg/unode_web_host_bg.wasm?url";
 import pluginWasmUrl from "./web_counter_plugin.wasm?url";
 
 const PLUGIN_ROUTE_PATTERN = "/plugins/web-counter";
+const pluginRegistry = new WebPluginRegistry().register({
+  id: "dev.unode.web-counter",
+  routePattern: PLUGIN_ROUTE_PATTERN,
+  loadWasm: () => fetch(pluginWasmUrl),
+});
 
-function routeForCurrentLocation() {
+function routeTargetForCurrentLocation() {
   const url = new URL(window.location.href);
 
   if (url.pathname === "/") {
@@ -33,8 +38,7 @@ function routeForCurrentLocation() {
   }
 
   return {
-    pattern: PLUGIN_ROUTE_PATTERN,
-    params: {},
+    pathname: url.pathname,
     query: Object.fromEntries(url.searchParams.entries()),
   };
 }
@@ -55,13 +59,18 @@ function App() {
         // sink services `state.set`. A real app would extend the handler with
         // `navigation.navigate`, domain APIs, etc.
         const sink = new StateWriteSink();
-        const plugin = await PluginInstance.instantiate(await fetch(pluginWasmUrl), sink.handler);
+        const pluginTarget = routeTargetForCurrentLocation();
+        const { plugin, route } = await pluginRegistry.instantiateForPath(
+          pluginTarget.pathname,
+          pluginTarget.query,
+          sink.handler,
+        );
 
         const runtime = new WebRuntime({
           plugin,
           session,
           sink,
-          route: routeForCurrentLocation(),
+          route,
           locale: "en",
         });
         const store = runtime.mount();

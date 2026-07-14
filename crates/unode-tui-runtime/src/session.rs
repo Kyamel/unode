@@ -3,7 +3,9 @@ use std::path::Path;
 use serde::de::DeserializeOwned;
 use serde_json::Value as JsonValue;
 use thiserror::Error;
-use unode_sdk::{PluginDispatchRequest, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest};
+use unode_sdk::{
+    PluginDispatchRequest, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
+};
 
 use crate::bridge::{TuiAbiBridgeError, TuiPluginBridge};
 use crate::host_call::TuiHostCallDispatcher;
@@ -78,7 +80,9 @@ impl PluginSession {
     where
         Resp: DeserializeOwned,
     {
-        self.bridge.call_plugin_dispatch(request).map_err(Into::into)
+        self.bridge
+            .call_plugin_dispatch(request)
+            .map_err(Into::into)
     }
 
     pub fn bridge(&self) -> &TuiPluginBridge<WasmtimeGuest> {

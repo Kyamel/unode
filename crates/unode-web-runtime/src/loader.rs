@@ -3,9 +3,7 @@ use std::sync::Arc;
 
 use thiserror::Error;
 use unode::core::permissions::PermissionProfile;
-use unode_sdk::{
-    PluginManifestEnvelope, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION,
-};
+use unode_sdk::{PluginManifestEnvelope, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION};
 
 #[derive(Debug, Clone)]
 pub enum WebPluginSource {
@@ -78,7 +76,10 @@ impl WebPluginLoader {
         Self { config }
     }
 
-    pub fn prepare(&self, descriptor: WebPluginDescriptor) -> Result<PreparedWebPlugin, WebLoaderError> {
+    pub fn prepare(
+        &self,
+        descriptor: WebPluginDescriptor,
+    ) -> Result<PreparedWebPlugin, WebLoaderError> {
         descriptor.validate(&self.config.expected_abi_version)?;
         Ok(PreparedWebPlugin {
             descriptor,
@@ -93,9 +94,13 @@ mod tests {
     use std::sync::Arc;
 
     use unode::core::permissions::PermissionProfile;
-    use unode_sdk::{plugin_manifest, PluginManifestEnvelope, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION};
+    use unode_sdk::{
+        PluginManifestEnvelope, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION, plugin_manifest,
+    };
 
-    use super::{WebLoaderConfig, WebLoaderError, WebPluginDescriptor, WebPluginLoader, WebPluginSource};
+    use super::{
+        WebLoaderConfig, WebLoaderError, WebPluginDescriptor, WebPluginLoader, WebPluginSource,
+    };
 
     fn descriptor() -> WebPluginDescriptor {
         WebPluginDescriptor {
@@ -108,7 +113,10 @@ mod tests {
                 abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
                 manifest: plugin_manifest("demo.plugin", "Demo").build(),
             },
-            exports: REQUIRED_EXPORTS.iter().map(|value| value.to_string()).collect::<BTreeSet<_>>(),
+            exports: REQUIRED_EXPORTS
+                .iter()
+                .map(|value| value.to_string())
+                .collect::<BTreeSet<_>>(),
         }
     }
 

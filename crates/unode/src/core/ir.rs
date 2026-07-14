@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value as JsonValue};
+use serde_json::{Value as JsonValue, json};
 
 use crate::core::ast::*;
 use crate::core::canonical::*;
@@ -138,7 +138,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             opt_enum(&mut p, "em", &n.emphasis);
             opt_bool(&mut p, "tr", n.truncate);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "text".into(), p, c: vec![] }
+            IrNode {
+                t: "text".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Value(n) => {
             let mut p = BTreeMap::new();
@@ -150,7 +154,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             opt_enum(&mut p, "role", &n.role);
             opt_enum(&mut p, "tone", &n.tone);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "value".into(), p, c: vec![] }
+            IrNode {
+                t: "value".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Icon(n) => {
             let mut p = BTreeMap::new();
@@ -158,20 +166,32 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             p.insert("label".into(), json!(n.label));
             opt_enum(&mut p, "tone", &n.tone);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "icon".into(), p, c: vec![] }
+            IrNode {
+                t: "icon".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Badge(n) => {
             let mut p = BTreeMap::new();
             p.insert("label".into(), lower_string_or_expr(&n.label));
             opt_enum(&mut p, "tone", &n.tone);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "badge".into(), p, c: vec![] }
+            IrNode {
+                t: "badge".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Divider(n) => {
             let mut p = BTreeMap::new();
             opt_string_or_expr(&mut p, "label", &n.label);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "divider".into(), p, c: vec![] }
+            IrNode {
+                t: "divider".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Media(n) => {
             let mut p = BTreeMap::new();
@@ -183,7 +203,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             }
             opt_bool(&mut p, "exp", n.expandable);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "media".into(), p, c: vec![] }
+            IrNode {
+                t: "media".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Pressable(n) => {
             let mut p = BTreeMap::new();
@@ -262,7 +286,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
                     }
                 })
                 .collect();
-            IrNode { t: "menu".into(), p, c }
+            IrNode {
+                t: "menu".into(),
+                p,
+                c,
+            }
         }
         CanonicalUiNode::Input(n) => {
             let mut p = BTreeMap::new();
@@ -275,7 +303,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             opt_bool(&mut p, "req", n.required);
             opt_bool_or_expr(&mut p, "dis", &n.disabled);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "input".into(), p, c: vec![] }
+            IrNode {
+                t: "input".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Form(n) => {
             let mut p = BTreeMap::new();
@@ -321,7 +353,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             opt_string_or_expr(&mut p, "label", &n.label);
             opt_number_or_expr(&mut p, "progress", &n.progress);
             inject_meta(&mut p, &n.meta);
-            IrNode { t: "loading".into(), p, c: vec![] }
+            IrNode {
+                t: "loading".into(),
+                p,
+                c: vec![],
+            }
         }
         CanonicalUiNode::Conditional(n) => {
             let mut p = BTreeMap::new();
@@ -331,7 +367,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             if let Some(else_node) = &n.r#else {
                 c.push(lower_node(else_node));
             }
-            IrNode { t: "if".into(), p, c }
+            IrNode {
+                t: "if".into(),
+                p,
+                c,
+            }
         }
         CanonicalUiNode::Slot(n) => {
             let mut p = BTreeMap::new();
@@ -341,7 +381,11 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             if let Some(fallback) = &n.fallback {
                 c.push(lower_node(fallback));
             }
-            IrNode { t: "slot".into(), p, c }
+            IrNode {
+                t: "slot".into(),
+                p,
+                c,
+            }
         }
     }
 }
@@ -394,7 +438,11 @@ fn lower_item(n: &CanonicalItemNode) -> IrNode {
     c.extend(wrap_group("secondary", &n.secondary));
     c.extend(wrap_group("trailing", &n.trailing));
 
-    IrNode { t: "item".into(), p, c }
+    IrNode {
+        t: "item".into(),
+        p,
+        c,
+    }
 }
 
 fn lower_action(n: &CanonicalActionNode) -> IrNode {
@@ -408,7 +456,11 @@ fn lower_action(n: &CanonicalActionNode) -> IrNode {
     }
     opt_bool_or_expr(&mut p, "dis", &n.disabled);
     inject_meta(&mut p, &n.meta);
-    IrNode { t: "action".into(), p, c: vec![] }
+    IrNode {
+        t: "action".into(),
+        p,
+        c: vec![],
+    }
 }
 
 fn inject_meta(p: &mut BTreeMap<String, JsonValue>, meta: &CanonicalMetadata) {
@@ -419,7 +471,10 @@ fn inject_meta(p: &mut BTreeMap<String, JsonValue>, meta: &CanonicalMetadata) {
         p.insert("_h".into(), json!(shape_code(meta.shape_reactivity)));
     }
     if meta.subtree_shape_reactivity != ShapeReactivity::Static {
-        p.insert("_hs".into(), json!(shape_code(meta.subtree_shape_reactivity)));
+        p.insert(
+            "_hs".into(),
+            json!(shape_code(meta.subtree_shape_reactivity)),
+        );
     }
     if !meta.reactive_fields.is_empty() {
         p.insert(
@@ -660,7 +715,11 @@ fn opt_bool(p: &mut BTreeMap<String, JsonValue>, key: &str, value: Option<bool>)
     }
 }
 
-fn opt_string_or_expr(p: &mut BTreeMap<String, JsonValue>, key: &str, value: &Option<StringOrExpr>) {
+fn opt_string_or_expr(
+    p: &mut BTreeMap<String, JsonValue>,
+    key: &str,
+    value: &Option<StringOrExpr>,
+) {
     if let Some(v) = value {
         p.insert(key.into(), lower_string_or_expr(v));
     }
@@ -682,7 +741,11 @@ fn opt_primitive_or_expr(
     }
 }
 
-fn opt_number_or_expr(p: &mut BTreeMap<String, JsonValue>, key: &str, value: &Option<NumberOrExpr>) {
+fn opt_number_or_expr(
+    p: &mut BTreeMap<String, JsonValue>,
+    key: &str,
+    value: &Option<NumberOrExpr>,
+) {
     if let Some(v) = value {
         p.insert(key.into(), lower_number_or_expr(v));
     }
@@ -695,13 +758,13 @@ mod tests {
     use serde_json::json;
 
     use crate::core::ast::{
-        ActionConfirm, ActionNode, ActionRef, ActionType, AspectRatio, BadgeNode, CollectionContinuation,
-        CoreActionType, DisclosureNode, EmptyStateNode, FormNode, Gap, GridNode, IconNode,
-        IncrementalContinuation, InputKind, InputNode, ListNode, LoadingNode, MediaKind, MediaNode,
-        MediaRef, MenuItem, MenuNode, NodeBase, OneOrExpr, PressableNode, PrimitiveOrExpr,
-        RemoteContinuation, ResponsiveGridColumns, ScreenNode, SectionNode, SlotNode, StatusNode,
-        StatusSeverity, StringOrExpr, TextEmphasis, TextNode, TextRole, Tone, UiExpr, UiNode,
-        ValueFormat, ValueNode, ConditionalNode, ItemNode,
+        ActionConfirm, ActionNode, ActionRef, ActionType, AspectRatio, BadgeNode,
+        CollectionContinuation, ConditionalNode, CoreActionType, DisclosureNode, EmptyStateNode,
+        FormNode, Gap, GridNode, IconNode, IncrementalContinuation, InputKind, InputNode, ItemNode,
+        ListNode, LoadingNode, MediaKind, MediaNode, MediaRef, MenuItem, MenuNode, NodeBase,
+        OneOrExpr, PressableNode, PrimitiveOrExpr, RemoteContinuation, ResponsiveGridColumns,
+        ScreenNode, SectionNode, SlotNode, StatusNode, StatusSeverity, StringOrExpr, TextEmphasis,
+        TextNode, TextRole, Tone, UiExpr, UiNode, ValueFormat, ValueNode,
     };
     use crate::core::canonical::{
         CanonicalMetadata, NodeReactivity, ReactiveField, ShapeReactivity, StructuralDependency,
@@ -710,8 +773,8 @@ mod tests {
     use crate::core::patch::{PatchOp, PatchValue};
 
     use super::{
-        inject_meta, lower_action_ref, lower_continuation, lower_patch_op, lower_patch_ops,
-        lower_screen, lower_static_fields, IrPatchOp,
+        IrPatchOp, inject_meta, lower_action_ref, lower_continuation, lower_patch_op,
+        lower_patch_ops, lower_screen, lower_static_fields,
     };
 
     fn base(id: &str) -> NodeBase {

@@ -25,7 +25,10 @@ impl<Ctx> TuiRuntime<Ctx> {
 
 pub use bridge::{TuiAbiBridgeError, TuiGuestInstance, TuiHostImportAdapter, TuiPluginBridge};
 pub use host_call::{TuiHostCallDispatcher, TuiHostCallError};
-pub use loader::{PreparedTuiPlugin, TuiLoaderConfig, TuiLoaderError, TuiPluginDescriptor, TuiPluginLoader, TuiPluginSource};
-pub use memory::{read_bytes, read_json, write_bytes, write_json, TuiMemoryError};
+pub use loader::{
+    PreparedTuiPlugin, TuiLoaderConfig, TuiLoaderError, TuiPluginDescriptor, TuiPluginLoader,
+    TuiPluginSource,
+};
+pub use memory::{TuiMemoryError, read_bytes, read_json, write_bytes, write_json};
 pub use session::{CachedTuiPlugin, PluginSession, TuiPluginRuntimeError};
 pub use wasmtime_guest::{CompiledWasmtimePlugin, WasmtimeGuest, WasmtimeGuestError};

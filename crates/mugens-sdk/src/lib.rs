@@ -1,8 +1,8 @@
 pub mod permissions;
 
-pub use permissions::{mugens_permission, MugensPermission};
+pub use permissions::{MugensPermission, mugens_permission};
 
 pub mod prelude {
-    pub use crate::permissions::{mugens, mugens_permission, MugensPermission};
+    pub use crate::permissions::{MugensPermission, mugens, mugens_permission};
     pub use unode_sdk::prelude::*;
 }

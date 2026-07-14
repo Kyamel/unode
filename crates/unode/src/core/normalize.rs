@@ -3,7 +3,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::Serialize;
 
 use crate::core::ast::*;
-use crate::core::ast::{BoolOrExpr, NumberOrExpr, Primitive, PrimitiveOrExpr, ScreenNode, StringOrExpr, UiExpr, UiNode};
+use crate::core::ast::{
+    BoolOrExpr, NumberOrExpr, Primitive, PrimitiveOrExpr, ScreenNode, StringOrExpr, UiExpr, UiNode,
+};
 use crate::core::canonical::*;
 
 // ============================================================
@@ -214,8 +216,7 @@ fn collect_static_fields_map<T: Serialize>(value: &T) -> BTreeMap<String, Primit
     for (key, entry) in map {
         if matches!(
             key.as_str(),
-            "id"
-                | "meta"
+            "id" | "meta"
                 | "children"
                 | "child"
                 | "leading"
@@ -259,7 +260,9 @@ fn expr_dependency<T>(value: &crate::core::ast::OneOrExpr<T>) -> Option<Structur
     }
 }
 
-fn opt_expr_dependency<T>(value: &Option<crate::core::ast::OneOrExpr<T>>) -> Option<StructuralDependency> {
+fn opt_expr_dependency<T>(
+    value: &Option<crate::core::ast::OneOrExpr<T>>,
+) -> Option<StructuralDependency> {
     value.as_ref().and_then(expr_dependency)
 }
 
@@ -479,9 +482,13 @@ pub fn normalize_screen(mut screen: ScreenNode) -> Result<CanonicalScreen, Strin
         screen.subtitle.as_ref().is_some_and(is_reactive_expr),
     ]);
     let reactive_fields = [
-        screen.title.as_ref().is_some_and(is_reactive_expr)
+        screen
+            .title
+            .as_ref()
+            .is_some_and(is_reactive_expr)
             .then_some(ReactiveField::Title),
-        screen.subtitle
+        screen
+            .subtitle
             .as_ref()
             .is_some_and(is_reactive_expr)
             .then_some(ReactiveField::Subtitle),
@@ -552,7 +559,10 @@ fn normalize_node_with_state(
             let children = normalize_children(node.children, &ctx, seen_ids, "c", "children")?;
             let self_rx = combine_reactivity([
                 node.title.as_ref().map(is_reactive_expr).unwrap_or(false),
-                node.description.as_ref().map(is_reactive_expr).unwrap_or(false),
+                node.description
+                    .as_ref()
+                    .map(is_reactive_expr)
+                    .unwrap_or(false),
             ]);
             let subtree_rx = subtree_from(&children, self_rx);
             let reactive_fields = [
@@ -727,7 +737,8 @@ fn normalize_node_with_state(
                 }
                 Some(CollectionContinuation::Remote(mut continuation)) => {
                     continuation.label = collapse_string_literal(continuation.label);
-                    continuation.loading_label = collapse_string_literal(continuation.loading_label);
+                    continuation.loading_label =
+                        collapse_string_literal(continuation.loading_label);
                     Some(CollectionContinuation::Remote(continuation))
                 }
                 None => None,
@@ -738,19 +749,15 @@ fn normalize_node_with_state(
             let children = normalize_children(node.children, &ctx, seen_ids, "c", "children")?;
             let self_rx = combine_reactivity([
                 match &node.continuation {
-                    Some(CollectionContinuation::Incremental(value)) => value
-                        .label
-                        .as_ref()
-                        .map(is_reactive_expr)
-                        .unwrap_or(false),
+                    Some(CollectionContinuation::Incremental(value)) => {
+                        value.label.as_ref().map(is_reactive_expr).unwrap_or(false)
+                    }
                     _ => false,
                 },
                 match &node.continuation {
-                    Some(CollectionContinuation::Remote(value)) => value
-                        .label
-                        .as_ref()
-                        .map(is_reactive_expr)
-                        .unwrap_or(false),
+                    Some(CollectionContinuation::Remote(value)) => {
+                        value.label.as_ref().map(is_reactive_expr).unwrap_or(false)
+                    }
                     _ => false,
                 },
                 match &node.continuation {
@@ -777,7 +784,9 @@ fn normalize_node_with_state(
                     _ => None,
                 },
                 match &node.continuation {
-                    Some(CollectionContinuation::Remote(value)) => opt_expr_dependency(&value.label),
+                    Some(CollectionContinuation::Remote(value)) => {
+                        opt_expr_dependency(&value.label)
+                    }
                     _ => None,
                 },
                 match &node.continuation {
@@ -942,7 +951,10 @@ fn normalize_node_with_state(
             let static_fields = collect_static_fields_map(&node);
             let node_id = node.base.id.clone();
             let self_rx = node.label.as_ref().map(is_reactive_expr).unwrap_or(false);
-            let reactive_fields = node.label.as_ref().is_some_and(is_reactive_expr)
+            let reactive_fields = node
+                .label
+                .as_ref()
+                .is_some_and(is_reactive_expr)
                 .then_some(ReactiveField::Label)
                 .into_iter()
                 .collect();
@@ -1010,18 +1022,22 @@ fn normalize_node_with_state(
                 seen_ids,
             )?;
 
-            let self_rx = combine_reactivity([
-                node.label.as_ref().map(is_reactive_expr).unwrap_or(false),
-            ]);
-            let subtree_rx =
-                merge_reactivity(std::iter::once(self_rx).chain(std::iter::once(child.meta().subtree_reactivity)));
-            let reactive_fields = node.label.as_ref().is_some_and(is_reactive_expr)
+            let self_rx =
+                combine_reactivity([node.label.as_ref().map(is_reactive_expr).unwrap_or(false)]);
+            let subtree_rx = merge_reactivity(
+                std::iter::once(self_rx).chain(std::iter::once(child.meta().subtree_reactivity)),
+            );
+            let reactive_fields = node
+                .label
+                .as_ref()
+                .is_some_and(is_reactive_expr)
                 .then_some(ReactiveField::Label)
                 .into_iter()
                 .collect();
             let self_shape = ShapeReactivity::Static;
             let subtree_shape = merge_shape_reactivity(
-                std::iter::once(self_shape).chain(std::iter::once(child.meta().subtree_shape_reactivity)),
+                std::iter::once(self_shape)
+                    .chain(std::iter::once(child.meta().subtree_shape_reactivity)),
             );
             let structural_dependencies = collect_dependencies([opt_expr_dependency(&node.label)]);
 
@@ -1061,16 +1077,19 @@ fn normalize_node_with_state(
             let primary = normalize_children(node.primary, &ctx, seen_ids, "primary", "primary")?;
             let secondary =
                 normalize_children(node.secondary, &ctx, seen_ids, "secondary", "secondary")?;
-            let trailing = normalize_children(node.trailing, &ctx, seen_ids, "trailing", "trailing")?;
+            let trailing =
+                normalize_children(node.trailing, &ctx, seen_ids, "trailing", "trailing")?;
 
             let self_rx = NodeReactivity::Static;
-            let subtree_rx =
-                subtree_from_many(self_rx, [
+            let subtree_rx = subtree_from_many(
+                self_rx,
+                [
                     leading.as_slice(),
                     primary.as_slice(),
                     secondary.as_slice(),
                     trailing.as_slice(),
-                ]);
+                ],
+            );
             let self_shape = ShapeReactivity::Static;
             let subtree_shape = subtree_shape_from_many(
                 self_shape,
@@ -1116,7 +1135,8 @@ fn normalize_node_with_state(
                 }
                 Some(CollectionContinuation::Remote(mut continuation)) => {
                     continuation.label = collapse_string_literal(continuation.label);
-                    continuation.loading_label = collapse_string_literal(continuation.loading_label);
+                    continuation.loading_label =
+                        collapse_string_literal(continuation.loading_label);
                     Some(CollectionContinuation::Remote(continuation))
                 }
                 None => None,
@@ -1136,19 +1156,15 @@ fn normalize_node_with_state(
 
             let self_rx = combine_reactivity([
                 match &node.continuation {
-                    Some(CollectionContinuation::Incremental(value)) => value
-                        .label
-                        .as_ref()
-                        .map(is_reactive_expr)
-                        .unwrap_or(false),
+                    Some(CollectionContinuation::Incremental(value)) => {
+                        value.label.as_ref().map(is_reactive_expr).unwrap_or(false)
+                    }
                     _ => false,
                 },
                 match &node.continuation {
-                    Some(CollectionContinuation::Remote(value)) => value
-                        .label
-                        .as_ref()
-                        .map(is_reactive_expr)
-                        .unwrap_or(false),
+                    Some(CollectionContinuation::Remote(value)) => {
+                        value.label.as_ref().map(is_reactive_expr).unwrap_or(false)
+                    }
                     _ => false,
                 },
                 match &node.continuation {
@@ -1175,7 +1191,9 @@ fn normalize_node_with_state(
                     _ => None,
                 },
                 match &node.continuation {
-                    Some(CollectionContinuation::Remote(value)) => opt_expr_dependency(&value.label),
+                    Some(CollectionContinuation::Remote(value)) => {
+                        opt_expr_dependency(&value.label)
+                    }
                     _ => None,
                 },
                 match &node.continuation {
@@ -1225,7 +1243,10 @@ fn normalize_node_with_state(
 
             let self_rx = combine_reactivity([
                 is_reactive_expr(&node.label),
-                node.disabled.as_ref().map(is_reactive_expr).unwrap_or(false),
+                node.disabled
+                    .as_ref()
+                    .map(is_reactive_expr)
+                    .unwrap_or(false),
             ]);
             let reactive_fields = [
                 is_reactive_expr(&node.label).then_some(ReactiveField::Label),
@@ -1317,7 +1338,10 @@ fn normalize_node_with_state(
 
             let self_rx = combine_reactivity([
                 is_reactive_expr(&node.label),
-                node.label_expanded.as_ref().map(is_reactive_expr).unwrap_or(false),
+                node.label_expanded
+                    .as_ref()
+                    .map(is_reactive_expr)
+                    .unwrap_or(false),
                 true,
             ]);
             let subtree_rx = subtree_from(&children, self_rx);
@@ -1382,12 +1406,16 @@ fn normalize_node_with_state(
             let static_fields = collect_static_fields_map(&node);
             let node_id = node.base.id.clone();
 
-            let self_rx = combine_reactivity(
-                std::iter::once(is_reactive_expr(&node.label)).chain(node.items.iter().map(|item| {
+            let self_rx = combine_reactivity(std::iter::once(is_reactive_expr(&node.label)).chain(
+                node.items.iter().map(|item| {
                     is_reactive_expr(&item.label)
-                        || item.disabled.as_ref().map(is_reactive_expr).unwrap_or(false)
-                })),
-            );
+                        || item
+                            .disabled
+                            .as_ref()
+                            .map(is_reactive_expr)
+                            .unwrap_or(false)
+                }),
+            ));
             let reactive_fields = [
                 is_reactive_expr(&node.label).then_some(ReactiveField::Label),
                 node.items
@@ -1402,11 +1430,15 @@ fn normalize_node_with_state(
             .flatten()
             .collect();
             let self_shape = ShapeReactivity::Static;
-            let structural_dependencies = collect_dependencies(
-                std::iter::once(expr_dependency(&node.label)).chain(node.items.iter().flat_map(|item| {
-                    [expr_dependency(&item.label), opt_expr_dependency(&item.disabled)]
-                })),
-            );
+            let structural_dependencies =
+                collect_dependencies(std::iter::once(expr_dependency(&node.label)).chain(
+                    node.items.iter().flat_map(|item| {
+                        [
+                            expr_dependency(&item.label),
+                            opt_expr_dependency(&item.disabled),
+                        ]
+                    }),
+                ));
 
             Ok(CanonicalUiNode::Menu(CanonicalMenuNode {
                 base: node.base,
@@ -1444,9 +1476,18 @@ fn normalize_node_with_state(
             let self_rx = combine_reactivity([
                 is_reactive_expr(&node.label),
                 node.value.as_ref().map(is_reactive_expr).unwrap_or(false),
-                node.placeholder.as_ref().map(is_reactive_expr).unwrap_or(false),
-                node.help_text.as_ref().map(is_reactive_expr).unwrap_or(false),
-                node.disabled.as_ref().map(is_reactive_expr).unwrap_or(false),
+                node.placeholder
+                    .as_ref()
+                    .map(is_reactive_expr)
+                    .unwrap_or(false),
+                node.help_text
+                    .as_ref()
+                    .map(is_reactive_expr)
+                    .unwrap_or(false),
+                node.disabled
+                    .as_ref()
+                    .map(is_reactive_expr)
+                    .unwrap_or(false),
             ]);
             let reactive_fields = [
                 is_reactive_expr(&node.label).then_some(ReactiveField::Label),
@@ -1669,7 +1710,10 @@ fn normalize_node_with_state(
 
             let self_rx = combine_reactivity([
                 node.label.as_ref().map(is_reactive_expr).unwrap_or(false),
-                node.progress.as_ref().map(is_reactive_expr).unwrap_or(false),
+                node.progress
+                    .as_ref()
+                    .map(is_reactive_expr)
+                    .unwrap_or(false),
             ]);
             let reactive_fields = [
                 node.label
@@ -1717,11 +1761,8 @@ fn normalize_node_with_state(
             let node_id = node.base.id.clone();
 
             let then_kind = kind_of(&node.r#then);
-            let then_node = normalize_node_with_state(
-                *node.r#then,
-                ctx.child("then", 0, then_kind),
-                seen_ids,
-            )?;
+            let then_node =
+                normalize_node_with_state(*node.r#then, ctx.child("then", 0, then_kind), seen_ids)?;
 
             let else_node = match node.r#else {
                 Some(else_node) => {
@@ -1802,8 +1843,11 @@ fn normalize_node_with_state(
             );
             let self_shape = ShapeReactivity::Static;
             let subtree_shape = merge_shape_reactivity(
-                std::iter::once(self_shape)
-                    .chain(fallback_node.iter().map(|n| n.meta().subtree_shape_reactivity)),
+                std::iter::once(self_shape).chain(
+                    fallback_node
+                        .iter()
+                        .map(|n| n.meta().subtree_shape_reactivity),
+                ),
             );
 
             Ok(CanonicalUiNode::Slot(CanonicalSlotNode {

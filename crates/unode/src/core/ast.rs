@@ -1,8 +1,8 @@
 //! Canonical, serializable Abstract Syntax Tree for uNode UIs.
-use std::collections::BTreeMap;
+use crate::core::chrome::ScreenRouteTabsMeta;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use crate::core::chrome::ScreenRouteTabsMeta;
+use std::collections::BTreeMap;
 
 pub const UNODE_AST_VERSION: &str = "2.0.0-alpha.1";
 
@@ -233,10 +233,17 @@ pub struct ActionConfirm {
 #[serde(tag = "type")]
 #[serde(rename_all = "camelCase")]
 pub enum MediaRef {
-    Url { src: String },
+    Url {
+        src: String,
+    },
     #[serde(rename = "at-blob")]
-    AtBlob { did: String, cid: String },
-    Asset { name: String },
+    AtBlob {
+        did: String,
+        cid: String,
+    },
+    Asset {
+        name: String,
+    },
     Placeholder {
         #[serde(skip_serializing_if = "Option::is_none")]
         kind: Option<String>,

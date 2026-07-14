@@ -222,14 +222,24 @@ impl<Ctx> CommandRegistry<Ctx> {
             .collect()
     }
 
-    pub fn run(&self, id: &str, shell: &ShellContext, ctx: &Ctx) -> Result<CommandResult, ActionRegistryError> {
+    pub fn run(
+        &self,
+        id: &str,
+        shell: &ShellContext,
+        ctx: &Ctx,
+    ) -> Result<CommandResult, ActionRegistryError> {
         let command = self
             .commands
             .iter()
             .find(|command| command.id == id)
             .ok_or_else(|| ActionRegistryError::CommandNotFound(id.to_string()))?;
 
-        if !command.when.as_ref().map(|when| when(shell)).unwrap_or(true) {
+        if !command
+            .when
+            .as_ref()
+            .map(|when| when(shell))
+            .unwrap_or(true)
+        {
             return Err(ActionRegistryError::CommandUnavailable(id.to_string()));
         }
 
@@ -304,7 +314,12 @@ impl<Ctx> ActionRegistry<Ctx> {
             .find(|registered| registered.id == *id)
             .ok_or_else(|| ActionRegistryError::ActionNotFound(id.clone()))?;
 
-        if !handler.when.as_ref().map(|when| when(action, ctx)).unwrap_or(true) {
+        if !handler
+            .when
+            .as_ref()
+            .map(|when| when(action, ctx))
+            .unwrap_or(true)
+        {
             return Err(ActionRegistryError::ActionUnavailable(id.clone()));
         }
 
@@ -372,9 +387,9 @@ mod tests {
     use unode::core::ast::{ActionRef, ActionType};
 
     use super::{
-        ActionOutcome, ActionRegistry, CommandRegistry, CommandResult, DeferredText, NavigationRegistry,
-        RegisteredAction, RegisteredCommand, RegisteredNavigationItem, RegisteredRoute, RouteRegistry,
-        ShellContext,
+        ActionOutcome, ActionRegistry, CommandRegistry, CommandResult, DeferredText,
+        NavigationRegistry, RegisteredAction, RegisteredCommand, RegisteredNavigationItem,
+        RegisteredRoute, RouteRegistry, ShellContext,
     };
 
     #[test]
@@ -420,7 +435,9 @@ mod tests {
             title: DeferredText::from("Open demo"),
             category: None,
             keywords: vec!["demo".to_string()],
-            when: Some(Arc::new(|ctx: &ShellContext| ctx.plugin_id.as_deref() == Some("demo.plugin"))),
+            when: Some(Arc::new(|ctx: &ShellContext| {
+                ctx.plugin_id.as_deref() == Some("demo.plugin")
+            })),
             run: Arc::new(|ctx| {
                 if *ctx == 7 {
                     CommandResult::RefreshCurrentScreen
@@ -457,6 +474,9 @@ mod tests {
             confirm: None,
         };
 
-        assert_eq!(registry.run(&action, &0).expect("action"), ActionOutcome::Handled);
+        assert_eq!(
+            registry.run(&action, &0).expect("action"),
+            ActionOutcome::Handled
+        );
     }
 }

@@ -36,8 +36,14 @@ impl std::fmt::Debug for MemoryStateStore {
         f.debug_struct("MemoryStateStore")
             .field("initial_seed", &self.initial_seed)
             .field("data", &self.data)
-            .field("exact_listener_paths", &self.exact_listeners.keys().collect::<Vec<_>>())
-            .field("prefix_listener_paths", &self.prefix_listeners.keys().collect::<Vec<_>>())
+            .field(
+                "exact_listener_paths",
+                &self.exact_listeners.keys().collect::<Vec<_>>(),
+            )
+            .field(
+                "prefix_listener_paths",
+                &self.prefix_listeners.keys().collect::<Vec<_>>(),
+            )
             .field("batch_depth", &self.batch_depth)
             .field("pending_paths", &self.pending_paths)
             .finish()
@@ -216,7 +222,9 @@ impl StateStore for MemoryStateStore {
 }
 
 fn split_path(path: &str) -> Vec<&str> {
-    path.split('.').filter(|segment| !segment.is_empty()).collect()
+    path.split('.')
+        .filter(|segment| !segment.is_empty())
+        .collect()
 }
 
 fn get_by_path<'a>(root: &'a JsonValue, path: &str) -> Option<&'a JsonValue> {
