@@ -19,6 +19,7 @@ and render the result through environment-specific runtimes.
   native. The web host crate exists to expose Rust core behavior across the
   browser's JS/WASM boundary.
 - `runtimes/web-react` contains the current React web adapter and JS bridge.
+- `crates/mgn` is an example/application binary, not the reusable TUI runtime.
 - `plugins/` contains example WASM plugins.
 - `ts-implementation/` contains deprecated legacy TypeScript code kept only as
   migration reference.

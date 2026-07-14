@@ -1,14 +1,9 @@
-use std::cell::Cell;
-
-use serde::de::DeserializeOwned;
 use serde_json::{json, Value as JsonValue};
-use unode_sdk::export_allocators;
 use unode_sdk::prelude::{
-    self as ui, create_route_tabs_meta, decode_json_bytes, encode_json_bytes,
-    ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode, PluginDispatchOutcome,
-    PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
-    PluginRenderRequest, ScreenNode, ScreenRouteTab, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION,
-    with_route_tabs,
+    self as ui, create_route_tabs_meta, ActionIntent, ActionRef, ActionType, CoreActionType,
+    IntoNode, PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse,
+    PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest, ScreenNode, ScreenRouteTab,
+    TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, with_route_tabs,
 };
 
 #[cfg(test)]
@@ -17,42 +12,6 @@ use unode_sdk::prelude::{StringOrExpr, UiNode};
 const PLUGIN_ID: &str = "dev.mugens.sanity-check";
 const PLUGIN_NAME: &str = "Sanity Check";
 const ROUTE_PATH: &str = "/plugins/sanity-check";
-
-static ABI_VERSION_BYTES: &[u8] = b"0.1.0\0";
-
-thread_local! {
-    static MANIFEST_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-    static LOAD_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-    static RENDER_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-    static DISPATCH_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-}
-
-export_allocators!();
-
-fn with_output_buffer<F>(len_cell: &'static std::thread::LocalKey<Cell<u32>>, build: F) -> u32
-where
-    F: FnOnce() -> Vec<u8>,
-{
-    len_cell.with(|slot| {
-        let bytes = build();
-        let len = bytes.len() as u32;
-        let ptr = unode_alloc(bytes.len()) as u32;
-        unsafe {
-            std::ptr::copy_nonoverlapping(bytes.as_ptr(), ptr as *mut u8, bytes.len());
-        }
-        slot.set(len);
-        ptr
-    })
-}
-
-fn output_len(len_cell: &'static std::thread::LocalKey<Cell<u32>>) -> u32 {
-    len_cell.with(Cell::get)
-}
-
-fn decode_guest_json<T: DeserializeOwned>(ptr: u32, len: u32) -> T {
-    let bytes = unsafe { std::slice::from_raw_parts(ptr as *const u8, len as usize) };
-    decode_json_bytes(bytes).expect("guest request must be valid ABI JSON")
-}
 
 fn manifest_envelope() -> PluginManifestEnvelope {
     PluginManifestEnvelope {
@@ -80,6 +39,15 @@ fn route_tabs() -> Vec<ScreenRouteTab> {
             badge: None,
         },
     ]
+}
+
+fn load_response(request: &PluginLoadRequest) -> JsonValue {
+    json!({
+        "loaded": true,
+        "pluginId": PLUGIN_ID,
+        "route": request.route.pattern,
+        "locale": request.locale,
+    })
 }
 
 fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
@@ -118,7 +86,7 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
         .title(format!("{PLUGIN_NAME} - {title}"))
         .subtitle(format!("route={} locale={locale}", request.route.pattern))
         .children([
-            ui::text("This screen is rendered from a Rust plugin compiled to WebAssembly.".to_string())
+            ui::text("This screen is rendered from a Rust plugin compiled to WebAssembly.")
                 .role(TextRole::Body)
                 .tone(Tone::Info)
                 .into_node(),
@@ -132,10 +100,10 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
             ui::stack()
                 .id("sanity-check.details")
                 .children([
-                    ui::text("The plugin is isolated behind the unode WASM ABI.".to_string())
+                    ui::text("The plugin is isolated behind the unode WASM ABI.")
                         .role(TextRole::Body)
                         .into_node(),
-                    ui::text("The TUI runtime is responsible for sandboxing and host calls.".to_string())
+                    ui::text("The TUI runtime is responsible for sandboxing and host calls.")
                         .role(TextRole::Body)
                         .into_node(),
                 ])
@@ -144,7 +112,7 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                 .id("sanity-check.actions")
                 .children([
                     ui::action(
-                        "Refresh screen".to_string(),
+                        "Refresh screen",
                         ActionRef {
                             r#type: ActionType::Custom("sanity.refresh".to_string()),
                             params: None,
@@ -154,7 +122,7 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                     .id("sanity-check.refresh")
                     .intent(ActionIntent::Primary),
                     ui::action(
-                        "Open inspect tab".to_string(),
+                        "Open inspect tab",
                         ActionRef {
                             r#type: ActionType::Core(CoreActionType::Navigate),
                             params: Some(std::collections::BTreeMap::from([(
@@ -167,7 +135,7 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                     .id("sanity-check.inspect")
                     .intent(ActionIntent::Secondary),
                     ui::action(
-                        "Go home via plugin dispatch".to_string(),
+                        "Go home via plugin dispatch",
                         ActionRef {
                             r#type: ActionType::Custom("sanity.go-home".to_string()),
                             params: None,
@@ -188,11 +156,6 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
             .swipe_enabled(true)
             .swipe_threshold(48.0),
     )
-}
-
-fn json_or_error<T: serde::Serialize>(value: &T) -> Vec<u8> {
-    encode_json_bytes(value)
-        .unwrap_or_else(|err| serde_json::to_vec(&json!({ "error": err.to_string() })).expect("fallback json"))
 }
 
 fn encode_action_response(request: &PluginDispatchRequest) -> PluginDispatchResponse {
@@ -275,59 +238,11 @@ fn render_text_value(value: &StringOrExpr) -> String {
     }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_abi_version() -> *const u8 {
-    ABI_VERSION_BYTES.as_ptr()
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_manifest() -> u32 {
-    with_output_buffer(&MANIFEST_BUFFER_LEN, || json_or_error(&manifest_envelope()))
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_manifest_len() -> u32 {
-    output_len(&MANIFEST_BUFFER_LEN)
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_load(request_ptr: u32, request_len: u32) -> u32 {
-    let request = decode_guest_json::<PluginLoadRequest>(request_ptr, request_len);
-    with_output_buffer(&LOAD_BUFFER_LEN, || {
-        json_or_error(&json!({
-            "loaded": true,
-            "pluginId": PLUGIN_ID,
-            "route": request.route.pattern,
-            "locale": request.locale,
-        }))
-    })
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_load_result_len() -> u32 {
-    output_len(&LOAD_BUFFER_LEN)
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_render(request_ptr: u32, request_len: u32) -> u32 {
-    let request = decode_guest_json::<PluginRenderRequest>(request_ptr, request_len);
-    with_output_buffer(&RENDER_BUFFER_LEN, || json_or_error(&render_screen(&request)))
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_render_result_len() -> u32 {
-    output_len(&RENDER_BUFFER_LEN)
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_dispatch(request_ptr: u32, request_len: u32) -> u32 {
-    let request = decode_guest_json::<PluginDispatchRequest>(request_ptr, request_len);
-    with_output_buffer(&DISPATCH_BUFFER_LEN, || json_or_error(&encode_action_response(&request)))
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_dispatch_result_len() -> u32 {
-    output_len(&DISPATCH_BUFFER_LEN)
+unode_sdk::export_plugin! {
+    manifest: manifest_envelope,
+    load: load_response,
+    render: render_screen,
+    dispatch: encode_action_response,
 }
 
 #[cfg(test)]

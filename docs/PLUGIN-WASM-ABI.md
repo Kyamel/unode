@@ -10,7 +10,27 @@ Owns the ABI names and request envelopes:
 - required exports like `plugin_manifest`, `plugin_load`, `plugin_render`
 - request payloads for load/render/dispatch
 - host-call envelope
-- allocator export macro via `export_allocators!()`
+- full plugin export macro via `export_plugin!()`
+- lower-level allocator export macro via `export_allocators!()`
+
+Plugin authors should normally write regular Rust functions and expose them with
+the SDK macro:
+
+```rust
+fn manifest() -> PluginManifestEnvelope { /* ... */ }
+fn load(request: &PluginLoadRequest) -> serde_json::Value { /* ... */ }
+fn render(request: &PluginRenderRequest) -> ScreenNode { /* ... */ }
+fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { /* ... */ }
+
+unode_sdk::export_plugin! {
+    manifest: manifest,
+    load: load,
+    render: render,
+    dispatch: dispatch,
+}
+```
+
+The macro generates the raw C ABI exports. The host contract does not change.
 
 ## Host runtimes
 

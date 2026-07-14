@@ -7,6 +7,7 @@ use unode::core::ast::ActionRef;
 use unode::core::runtime::{PluginManifest, ResolvedRoute};
 
 pub const UNODE_PLUGIN_ABI_VERSION: &str = "0.1.0";
+pub const UNODE_PLUGIN_ABI_VERSION_BYTES: &[u8] = b"0.1.0\0";
 
 pub const EXPORT_UNODE_ALLOC: &str = "unode_alloc";
 pub const EXPORT_UNODE_DEALLOC: &str = "unode_dealloc";
@@ -131,6 +132,10 @@ pub fn decode_json_bytes<T: DeserializeOwned>(bytes: &[u8]) -> Result<T, AbiErro
     serde_json::from_slice(bytes).map_err(AbiError::from)
 }
 
+/// Exports the allocator functions required by the raw plugin ABI.
+///
+/// Most plugins should use [`export_plugin!`] instead, which includes these
+/// allocators and the standard manifest/load/render/dispatch exports.
 #[macro_export]
 macro_rules! export_allocators {
     () => {
@@ -152,6 +157,151 @@ macro_rules! export_allocators {
             let layout = std::alloc::Layout::from_size_align(size, std::mem::align_of::<u8>())
                 .expect("valid allocation layout");
             unsafe { std::alloc::dealloc(ptr, layout) };
+        }
+    };
+}
+
+/// Exports the complete raw Unode plugin ABI for a Rust plugin.
+///
+/// The plugin author provides ordinary Rust functions for each lifecycle hook:
+///
+/// ```ignore
+/// fn manifest() -> PluginManifestEnvelope { ... }
+/// fn load(request: &PluginLoadRequest) -> serde_json::Value { ... }
+/// fn render(request: &PluginRenderRequest) -> ScreenNode { ... }
+/// fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { ... }
+///
+/// unode_sdk::export_plugin! {
+///     manifest: manifest,
+///     load: load,
+///     render: render,
+///     dispatch: dispatch,
+/// }
+/// ```
+///
+/// The macro generates the `extern "C"` exports the host runtimes look up by
+/// name, plus `unode_alloc` and `unode_dealloc`. This keeps the ABI explicit for
+/// hosts while making plugins feel like normal Rust code.
+#[macro_export]
+macro_rules! export_plugin {
+    (
+        manifest: $manifest:expr,
+        load: $load:expr,
+        render: $render:expr,
+        dispatch: $dispatch:expr $(,)?
+    ) => {
+        $crate::export_allocators!();
+
+        thread_local! {
+            static __UNODE_MANIFEST_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
+            static __UNODE_LOAD_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
+            static __UNODE_RENDER_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
+            static __UNODE_DISPATCH_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
+        }
+
+        fn __unode_with_output_buffer<F>(
+            len_cell: &'static ::std::thread::LocalKey<::std::cell::Cell<u32>>,
+            build: F,
+        ) -> u32
+        where
+            F: FnOnce() -> ::std::vec::Vec<u8>,
+        {
+            len_cell.with(|slot| {
+                let bytes = build();
+                let len = bytes.len() as u32;
+                let ptr = unode_alloc(bytes.len()) as u32;
+                unsafe {
+                    ::std::ptr::copy_nonoverlapping(bytes.as_ptr(), ptr as *mut u8, bytes.len());
+                }
+                slot.set(len);
+                ptr
+            })
+        }
+
+        fn __unode_output_len(
+            len_cell: &'static ::std::thread::LocalKey<::std::cell::Cell<u32>>,
+        ) -> u32 {
+            len_cell.with(::std::cell::Cell::get)
+        }
+
+        fn __unode_decode_guest_json<T: ::serde::de::DeserializeOwned>(
+            ptr: u32,
+            len: u32,
+        ) -> T {
+            let bytes = unsafe { ::std::slice::from_raw_parts(ptr as *const u8, len as usize) };
+            $crate::decode_json_bytes(bytes).expect("guest request must be valid ABI JSON")
+        }
+
+        fn __unode_json_or_error<T: ::serde::Serialize>(value: &T) -> ::std::vec::Vec<u8> {
+            $crate::encode_json_bytes(value).unwrap_or_else(|err| {
+                ::serde_json::to_vec(&::serde_json::json!({ "error": err.to_string() }))
+                    .expect("fallback json")
+            })
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_abi_version() -> *const u8 {
+            $crate::UNODE_PLUGIN_ABI_VERSION_BYTES.as_ptr()
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_manifest() -> u32 {
+            __unode_with_output_buffer(&__UNODE_MANIFEST_BUFFER_LEN, || {
+                __unode_json_or_error(&($manifest)())
+            })
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_manifest_len() -> u32 {
+            __unode_output_len(&__UNODE_MANIFEST_BUFFER_LEN)
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_load(request_ptr: u32, request_len: u32) -> u32 {
+            let request = __unode_decode_guest_json::<$crate::PluginLoadRequest>(
+                request_ptr,
+                request_len,
+            );
+            __unode_with_output_buffer(&__UNODE_LOAD_BUFFER_LEN, || {
+                __unode_json_or_error(&($load)(&request))
+            })
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_load_result_len() -> u32 {
+            __unode_output_len(&__UNODE_LOAD_BUFFER_LEN)
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_render(request_ptr: u32, request_len: u32) -> u32 {
+            let request = __unode_decode_guest_json::<$crate::PluginRenderRequest>(
+                request_ptr,
+                request_len,
+            );
+            __unode_with_output_buffer(&__UNODE_RENDER_BUFFER_LEN, || {
+                __unode_json_or_error(&($render)(&request))
+            })
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_render_result_len() -> u32 {
+            __unode_output_len(&__UNODE_RENDER_BUFFER_LEN)
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_dispatch(request_ptr: u32, request_len: u32) -> u32 {
+            let request = __unode_decode_guest_json::<$crate::PluginDispatchRequest>(
+                request_ptr,
+                request_len,
+            );
+            __unode_with_output_buffer(&__UNODE_DISPATCH_BUFFER_LEN, || {
+                __unode_json_or_error(&($dispatch)(&request))
+            })
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_dispatch_result_len() -> u32 {
+            __unode_output_len(&__UNODE_DISPATCH_BUFFER_LEN)
         }
     };
 }

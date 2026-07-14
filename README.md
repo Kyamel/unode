@@ -22,6 +22,7 @@ embedded in applications written with React, Svelte, Vue, or another framework.
 | `crates/unode-tui-runtime` | TUI runtime boundary helpers using Wasmtime-oriented plugin sessions and host calls. |
 | `crates/renderer` | TUI rendering work using Ratatui concepts. |
 | `crates/mugens-domain` / `crates/mugens-sdk` | Example/domain bridge crates for app-specific models, permissions, and UI sugar. |
+| `crates/mgn` | Example native Rust TUI application that wires the runtime, renderer, and Mugens bridge together. |
 | `plugins/` | Rust WASM example plugins, including `web-counter`. |
 | `runtimes/web-react` | Current React web adapter and JS bridge for `plugin.wasm + unode_web_host.wasm`. |
 | `ts-implementation/` | Deprecated legacy TypeScript prototype kept only as migration reference. |
@@ -53,6 +54,10 @@ The TUI stack does not need a matching `unode-tui-host` crate because the TUI
 host is already native Rust. `unode-tui-runtime` can call `crates/unode`
 directly while it manages Wasmtime plugin instances, host calls, and terminal
 session lifecycle.
+
+`crates/mgn` is in `crates/` because it is a Rust workspace package/binary that
+integrates Unode for one app. It is not the reusable TUI runtime itself; that
+role belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
 
 ## Useful Commands
 

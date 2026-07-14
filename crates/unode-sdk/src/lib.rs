@@ -11,6 +11,7 @@ pub use abi::{
     EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_MANIFEST_LEN, EXPORT_PLUGIN_RENDER,
     EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC,
     IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION,
+    UNODE_PLUGIN_ABI_VERSION_BYTES,
 };
 pub use i18n::{
     msg, msg_with, I18nCatalogRegistrationEvent, I18nError, I18nInspector, I18nLookupEvent, I18nText,
@@ -21,6 +22,7 @@ pub use manifest::{permission, plugin_manifest, PermissionRequestBuilder, Plugin
 pub use permissions::{core_permission, CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile, PermissionRequest};
 
 pub mod prelude {
+    pub use crate::{export_allocators, export_plugin};
     pub use crate::abi::{
         decode_json_bytes, encode_json_bytes, HostCallEnvelope, PluginDispatchOutcome,
         PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
@@ -29,7 +31,7 @@ pub mod prelude {
         EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_MANIFEST_LEN,
         EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_UNODE_ALLOC,
         EXPORT_UNODE_DEALLOC, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN, REQUIRED_EXPORTS,
-        UNODE_PLUGIN_ABI_VERSION,
+        UNODE_PLUGIN_ABI_VERSION, UNODE_PLUGIN_ABI_VERSION_BYTES,
     };
     pub use crate::i18n::{
         msg, msg_with, I18nInspector, I18nText, LocaleSource, MessageCatalog, MessageCatalogs,

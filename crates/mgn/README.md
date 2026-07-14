@@ -3,10 +3,14 @@
 `mgn` is the example terminal application that wires the Unode pieces together
 for the Mugens domain.
 
-It is an application crate, not a reusable framework crate. It depends on the
-domain bridge, the TUI renderer, and `unode-tui-runtime` to prove that a plugin
-screen can be loaded, rendered, navigated, and dispatched in a native terminal
-host.
+It is an application crate, not the reusable TUI runtime. It lives under
+`crates/` because it is a Rust workspace package/binary integrated with the
+other Rust crates. A future cleanup could move application binaries to `apps/`,
+but that would be a repo-organization change, not an architecture change.
+
+It depends on the domain bridge, the TUI renderer, and `unode-tui-runtime` to
+prove that a plugin screen can be loaded, rendered, navigated, and dispatched in
+a native terminal host.
 
 ## Owns
 

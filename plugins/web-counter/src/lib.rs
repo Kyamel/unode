@@ -2,26 +2,23 @@
 //!
 //! It renders one reactive line bound to `ui.countLabel` plus three actions.
 //! On dispatch it reads the current count from the `state_snapshot` the host
-//! passed in, computes the next value, and returns the state writes to apply in
-//! `PluginDispatchResponse.data.stateWrites`. The host applies them to its
-//! store, which produces a single patch op re-rendering only the bound line.
+//! passed in, computes the next value, and requests state writes through the
+//! `host_call` import. The host applies them to its store, which produces a
+//! single patch op re-rendering only the bound line.
 //!
 //! State never lives inside the plugin's linear memory — it is owned by the
 //! host store and handed back each dispatch. That is the sandbox boundary: the
 //! plugin only declares intent and returns data.
 
-use std::cell::Cell;
 use std::collections::BTreeMap;
 
-use serde::de::DeserializeOwned;
 use serde_json::{json, Value as JsonValue};
 
-use unode_sdk::export_allocators;
 use unode_sdk::prelude::{
-    self as ui, decode_json_bytes, encode_json_bytes, expr, ActionIntent, ActionRef, ActionType,
-    HostCallEnvelope, IntoNode, PluginDispatchOutcome, PluginDispatchRequest,
-    PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
-    ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION,
+    self as ui, encode_json_bytes, expr, ActionIntent, ActionRef, ActionType,
+    HostCallEnvelope, IntoNode, PluginDispatchOutcome, PluginDispatchRequest, PluginLoadRequest,
+    PluginDispatchResponse, PluginManifestEnvelope, PluginRenderRequest, ScreenNode, TextRole,
+    Tone, UNODE_PLUGIN_ABI_VERSION,
 };
 
 /// The `host_call` boundary — the only way state leaves the plugin sandbox.
@@ -90,48 +87,6 @@ const ROUTE_PATH: &str = "/plugins/web-counter";
 const COUNT_PATH: &str = "ui.count";
 const LABEL_PATH: &str = "ui.countLabel";
 
-static ABI_VERSION_BYTES: &[u8] = b"0.1.0\0";
-
-thread_local! {
-    static MANIFEST_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-    static LOAD_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-    static RENDER_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-    static DISPATCH_BUFFER_LEN: Cell<u32> = const { Cell::new(0) };
-}
-
-export_allocators!();
-
-fn with_output_buffer<F>(len_cell: &'static std::thread::LocalKey<Cell<u32>>, build: F) -> u32
-where
-    F: FnOnce() -> Vec<u8>,
-{
-    len_cell.with(|slot| {
-        let bytes = build();
-        let len = bytes.len() as u32;
-        let ptr = unode_alloc(bytes.len()) as u32;
-        unsafe {
-            std::ptr::copy_nonoverlapping(bytes.as_ptr(), ptr as *mut u8, bytes.len());
-        }
-        slot.set(len);
-        ptr
-    })
-}
-
-fn output_len(len_cell: &'static std::thread::LocalKey<Cell<u32>>) -> u32 {
-    len_cell.with(Cell::get)
-}
-
-fn decode_guest_json<T: DeserializeOwned>(ptr: u32, len: u32) -> T {
-    let bytes = unsafe { std::slice::from_raw_parts(ptr as *const u8, len as usize) };
-    decode_json_bytes(bytes).expect("guest request must be valid ABI JSON")
-}
-
-fn json_or_error<T: serde::Serialize>(value: &T) -> Vec<u8> {
-    encode_json_bytes(value).unwrap_or_else(|err| {
-        serde_json::to_vec(&json!({ "error": err.to_string() })).expect("fallback json")
-    })
-}
-
 fn manifest_envelope() -> PluginManifestEnvelope {
     PluginManifestEnvelope {
         abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
@@ -141,6 +96,14 @@ fn manifest_envelope() -> PluginManifestEnvelope {
             .author("unode")
             .build(),
     }
+}
+
+fn load_response(request: &PluginLoadRequest) -> JsonValue {
+    json!({
+        "loaded": true,
+        "pluginId": PLUGIN_ID,
+        "route": request.route.pattern,
+    })
 }
 
 fn label_for(count: i64) -> String {
@@ -238,58 +201,11 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_abi_version() -> *const u8 {
-    ABI_VERSION_BYTES.as_ptr()
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_manifest() -> u32 {
-    with_output_buffer(&MANIFEST_BUFFER_LEN, || json_or_error(&manifest_envelope()))
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_manifest_len() -> u32 {
-    output_len(&MANIFEST_BUFFER_LEN)
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_load(request_ptr: u32, request_len: u32) -> u32 {
-    let request = decode_guest_json::<PluginLoadRequest>(request_ptr, request_len);
-    with_output_buffer(&LOAD_BUFFER_LEN, || {
-        json_or_error(&json!({
-            "loaded": true,
-            "pluginId": PLUGIN_ID,
-            "route": request.route.pattern,
-        }))
-    })
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_load_result_len() -> u32 {
-    output_len(&LOAD_BUFFER_LEN)
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_render(request_ptr: u32, request_len: u32) -> u32 {
-    let request = decode_guest_json::<PluginRenderRequest>(request_ptr, request_len);
-    with_output_buffer(&RENDER_BUFFER_LEN, || json_or_error(&render_screen(&request)))
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_render_result_len() -> u32 {
-    output_len(&RENDER_BUFFER_LEN)
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_dispatch(request_ptr: u32, request_len: u32) -> u32 {
-    let request = decode_guest_json::<PluginDispatchRequest>(request_ptr, request_len);
-    with_output_buffer(&DISPATCH_BUFFER_LEN, || json_or_error(&dispatch_response(&request)))
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn plugin_dispatch_result_len() -> u32 {
-    output_len(&DISPATCH_BUFFER_LEN)
+unode_sdk::export_plugin! {
+    manifest: manifest_envelope,
+    load: load_response,
+    render: render_screen,
+    dispatch: dispatch_response,
 }
 
 #[cfg(test)]

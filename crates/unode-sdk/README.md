@@ -11,9 +11,31 @@ plugin-owned i18n helpers.
 - plugin manifest builders;
 - permission request builders;
 - ABI constants and JSON envelopes for load/render/dispatch;
-- `export_allocators!()` for raw WASM plugins;
+- `export_plugin!()` for generating raw WASM ABI exports;
+- `export_allocators!()` for lower-level/manual ABI work;
 - i18n catalog and translator helpers;
 - a plugin-author-friendly prelude.
+
+## Export Macro
+
+Plugins should usually expose the ABI with `export_plugin!`:
+
+```rust
+fn manifest() -> PluginManifestEnvelope { /* ... */ }
+fn load(request: &PluginLoadRequest) -> serde_json::Value { /* ... */ }
+fn render(request: &PluginRenderRequest) -> ScreenNode { /* ... */ }
+fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { /* ... */ }
+
+unode_sdk::export_plugin! {
+    manifest: manifest,
+    load: load,
+    render: render,
+    dispatch: dispatch,
+}
+```
+
+The host still sees plain C ABI exports such as `plugin_manifest` and
+`plugin_render`; plugin authors no longer have to write that boilerplate by hand.
 
 ## Does Not Own
 
