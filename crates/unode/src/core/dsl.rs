@@ -475,6 +475,18 @@ impl<T> From<T> for OneOrExpr<T> {
     }
 }
 
+impl From<&str> for OneOrExpr<String> {
+    fn from(value: &str) -> Self {
+        OneOrExpr::Value(value.to_string())
+    }
+}
+
+impl From<&String> for OneOrExpr<String> {
+    fn from(value: &String) -> Self {
+        OneOrExpr::Value(value.clone())
+    }
+}
+
 impl<T> From<UiExpr<T>> for OneOrExpr<T> {
     fn from(expr: UiExpr<T>) -> Self {
         OneOrExpr::Expr(expr)
@@ -567,8 +579,8 @@ impl_into_children_via_node!(
 ///
 /// let screen = ui::screen()
 ///     .id("demo.screen")
-///     .title(String::from("Demo"))
-///     .children([ui::text(String::from("Hello")).id("demo.greeting").into_node()])
+///     .title("Demo")
+///     .children([ui::text("Hello").id("demo.greeting").into_node()])
 ///     .build();
 /// ```
 pub fn screen() -> ScreenBuilder {

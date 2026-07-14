@@ -457,7 +457,7 @@ fn subtree_shape_from_many<'a>(
 ///
 /// let raw = ui::screen()
 ///     .id("demo")
-///     .children([ui::text(String::from("Ready")).id("demo.ready").into_node()])
+///     .children([ui::text("Ready").id("demo.ready").into_node()])
 ///     .build();
 /// let canonical = normalize_screen(raw)?;
 /// # Ok::<(), String>(())

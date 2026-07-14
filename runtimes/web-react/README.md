@@ -34,8 +34,8 @@ The repo's `shell.nix` provides the whole toolchain (wasm-ld, wasm-bindgen 0.2.1
 node, pnpm). From the repo root:
 
 ```sh
-nix-shell --run ./ts-implementation/web-react-runtime/build.sh
-cd ts-implementation/web-react-runtime
+nix-shell --run ./runtimes/web-react/build.sh
+cd runtimes/web-react
 nix-shell --run 'pnpm install && pnpm run dev'   # open the printed localhost URL
 ```
 
@@ -56,10 +56,10 @@ cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
 
 # 2. the real compiled wasm artifacts, end-to-end minus React
-nix-shell --run 'node ts-implementation/web-react-runtime/scripts/smoke.mjs'
+nix-shell --run 'node runtimes/web-react/scripts/smoke.mjs'
 
 # 3. the TS glue types against the generated bindings
-nix-shell --run 'cd ts-implementation/web-react-runtime && pnpm run typecheck'
+nix-shell --run 'cd runtimes/web-react && pnpm run typecheck'
 ```
 
 `tests/reactive_slice.rs` asserts that writing `ui.count` produces exactly one

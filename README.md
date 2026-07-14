@@ -23,7 +23,8 @@ embedded in applications written with React, Svelte, Vue, or another framework.
 | `crates/renderer` | TUI rendering work using Ratatui concepts. |
 | `crates/mugens-domain` / `crates/mugens-sdk` | Example/domain bridge crates for app-specific models, permissions, and UI sugar. |
 | `plugins/` | Rust WASM example plugins, including `web-counter`. |
-| `ts-implementation/` | Legacy TypeScript implementation and current web React runtime slice used to prove browser integration. |
+| `runtimes/web-react` | Current React web adapter and JS bridge for `plugin.wasm + unode_web_host.wasm`. |
+| `ts-implementation/` | Deprecated legacy TypeScript prototype kept only as migration reference. |
 | `docs/` | Architecture, runtime, ABI, reactivity, permissions, and migration documentation. |
 
 ## Current Web Slice
@@ -41,13 +42,25 @@ React is the first adapter, not a hard requirement. The intended boundary is
 framework-agnostic: web adapters consume IR and patch ops, while Rust owns the
 core semantics.
 
+## Why Web Has `unode-web-host`
+
+The web stack has an extra crate because the browser host is partly JavaScript.
+`unode-web-host` compiles the Rust core session to `unode_web_host.wasm` and
+exposes it through `wasm-bindgen`, so React, Svelte, Vue, or another adapter can
+ask Rust to normalize, track dependencies, and plan patches.
+
+The TUI stack does not need a matching `unode-tui-host` crate because the TUI
+host is already native Rust. `unode-tui-runtime` can call `crates/unode`
+directly while it manages Wasmtime plugin instances, host calls, and terminal
+session lifecycle.
+
 ## Useful Commands
 
 ```sh
 cargo test --workspace
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run ./ts-implementation/web-react-runtime/build.sh
+nix-shell --run ./runtimes/web-react/build.sh
 ```
 
 See `docs/README.md` for the document map and `AGENTS.md` for contributor

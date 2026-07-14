@@ -15,9 +15,13 @@ and render the result through environment-specific runtimes.
   planning for web adapters.
 - `crates/unode-web-runtime` and `crates/unode-tui-runtime` own host-specific
   WASM boundary concerns.
+- There is no `unode-tui-host` crate because the TUI host is already Rust
+  native. The web host crate exists to expose Rust core behavior across the
+  browser's JS/WASM boundary.
+- `runtimes/web-react` contains the current React web adapter and JS bridge.
 - `plugins/` contains example WASM plugins.
-- `ts-implementation/` contains legacy TypeScript code plus the current React
-  web-runtime slice that proves the web adapter model.
+- `ts-implementation/` contains deprecated legacy TypeScript code kept only as
+  migration reference.
 - `docs/` is the source of English project documentation.
 
 ## Design Constraints
@@ -35,8 +39,8 @@ and render the result through environment-specific runtimes.
 ## Documentation Expectations
 
 Update `docs/` when changing protocol, runtime, ABI, permission, or reactivity
-behavior. If an implementation detail in `ts-implementation/` is legacy, label it
-as legacy instead of describing it as the target architecture.
+behavior. Do not add new implementation work under `ts-implementation/`; promote
+current web work under `runtimes/web-react` or a future package.
 
 ## Verification
 

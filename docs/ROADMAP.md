@@ -56,10 +56,10 @@ custom adapter should consume the same IR contract.
 
 ## Legacy TypeScript Role
 
-`ts-implementation/` is now reference and migration material, plus the home of
-the current web React runtime slice. The old same-process TypeScript plugin
-runtime should not be treated as the target security model because it does not
-provide the WASM sandbox boundary Unode needs.
+`ts-implementation/` is deprecated reference and migration material. The current
+web React runtime slice lives in `runtimes/web-react`. The old same-process
+TypeScript plugin runtime should not be treated as the target security model
+because it does not provide the WASM sandbox boundary Unode needs.
 
 ## What Should Not Change
 

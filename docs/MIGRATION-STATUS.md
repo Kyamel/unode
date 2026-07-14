@@ -31,7 +31,7 @@ Unode should provide:
 - `crates/unode-web-host` is the browser-side Rust core compiled through
   `wasm-bindgen`. It owns the web session pipeline: normalize, seed state, track
   dependencies, lower to IR, and plan patch ops.
-- `ts-implementation/web-react-runtime` is the current browser vertical slice.
+- `runtimes/web-react` is the current browser vertical slice.
   It instantiates both `plugin.wasm` and `unode_web_host.wasm`, wires host calls,
   stores keyed IR, and renders through React.
 - `plugins/web-counter` is the end-to-end proof plugin for web reactivity.
@@ -54,7 +54,7 @@ The untracked work in this tree adds the first working web runtime slice:
   - `initial_patches()` resolves symbolic bindings after mount;
   - `apply_writes()` applies state writes and returns targeted `IrPatchOp`s;
   - `state_snapshot()` feeds current host state back to plugin dispatch.
-- `ts-implementation/web-react-runtime`
+- `runtimes/web-react`
   - JS plugin host using native `WebAssembly.instantiate`;
   - typed host-session wrapper over `unode-web-host`;
   - bridge that drains plugin host calls into state writes;
@@ -97,8 +97,7 @@ resolver, or patch planning into TypeScript.
   operations, and permission-denied cases.
 - Add more golden tests for normalization, IR lowering, patch planning, and
   plugin ABI round-trips.
-- Decide what remains in `ts-implementation/` as legacy reference and what is
-  promoted into production packages.
+- Decide when the deprecated `ts-implementation/` reference can be deleted.
 
 ## Legacy TypeScript Risks To Avoid
 
@@ -122,6 +121,6 @@ Useful checks for the current slice:
 ```sh
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run 'node ts-implementation/web-react-runtime/scripts/smoke.mjs'
-nix-shell --run 'cd ts-implementation/web-react-runtime && pnpm run typecheck'
+nix-shell --run 'node runtimes/web-react/scripts/smoke.mjs'
+nix-shell --run 'cd runtimes/web-react && pnpm run typecheck'
 ```

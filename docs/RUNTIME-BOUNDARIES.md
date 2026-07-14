@@ -60,6 +60,10 @@ Owns the browser-side Rust core session:
 It deliberately does not instantiate plugin WASM. JavaScript loads both
 `plugin.wasm` and `unode_web_host.wasm` and connects them through host calls.
 
+The web stack needs this crate because the browser integration crosses a
+JavaScript/framework boundary. `unode-web-host` is the Rust core session packaged
+as WASM for that boundary.
+
 ### `unode-tui-runtime`
 
 Owns:
@@ -68,6 +72,10 @@ Owns:
 - Wasmtime/native runtime integration
 - keyboard/command palette wiring
 - terminal-specific navigation loop
+
+There is no separate `unode-tui-host` crate. The TUI host is already native Rust,
+so it can call `unode` core functions directly while this crate handles the
+plugin WASM boundary and terminal runtime lifecycle.
 
 ## Renderers
 

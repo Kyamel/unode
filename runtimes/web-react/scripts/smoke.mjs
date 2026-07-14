@@ -3,7 +3,7 @@
 // No React/DOM here; this validates everything up to the render layer.
 //
 // Run inside the nix shell, after build.sh:
-//   node ts-implementation/web-react-runtime/scripts/smoke.mjs
+//   node runtimes/web-react/scripts/smoke.mjs
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

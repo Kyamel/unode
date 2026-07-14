@@ -59,7 +59,7 @@ Framework adapter
   └── renderer components subscribe by node key, not by global revision
 ```
 
-The current proof lives in `ts-implementation/web-react-runtime`. React is an
+The current proof lives in `runtimes/web-react`. React is an
 adapter choice, not a core dependency. The Rust web host owns normalization,
 dependency tracking, state snapshots, and patch planning.
 
@@ -105,7 +105,7 @@ activation as host state, not component-local state.
 ```sh
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run 'node ts-implementation/web-react-runtime/scripts/smoke.mjs'
+nix-shell --run 'node runtimes/web-react/scripts/smoke.mjs'
 ```
 
 ---

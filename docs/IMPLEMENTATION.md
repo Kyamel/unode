@@ -424,7 +424,7 @@ const writes = hostCallSink.drainStateWrites();
 store.apply(session.applyWrites(writes));
 ```
 
-The current adapter is React (`ts-implementation/web-react-runtime`). A Svelte
+The current adapter is React (`runtimes/web-react`). A Svelte
 or Vue adapter should consume the same IR and patch ops.
 
 ---

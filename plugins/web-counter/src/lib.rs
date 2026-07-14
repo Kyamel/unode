@@ -160,7 +160,7 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
     ui::screen()
         .id("web-counter.screen")
         .title(format!("{PLUGIN_NAME}"))
-        .subtitle("Rendered from a Rust plugin compiled to WebAssembly.".to_string())
+        .subtitle("Rendered from a Rust plugin compiled to WebAssembly.")
         .initial_state(BTreeMap::from([
             (COUNT_PATH.to_string(), json!(0)),
             (LABEL_PATH.to_string(), json!(label_for(0))),
@@ -173,7 +173,7 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
                 .role(TextRole::Title)
                 .tone(Tone::Info)
                 .into_node(),
-            ui::text("The number above is host state; the buttons dispatch intents.".to_string())
+            ui::text("The number above is host state; the buttons dispatch intents.")
                 .id("web-counter.hint")
                 .role(TextRole::Caption)
                 .tone(Tone::Muted)
@@ -181,13 +181,13 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
             ui::actions()
                 .id("web-counter.actions")
                 .children([
-                    ui::action("Increment".to_string(), custom("counter.inc"))
+                    ui::action("Increment", custom("counter.inc"))
                         .id("web-counter.inc")
                         .intent(ActionIntent::Primary),
-                    ui::action("Decrement".to_string(), custom("counter.dec"))
+                    ui::action("Decrement", custom("counter.dec"))
                         .id("web-counter.dec")
                         .intent(ActionIntent::Secondary),
-                    ui::action("Reset".to_string(), custom("counter.reset"))
+                    ui::action("Reset", custom("counter.reset"))
                         .id("web-counter.reset")
                         .intent(ActionIntent::Ghost),
                 ])
