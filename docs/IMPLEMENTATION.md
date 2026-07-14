@@ -14,6 +14,7 @@ unode/                          ← workspace root
     unode/                 ← AST, normalize, state, resolver, transport
     unode-sdk/           ← DSL builders, plugin manifest, host function wrappers
     unode-web-runtime/          ← JS-facing WASM entry points for web renderer
+    unode-web-host/             ← wasm-bindgen host session for normalize/track/patch
     mugens-sdk/                ← Mugen-specific domain API and host functions
     renderer/           ← TUI renderer (Ratatui + Wasmtime)
 ```
@@ -390,43 +391,41 @@ pub fn register_tui_host_functions(
 
 ---
 
-## Phase 4 — Web renderer integration
+## Phase 4 — Web host integration
 
-The web renderer is Svelte + TypeScript. It communicates with the Rust WASM
-module via the `unode-web-runtime` crate, which exposes JS-friendly entry points.
+The web integration is split between two WASM modules and a thin framework
+adapter. JavaScript instantiates the plugin WASM and `unode_web_host.wasm`.
+The plugin owns `manifest/load/render/dispatch`; `unode-web-host` owns
+normalize, state seeding, binding tracking, IR lowering, and patch planning.
 
 ```rust
-// unode-web-runtime/src/lib.rs
-use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-pub struct PluginInstance {
-    inner: WasmPluginInstance,
-}
-
-#[wasm_bindgen]
-impl PluginInstance {
-    #[wasm_bindgen(constructor)]
-    pub async fn new(wasm_bytes: &[u8], imports: JsValue) -> Result<PluginInstance, JsValue> { ... }
-
-    pub async fn load(&self, route_json: &str) -> Result<String, JsValue> { ... }
-
-    pub fn render(&self, data_json: &str) -> Result<String, JsValue> { ... }
-
-    pub async fn dispatch(&self, action_json: &str) -> Result<(), JsValue> { ... }
-
-    pub fn normalize_screen(&self, screen_json: &str) -> Result<String, JsValue> { ... }
-}
+// crates/unode-web-host/src/session.rs
+let mut session = WebSessionCore::new("en-US");
+session.set_route(route);
+let ir = session.mount(raw_screen, restored_state)?;
+let initial = session.initial_patches()?;
+let patches = session.apply_writes(writes)?;
 ```
 
-The Svelte renderer calls:
+The JavaScript bridge follows this shape:
 
 ```typescript
-const instance = await new PluginInstance(wasmBytes, buildImports(guard, hostApi));
-const dataJson = await instance.load(routeJson);
-const screenJson = instance.render(dataJson);
-const canonical = JSON.parse(instance.normalize_screen(screenJson));
+const plugin = await PluginInstance.instantiate(pluginWasmUrl, hostCalls);
+const session = await HostSession.create(webHostModule, webHostWasmUrl, "en-US");
+
+session.setRoute(route);
+const screen = plugin.render({ route, data, stateSnapshot: {} });
+const ir = session.mount(screen);
+store.mount(ir);
+store.apply(session.initialPatches());
+
+const response = plugin.dispatch({ route, action, stateSnapshot: session.stateSnapshot() });
+const writes = hostCallSink.drainStateWrites();
+store.apply(session.applyWrites(writes));
 ```
+
+The current adapter is React (`ts-implementation/web-react-runtime`). A Svelte
+or Vue adapter should consume the same IR and patch ops.
 
 ---
 
@@ -494,28 +493,11 @@ let picker = Picker::from_query_stdio()?;
 
 ## Implementation order
 
-**Week 1** — `unode`: AST types, MemoryStateStore, ExprResolver, normalizeScreen.
-Write unit tests comparing output against the TypeScript normalize spec.
+**Now** — stabilize protocol boundaries, ABI validation, web host packaging, and
+test coverage around normalization, IR lowering, and patches.
 
-**Week 2** — `unode`: trackReactiveBindings, transport layer. Write integration
-test: normalize a screen with bindings, trigger state change, verify correct
-node keys returned by subscribers_of.
+**Next** — flesh out the app/domain bridge crates and method-level permission
+metadata.
 
-**Week 3** — `unode-sdk`: DSL builders, PluginContext, WASM exports.
-Write a minimal plugin in Rust, compile to WASM, call from a test harness.
-
-**Week 4** — `mugens-sdk`: domain models, host function registration for both
-web and TUI renderers.
-
-**Week 5** — Web renderer: replace TypeScript runtime with WASM calls. Keep Svelte
-component tree intact. Fix reactivity by implementing `SvelteStateAdapter`.
-Integrate into `+page.ts load()`.
-
-**Week 6** — TUI renderer: Wasmtime integration, basic node rendering (text,
-stack, list). Input loop, focus management.
-
-**Week 7** — TUI renderer: grid layout, disclosure, conditional, media with
-ratatui-image. Full AST coverage.
-
-**Week 8** — Integration testing across both renderers. The same plugin WASM
-should produce equivalent output on both.
+**Then** — connect the TUI runtime helpers to a full Ratatui loop and verify the
+same plugin WASM across web and terminal hosts.

@@ -1,6 +1,12 @@
 use unode::core::permissions::PermissionRequest;
 use unode::core::runtime::{PluginManifest, UNODE_CORE_API_VERSION};
 
+/// Starts a plugin permission request builder.
+///
+/// Permission strings are host-defined capabilities such as `http.fetch` or a
+/// domain-specific method group. Mark permissions as required when the plugin
+/// cannot function without them; optional permissions can be granted later by
+/// host policy.
 pub fn permission(permission: impl Into<String>) -> PermissionRequestBuilder {
     PermissionRequestBuilder {
         request: PermissionRequest {
@@ -12,6 +18,11 @@ pub fn permission(permission: impl Into<String>) -> PermissionRequestBuilder {
     }
 }
 
+/// Starts a plugin manifest builder with the current core API version.
+///
+/// Plugin authors normally expose the built manifest through the WASM ABI
+/// `plugin_manifest` export. Hosts read it before instantiation to validate API
+/// compatibility and requested permissions.
 pub fn plugin_manifest(
     id: impl Into<String>,
     name: impl Into<String>,

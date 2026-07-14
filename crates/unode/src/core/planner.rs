@@ -7,6 +7,15 @@ use crate::core::canonical::*;
 use crate::core::patch::{PatchOp, PatchValue};
 use crate::core::resolver::{DefaultExprResolver, ResolverContext};
 
+/// Plans renderer patch operations for dirty canonical node keys.
+///
+/// Hosts call this after state writes have been applied and the resolver has
+/// identified affected keys. Static/property-only nodes produce `SetProp`
+/// patches, while structurally reactive nodes can produce `ReplaceNode` or
+/// `ReplaceChildren` operations.
+///
+/// The planner reuses the canonical tree from the current mount; it does not
+/// call plugin `render()` again for ordinary local state updates.
 pub fn plan_patch_ops(
     screen: &CanonicalScreen,
     dirty_keys: &BTreeSet<String>,

@@ -14,6 +14,10 @@ pub struct BindingSubscriptions {
 }
 
 impl BindingSubscriptions {
+    /// Unregisters all live state subscriptions created by tracking.
+    ///
+    /// Call this before mounting a new screen or tearing down a route so old node
+    /// keys cannot receive patches after their tree has gone away.
     pub fn teardown(self, state: &mut MemoryStateStore) {
         for id in self.subscription_ids {
             state.unsubscribe(id);
@@ -21,6 +25,17 @@ impl BindingSubscriptions {
     }
 }
 
+/// Builds the dependency graph between host state paths and canonical node keys.
+///
+/// This walks a normalized screen, resolves only reactive expressions, records
+/// path reads in the supplied resolver, and subscribes to the state store. The
+/// returned [`BindingSubscriptions`] includes a `path_to_nodes` snapshot that web
+/// and TUI hosts can use for initial patch planning and diagnostics.
+///
+/// `on_patch` receives the affected node keys when the subscribed store changes.
+/// Some hosts, such as `unode-web-host`, drive patch planning manually after
+/// batching writes and use a no-op callback while still keeping the subscription
+/// handle for teardown.
 pub fn track_reactive_bindings(
     screen: &CanonicalScreen,
     resolver: &mut DefaultExprResolver,

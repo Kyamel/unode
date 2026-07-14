@@ -36,12 +36,12 @@ App Bridge (Rust, compiled to .wasm)
   ├── Domain models (WorkSummary, ChapterSummary)
   └── Permission metadata per method
 
-Web Renderer (Svelte)
+Web Host + Adapter
   ├── Loads plugin .wasm via WebAssembly.instantiate()
-  ├── Implements host functions in JS
-  ├── Receives CanonicalScreen JSON
-  ├── Mounts and reacts to StateStore changes
-  └── Dispatches ActionRef back to WASM
+  ├── Loads unode_web_host.wasm via wasm-bindgen
+  ├── Runs normalize, dependency tracking, and patch planning in Rust
+  ├── Mounts IR through a framework adapter (React today; Svelte/Vue possible)
+  └── Dispatches ActionRef back to the plugin WASM
 
 TUI Renderer (Rust)
   ├── Loads plugin .wasm via Wasmtime
@@ -68,5 +68,5 @@ TUI Renderer (Rust)
 | `HOST-BRIDGE.md` | App bridge shape, domain APIs |
 | `IMPLEMENTATION.md` | Step-by-step guide for implementing unode in Rust |
 | `RUNTIME-BOUNDARIES.md` | Division between `unode`, SDKs, runtimes, and renderers |
-| `MIGRATION-STATUS.md` | Snapshot of what has been ported, what is missing, and migration risks |
-| `ROADMAP.md` | Migration path from TypeScript to Rust |
+| `MIGRATION-STATUS.md` | Current snapshot of the Rust/WASM migration and remaining risks |
+| `ROADMAP.md` | Forward migration path from the legacy TypeScript prototype to Rust |

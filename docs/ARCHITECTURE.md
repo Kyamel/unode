@@ -53,16 +53,23 @@ Owns:
 
 The bridge answers the question: "what can a plugin do in *this* app?"
 
-### 3. Renderer (platform-specific)
+### 3. Host runtime + renderer adapter (platform-specific)
 
 Two implementations, one contract:
 
-**Web renderer (Svelte + TypeScript)**
+**Web host (Rust core compiled to WASM + JavaScript glue)**
 - Instantiates plugin `.wasm` via `WebAssembly.instantiate()`
-- Implements host functions as JavaScript closures
-- Receives `CanonicalScreen` JSON, mounts Svelte component tree
-- Manages per-path Svelte stores for granular reactivity
-- Enforces permissions via JS-level `PermissionGuard`
+- Instantiates `unode_web_host.wasm` via `wasm-bindgen`
+- Implements the `host_call` import and framework bridge in JavaScript
+- Runs normalization, dependency tracking, and patch planning in Rust
+- Emits IR and `IrPatchOp`s to a framework adapter
+- Enforces permissions before providing host functions or host-call operations
+
+**Web framework adapter (React in the current slice)**
+- Consumes the IR returned by `unode-web-host`
+- Maintains a keyed `ScreenStore`
+- Subscribes components by node key and applies patch ops
+- Can be replaced by Svelte, Vue, or another adapter without changing the core
 
 **TUI renderer (Rust)**
 - Instantiates plugin `.wasm` via Wasmtime
@@ -97,15 +104,16 @@ Plugins must not import:
 7. Host calls plugin.render(data, state_json) → receives CanonicalScreen JSON
 8. Host calls normalizeScreen(json) → fills defaults, computes _reactivity
 9. Host calls trackReactiveBindings(screen, resolver, state, on_patch)
-10. Renderer mounts the canonical screen
-11. User interaction → ActionRef dispatched → plugin action handler called (WASM)
-12. Action handler calls ctx.state.set() → crosses WASM boundary → StateStore updates
-13. StateStore notifies subscribers → renderer patches only affected nodes
-14. Navigation → teardown subscriptions, reset StateStore, repeat from step 5
+10. Host lowers the canonical screen to IR
+11. Renderer adapter mounts the IR
+12. User interaction → ActionRef dispatched → plugin action handler called (WASM)
+13. Action handler calls ctx.state.set() → crosses WASM boundary → StateStore updates
+14. StateStore writes are planned into patch ops → renderer patches only affected nodes
+15. Navigation → teardown subscriptions, reset StateStore, repeat from step 5
 ```
 
-Steps 1–4 happen once per plugin. Steps 5–10 happen on each navigation. Steps
-11–13 happen on each user interaction. Step 14 restarts the cycle.
+Steps 1–4 happen once per plugin. Steps 5–11 happen on each navigation. Steps
+12–14 happen on each user interaction. Step 15 restarts the cycle.
 
 ---
 
@@ -153,12 +161,14 @@ fields, no nulls unless explicitly `Option<T>`. Serde handles JSON serialization
 without runtime overhead. The WASM output is small and starts fast. The same crate
 compiles to `.wasm` for the plugin SDK and to native code for the TUI renderer.
 
-### Why keep the Svelte web renderer
+### Why web adapters are framework-agnostic
 
-Svelte is excellent for DOM rendering, accessibility, animations, and browser
-integration. The web renderer does not need to change language — it changes what
-it consumes. Instead of calling a TypeScript runtime, it instantiates a WASM
-module and receives JSON. Svelte remains responsible for turning that JSON into DOM.
+Unode should be easy to embed in an existing React, Svelte, Vue, or custom web
+application. The browser integration is therefore split in two: `unode-web-host`
+owns the Rust core pipeline and JavaScript owns framework glue. The current
+vertical slice uses React because it is a small proof that keyed IR patches work
+in a mainstream framework. A Svelte adapter should consume the same IR and patch
+ops instead of reimplementing normalization or reactivity.
 
 ### Why Ratatui for TUI instead of Notcurses
 

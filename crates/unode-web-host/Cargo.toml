@@ -1,0 +1,23 @@
+[package]
+name = "unode-web-host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+# `cdylib` is what wasm-bindgen consumes; `rlib` keeps the crate usable as a
+# normal dependency (and testable natively without the wasm toolchain).
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+unode = { path = "../unode" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# wasm-bindgen is only needed when we actually target the browser. Gating it on
+# the wasm target keeps `cargo test` on the host toolchain free of it, so the
+# core session pipeline can be verified natively.
+# Pinned to the exact version of `wasm-bindgen-cli` provided by shell.nix —
+# wasm-bindgen requires the crate and the CLI to match versions exactly.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.108"

@@ -440,6 +440,28 @@ fn subtree_shape_from_many<'a>(
 // public entrypoints
 // ============================================================
 
+/// Converts a plugin-authored [`ScreenNode`] into a canonical tree.
+///
+/// Normalization is the first host-owned step after `plugin_render`. It applies
+/// defaults, collapses literal expressions, validates global IDs, assigns stable
+/// structural keys where allowed, and computes reactivity metadata used by the
+/// resolver and patch planner.
+///
+/// Call this once for each route render before tracking bindings or lowering to
+/// IR:
+///
+/// ```rust
+/// use unode::core::dsl as ui;
+/// use unode::core::dsl::IntoNode;
+/// use unode::core::normalize::normalize_screen;
+///
+/// let raw = ui::screen()
+///     .id("demo")
+///     .children([ui::text(String::from("Ready")).id("demo.ready").into_node()])
+///     .build();
+/// let canonical = normalize_screen(raw)?;
+/// # Ok::<(), String>(())
+/// ```
 pub fn normalize_screen(mut screen: ScreenNode) -> Result<CanonicalScreen, String> {
     let ctx = NormalizeContext::root();
     let mut seen_ids = BTreeMap::new();

@@ -98,25 +98,21 @@ pub extern "C" fn plugin_render_slot(
 The host collects all contributions, deserializes each UiNode JSON, and
 assembles the final tree before passing it to the renderer.
 
-### SlotNode in the Web renderer (Svelte)
+### SlotNode in a Web adapter
 
-The Web renderer receives the already-injected canonical tree. `CoreSlotNode`
-renders the injected children as `CoreUiRenderer` nodes. If the slot has no
-contributions and no fallback, it renders nothing.
+The Web adapter receives the already-injected tree or IR. A slot renderer renders
+the injected children as normal Unode nodes. If the slot has no contributions
+and no fallback, it renders nothing.
 
-```svelte
-<!-- CoreSlotNode.svelte -->
-{#if injectedNodes.length > 0}
-  {#each injectedNodes as node (node._key)}
-    <CoreUiRenderer {node} />
-  {/each}
-{:else if node.fallback}
-  <CoreUiRenderer node={node.fallback} />
-{/if}
+```tsx
+function SlotNode({ node }: { node: IrNode }) {
+  const children = injectedChildrenFor(node) ?? node.c;
+  return children.map((child) => <UnodeNode key={child.p._k} node={child} />);
+}
 ```
 
-The injection happens before the Svelte tree is constructed — the renderer
-receives an already-resolved tree, not one with unresolved placeholders.
+Injection normally happens before the framework tree is constructed, so the
+adapter receives an already-resolved tree rather than unresolved placeholders.
 
 ### SlotNode in the TUI renderer (Ratatui)
 
@@ -136,8 +132,8 @@ UI to regions of the host app's own chrome — the navigation sidebar, the heade
 action bar, the bottom navigation on mobile.
 
 These regions exist outside any plugin screen. They are owned by the app shell
-(Svelte layout components on Web, the `mgn` TUI app frame). Plugins register
-contributions to them at activation time.
+(the web application's layout components, or the `mgn` TUI app frame). Plugins
+register contributions to them at activation time.
 
 ### Use case
 
@@ -155,9 +151,9 @@ ctx.navigation.register(NavigationItem {
 });
 ```
 
-The Svelte sidebar queries the navigation registry and renders these items
-using its own components. The plugin does not control how the sidebar looks —
-it only declares that it wants to be present and what navigating to it means.
+The web app sidebar queries the navigation registry and renders these items using
+its own components. The plugin does not control how the sidebar looks — it only
+declares that it wants to be present and what navigating to it means.
 
 ### Shell slot targets
 
@@ -183,7 +179,7 @@ host shell components whenever they need to render.
 2. Host shell renders sidebar
    → queries NavigationRegistry.get_available(ctx)
    → receives list of NavigationItems from all active plugins
-   → renders them using its own Svelte components
+   → renders them using its own framework components
 
 3. User navigates to plugin route
    → normal route lifecycle (load, render, mount)
@@ -216,7 +212,7 @@ ctx.slots.register(SlotContribution {
 
 The host calls `plugin_render_slot("shell:header-actions", ctx)` on each plugin
 that registered for this target, collects the UiNode JSON responses, and renders
-them via `CoreUiRenderer` in the header.
+them via the active framework adapter in the header.
 
 ---
 
@@ -234,39 +230,32 @@ them via `CoreUiRenderer` in the header.
 
 ---
 
-## Web renderer implementation
+## Web adapter implementation
 
 ### SlotNode
 
-Injection happens in the runtime before the Svelte component tree is created:
+Injection happens in the runtime before the framework component tree is created:
 
 ```typescript
-// In PluginScreenHost, after normalize
+// After normalize and before lower/mount.
 const injectedScreen = await injectSlots(canonicalScreen, slotRegistry, ctx);
 // injectedScreen has no unresolved SlotNodes — all replaced with contributions
 mountScreen(injectedScreen);
 ```
 
-The `CoreSlotNode.svelte` component exists only as a fallback for slots that
-were not injected (e.g. contributed by a plugin that loaded after mount).
-Dynamic slot injection after mount is possible but rare.
+An adapter-level slot component exists only as a fallback for slots that were not
+injected, for example because a contributing plugin loaded after mount. Dynamic
+slot injection after mount is possible but rare.
 
 ### Shell slots (navigation)
 
-The Svelte shell queries the registry reactively:
+The web shell queries the registry reactively:
 
-```svelte
-<!-- AppSidebarContent.svelte -->
-<script>
-  // Re-queries when navigation registry changes (plugin loaded/unloaded)
-  const navItems = $derived(
-    navigationRegistry.getAvailable({ host: hostApi })
-  );
-</script>
-
-{#each navItems as item (item.id)}
-  <SidebarNavItem {item} />
-{/each}
+```tsx
+function Sidebar() {
+  const navItems = navigationRegistry.getAvailable({ host: hostApi });
+  return navItems.map((item) => <SidebarNavItem key={item.id} item={item} />);
+}
 ```
 
 This is pure data rendering — no WASM call per render, no `CoreUiRenderer`.
@@ -279,15 +268,10 @@ const headerActions = await slotRegistry.resolve("shell:header-actions", ctx);
 // headerActions: CanonicalUiNode[] — each came from a plugin_render_slot call
 ```
 
-```svelte
-<!-- ScreenHost layout -->
-{#if headerActions.length}
-  <div class="header-actions">
-    {#each headerActions as node (node._key)}
-      <CoreUiRenderer {node} />
-    {/each}
-  </div>
-{/if}
+```tsx
+function HeaderActions({ actions }: { actions: IrNode[] }) {
+  return actions.map((node) => <UnodeNode key={node.p._k} node={node} />);
+}
 ```
 
 ---

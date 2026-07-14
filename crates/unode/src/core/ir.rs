@@ -39,6 +39,11 @@ pub struct IrPatchOp {
     pub c: Option<Vec<IrNode>>,
 }
 
+/// Lowers a canonical screen into compact renderer IR.
+///
+/// IR keeps the semantic node tree but shortens common field names and embeds
+/// metadata in the `p` property map. Framework adapters and TUI renderers should
+/// consume this shape rather than duplicating canonical normalization logic.
 pub fn lower_screen(screen: &CanonicalScreen) -> IrScreen {
     let mut p = BTreeMap::new();
 
@@ -370,6 +375,10 @@ pub fn lower_patch_op(op: &PatchOp) -> IrPatchOp {
     }
 }
 
+/// Lowers canonical patch operations into compact IR patch operations.
+///
+/// Use this immediately before sending patches to a renderer adapter. The web
+/// host returns this shape from `initial_patches` and `apply_writes`.
 pub fn lower_patch_ops(ops: &[PatchOp]) -> Vec<IrPatchOp> {
     ops.iter().map(lower_patch_op).collect()
 }

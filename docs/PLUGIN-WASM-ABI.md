@@ -25,6 +25,20 @@ Validates:
 and then is responsible for browser-side instantiation through
 `WebAssembly.instantiate`.
 
+### `unode-web-host`
+
+Runs the browser-side core pipeline after a plugin has rendered a raw screen:
+
+- normalize the `ScreenNode`
+- seed and own the `MemoryStateStore`
+- track bindings with `DefaultExprResolver`
+- lower the canonical screen to IR
+- plan `IrPatchOp`s after state writes
+
+This crate is compiled with `wasm-bindgen` and consumed by JavaScript adapters.
+It does not instantiate plugins itself; JS instantiates both WASM modules and
+wires the boundary.
+
 ### `unode-tui-runtime`
 
 Validates the same ABI contract, but is the place where Wasmtime integration
@@ -44,8 +58,9 @@ Recommended command:
 cargo build --target wasm32-unknown-unknown --release
 ```
 
-The resulting `.wasm` file is the same artifact that both Web and TUI runtimes
-consume.
+The resulting plugin `.wasm` file is the same artifact that both Web and TUI
+runtimes consume. On the web, it runs beside `unode_web_host.wasm`; the two
+modules do not instantiate each other.
 
 ## Why this matters
 

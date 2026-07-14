@@ -23,6 +23,10 @@ pub struct SerializeOptions {
     pub pretty: bool,
 }
 
+/// Serializes an IR screen into a versioned Unode envelope.
+///
+/// The envelope carries the AST/protocol version and an optional screen kind so
+/// hosts can reject incompatible payloads before handing data to a renderer.
 pub fn screen_to_json(screen: &IrScreen, options: &SerializeOptions) -> Result<String, serde_json::Error> {
     let envelope = ScreenEnvelope {
         r#type: "unode-screen".into(),
@@ -39,6 +43,10 @@ pub fn screen_to_json(screen: &IrScreen, options: &SerializeOptions) -> Result<S
     }
 }
 
+/// Lowers and serializes a canonical screen into a versioned Unode envelope.
+///
+/// This is a convenience for hosts that keep canonical screens internally but
+/// expose only IR over a boundary.
 pub fn canonical_screen_to_json(
     screen: &CanonicalScreen,
     options: &SerializeOptions,
@@ -47,6 +55,11 @@ pub fn canonical_screen_to_json(
     screen_to_json(&ir, options)
 }
 
+/// Parses and validates a versioned Unode screen envelope.
+///
+/// The current compatibility rule accepts matching major versions. Callers
+/// receive a descriptive error for malformed JSON, unknown envelope types, or
+/// incompatible protocol versions.
 pub fn screen_from_json(json: &str) -> Result<ScreenEnvelope, String> {
     let parsed: ScreenEnvelope =
         serde_json::from_str(json).map_err(|e| format!("Invalid JSON: {e}"))?;

@@ -437,14 +437,31 @@ pub fn conditional(
 pub mod expr {
     use super::UiExpr;
 
+    /// Creates a literal expression.
+    ///
+    /// Literal expressions are serialized in the same expression shape as
+    /// bindings and route params, then collapsed during normalization where the
+    /// target field accepts plain values. Use this when generated UI code wants
+    /// to keep one uniform expression path even for constant values.
     pub fn literal<T>(value: T) -> UiExpr<T> {
         UiExpr::Literal { value }
     }
 
+    /// Creates a reactive binding to a host state path.
+    ///
+    /// The path uses dot notation such as `"ui.count"` or `"items.0.title"`.
+    /// During `track_reactive_bindings`, Unode records which node key reads this
+    /// path. Later writes to the path wake only those nodes and produce targeted
+    /// patch ops instead of re-rendering the whole screen.
     pub fn binding<T>(path: impl Into<String>) -> UiExpr<T> {
         UiExpr::Binding { path: path.into() }
     }
 
+    /// Creates an expression backed by the current resolved route.
+    ///
+    /// Param expressions first read named route params, then query values. They
+    /// are useful for screens whose labels, filters, or selected resources are
+    /// derived from route state rather than local screen state.
     pub fn param<T>(name: impl Into<String>) -> UiExpr<T> {
         UiExpr::Param { name: name.into() }
     }
@@ -537,7 +554,23 @@ impl_into_children_via_node!(
 
 // --- Builders ---
 
-/// Creates a root screen node.
+/// Starts a root screen builder.
+///
+/// A screen is what a plugin returns from `plugin_render`: semantic children,
+/// optional title/subtitle metadata, initial focus, and an optional flat
+/// `initial_state` map. The host normalizes the finished `ScreenNode`, seeds its
+/// `MemoryStateStore`, and lowers it to renderer IR.
+///
+/// ```rust
+/// use unode::core::dsl as ui;
+/// use unode::core::dsl::IntoNode;
+///
+/// let screen = ui::screen()
+///     .id("demo.screen")
+///     .title(String::from("Demo"))
+///     .children([ui::text(String::from("Hello")).id("demo.greeting").into_node()])
+///     .build();
+/// ```
 pub fn screen() -> ScreenBuilder {
     ScreenBuilder::default()
 }
@@ -842,7 +875,11 @@ pub fn cols() -> ResponsiveGridColumns {
     ResponsiveGridColumns::default()
 }
 
-/// Creates a semantic text node.
+/// Starts a semantic text node builder.
+///
+/// Text content can be a plain string or a `StringOrExpr`, including
+/// `expr::binding::<String>("path")`. Give text nodes stable IDs when they are
+/// reactive or when a renderer/plugin anchor needs to address them directly.
 pub fn text(content: impl Into<StringOrExpr>) -> TextBuilder {
     TextBuilder {
         content: content.into(),
@@ -1471,7 +1508,11 @@ impl IntoChildren for ListBuilder {
     }
 }
 
-/// Creates a user-invokable action node.
+/// Starts a user-invokable action node builder.
+///
+/// Actions describe intent; renderers decide whether they become buttons, menu
+/// items, key bindings, or terminal commands. Core action types may be handled by
+/// the host, while custom action strings are dispatched back to the plugin.
 pub fn action(label: impl Into<StringOrExpr>, action: impl Into<ActionRef>) -> ActionBuilder {
     ActionBuilder {
         id: None,
@@ -2151,7 +2192,11 @@ impl IntoChildren for LoadingBuilder {
     }
 }
 
-/// Creates an inline slot placeholder with optional fallback content.
+/// Creates an inline plugin anchor with optional fallback content.
+///
+/// `SlotNode`s let a plugin or host declare a named extension point inside a
+/// screen. The host resolves contributions before mounting so framework and TUI
+/// renderers normally receive an already-injected tree.
 pub fn slot(name: impl Into<String>) -> SlotBuilder {
     SlotBuilder {
         id: None,

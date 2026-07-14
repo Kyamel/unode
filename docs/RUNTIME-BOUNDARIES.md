@@ -47,6 +47,19 @@ Owns:
 - i18next adapter
 - browser navigation integration
 
+### `unode-web-host`
+
+Owns the browser-side Rust core session:
+
+- normalize raw plugin screens
+- seed and snapshot host state
+- track reactive bindings
+- plan patch ops
+- expose a small `wasm-bindgen` JSON-in/JSON-out API to framework adapters
+
+It deliberately does not instantiate plugin WASM. JavaScript loads both
+`plugin.wasm` and `unode_web_host.wasm` and connects them through host calls.
+
 ### `unode-tui-runtime`
 
 Owns:
@@ -60,13 +73,13 @@ Owns:
 
 Renderers sit below the runtime and should not own security decisions:
 
-- a Svelte renderer reads screen/chrome data and applies patches
+- a web adapter such as React or Svelte reads IR and applies patches
 - a Ratatui renderer does the same in terminal form
 
 Renderers consume:
 
-- `CanonicalScreen` / IR
-- `PatchOp`
+- IR screens
+- IR patch ops
 - screen chrome metadata such as `routeTabs`
 
 Renderers do not own:

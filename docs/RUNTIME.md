@@ -104,18 +104,20 @@ build navigation menus, command palettes, and slot contributions.
    → walks static-skipping tree
    → registers path subscriptions
 
-8. Mount
-   renderer.mount(canonical_screen)
-   → Web: Svelte component tree
+8. Lower + mount
+   lower_screen(canonical_screen)
+   renderer.mount(ir_screen)
+   → Web: keyed framework adapter (React in the current vertical slice)
    → TUI: Ratatui widget layout
 
 9. Reactive loop
    on user interaction:
      → dispatch ActionRef to plugin.dispatch()
      → plugin calls host functions (state.set, navigate, etc.)
-     → StateStore notifies path subscribers
-     → on_patch({affected_node_keys}) called
-     → renderer patches only those nodes
+     → host applies buffered state writes
+     → resolver.subscribers_of(path) finds dirty node keys
+     → plan_patch_ops(...) produces targeted patch ops
+     → renderer applies only those patches
 
 10. Teardown on navigation
     subscriptions.teardown()

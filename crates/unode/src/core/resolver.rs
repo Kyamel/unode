@@ -20,6 +20,11 @@ pub struct DefaultExprResolver {
 }
 
 impl DefaultExprResolver {
+    /// Records that `node_key` depends on `path`.
+    ///
+    /// Most callers should not invoke this directly. Use the typed
+    /// `resolve_*` methods while walking a canonical tree so dependency
+    /// tracking and value resolution stay in sync.
     pub fn track(&mut self, node_key: &str, path: &str) {
         self.node_to_path
             .entry(node_key.to_string())
@@ -32,6 +37,10 @@ impl DefaultExprResolver {
             .insert(node_key.to_string());
     }
 
+    /// Removes all dependencies currently associated with a node key.
+    ///
+    /// Patch planning calls this before re-resolving a node so dependencies from
+    /// an older conditional branch or expression value do not linger.
     pub fn clear_tracking(&mut self, node_key: &str) {
         let Some(paths) = self.node_to_path.remove(node_key) else {
             return;
@@ -51,6 +60,10 @@ impl DefaultExprResolver {
         }
     }
 
+    /// Returns the state paths read by a node.
+    ///
+    /// This is mainly useful for diagnostics and tests. Runtime patching usually
+    /// asks the inverse question through [`Self::subscribers_of`].
     pub fn dependencies_of(&self, node_key: &str) -> Vec<&str> {
         self.node_to_path
             .get(node_key)
@@ -59,6 +72,11 @@ impl DefaultExprResolver {
             .collect()
     }
 
+    /// Returns node keys that should be re-evaluated after a path write.
+    ///
+    /// Matching is ancestor-aware in both directions: a write to `work.title`
+    /// wakes nodes bound to `work.title` and nodes bound to `work`; a write to
+    /// `work` wakes nodes bound to `work.title`.
     pub fn subscribers_of(&self, path: &str) -> Vec<String> {
         let mut out = BTreeSet::new();
 
@@ -78,6 +96,10 @@ impl DefaultExprResolver {
         self.path_to_node.keys().cloned().collect()
     }
 
+    /// Resolves a primitive expression and optionally records its dependency.
+    ///
+    /// Pass `Some(node_key)` during tracking or patch planning. Pass `None` when
+    /// evaluating outside a node context and no dependency edge should be stored.
     pub fn resolve_primitive(
         &mut self,
         expr: &PrimitiveOrExpr,
@@ -90,6 +112,11 @@ impl DefaultExprResolver {
         }
     }
 
+    /// Resolves a string expression from a literal, state binding, or route
+    /// parameter.
+    ///
+    /// Bindings read from the host `MemoryStateStore`; params read from
+    /// `ResolvedRoute.params` first and `ResolvedRoute.query` second.
     pub fn resolve_string(
         &mut self,
         expr: &StringOrExpr,

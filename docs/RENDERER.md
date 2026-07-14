@@ -31,106 +31,81 @@ navigation or explicit refresh triggers a new load/render cycle.
 
 ---
 
-## Web renderer (Svelte)
+## Web host + framework adapters
 
 ### Architecture
 
 ```
-PluginScreenHost (Svelte)
-  ├── loads plugin.wasm via WebAssembly.instantiate()
-  ├── builds JS import object (host functions, gated by PermissionGuard)
-  ├── calls plugin_load() → merges data into MemoryStateStore
-  ├── calls plugin_render() → receives CanonicalScreen JSON
-  ├── normalizes screen
-  ├── creates SvelteStateAdapter (per-path Svelte stores)
-  ├── calls trackReactiveBindings() with on_patch callback
-  └── mounts PluginScreenLayout
+plugin.wasm
+  ├── exports plugin_manifest/load/render/dispatch
+  └── imports unode.host_call
 
-PluginScreenLayout (Svelte)
-  ├── slot layout (header.actions, sidebar.primary, etc.)
-  └── CoreUiRenderer
+unode_web_host.wasm
+  ├── WebSession.mount(screen_json, seed_json)
+  ├── WebSession.initialPatches()
+  ├── WebSession.applyWrites(writes_json)
+  └── WebSession.stateSnapshot()
 
-CoreUiRenderer (Svelte)
-  └── dispatches to node components by kind
-      ├── CoreTextNode, CoreValueNode, CoreBadgeNode (leaf nodes)
-      ├── CoreStackNode, CoreInlineNode, CoreGridNode (containers)
-      ├── CoreListNode, CoreItemNode (collections)
-      ├── CoreActionNode, CoreActionsNode (actions)
-      ├── CoreDisclosureNode, CoreMenuNode (interactive composition)
-      ├── CoreInputNode, CoreFormNode (inputs)
-      ├── CoreConditionalNode (reactive branching)
-      └── CoreSlotNode, CorePressableNode
+JavaScript bridge
+  ├── instantiates both WASM modules
+  ├── implements host_call
+  ├── dispatches user actions to plugin_dispatch()
+  ├── drains state writes
+  └── applies returned IrPatchOps to the adapter store
+
+Framework adapter
+  ├── React adapter exists today
+  ├── Svelte/Vue adapters can consume the same IR contract
+  └── renderer components subscribe by node key, not by global revision
 ```
 
-### Per-path reactivity (fixes the global revision counter bug)
+The current proof lives in `ts-implementation/web-react-runtime`. React is an
+adapter choice, not a core dependency. The Rust web host owns normalization,
+dependency tracking, state snapshots, and patch planning.
+
+### Keyed reactivity
 
 The previous implementation collapsed all state reactivity into one counter
 (`rendererStateRevision`). Any state write caused every component to
 re-evaluate.
 
-The correct implementation uses per-path Svelte stores:
+The current web slice uses a keyed `ScreenStore`. Each node subscribes to its own
+key through the framework adapter. When `unode-web-host` returns a `SetProp`,
+`ReplaceNode`, or `ReplaceChildren` patch, the store wakes only the affected key.
 
 ```typescript
-class SvelteStateAdapter {
-    private pathStores = new Map<string, Writable<unknown>>();
+const patches = session.applyWrites({ "ui.countLabel": "Count: 1" });
+screenStore.apply(patches);
 
-    getPathStore(path: string): Readable<unknown> {
-        if (!this.pathStores.has(path)) {
-            const store = writable(stateStore.get(path));
-            stateStore.subscribe(path, value => store.set(value));
-            this.pathStores.set(path, store);
-        }
-        return this.pathStores.get(path)!;
-    }
+function UnodeNode({ nodeKey }: { nodeKey: string }) {
+  const node = useSyncExternalStore(
+    (wake) => screenStore.subscribe(nodeKey, wake),
+    () => screenStore.get(nodeKey),
+  );
+  return renderNode(node);
 }
 ```
 
-Components subscribe only to the paths they read:
+Bindings are still tracked by state path inside Rust; the JavaScript adapter sees
+only the resulting dirty node keys and IR patch operations.
 
-```svelte
-<!-- Only re-renders when "work.title" changes -->
-<script>
-  const adapter = getStateAdapter();
-  const titleStore = adapter.getPathStore("work.title");
-  const title = $derived($titleStore ?? "");
-</script>
-<p>{title}</p>
-```
+### Framework integration
 
-Static nodes (`node._reactivity === "static"`) read from `_staticFields`
-without any store subscription — they never re-render due to state changes.
+A production web integration should resolve screens before mounting the visual
+component tree where the host framework supports that pattern. In SvelteKit this
+means `+page.ts load()`. In React apps this may mean route loaders, suspense
+resources, or an app-specific data layer.
 
-### SvelteKit load integration
+Plugin activation should be cached per browser session. The legacy implementation
+could re-fetch plugin registries too often; the target runtime should treat
+activation as host state, not component-local state.
 
-Screen resolution happens in `+page.ts load()`, not in `onMount`. This enables
-`data-sveltekit-preload-data="hover"` to warm plugin screens before navigation,
-making them feel as fast as native SvelteKit pages.
+### Current web verification
 
-```typescript
-// +page.ts
-export const load: PageLoad = async ({ url }) => {
-  await ensurePluginsActivated(); // cached after first call
-  const screen = await wasmRuntime.resolveScreen(url.pathname, url.searchParams);
-  return { screen };
-};
-```
-
-### Plugin activation caching
-
-`ensurePluginsActivated()` must be cached in session memory. The previous
-implementation re-fetched `/plugins/registry.json` on every navigation, sidebar
-render, and command palette open. This was a bug, not a design tradeoff.
-
-```typescript
-let activationPromise: Promise<void> | null = null;
-let activated = false;
-
-export async function ensurePluginsActivated(): Promise<void> {
-    if (activated) return;
-    if (activationPromise) return activationPromise;
-    activationPromise = doActivation().then(() => { activated = true; });
-    return activationPromise;
-}
+```sh
+cargo test -p unode-web-host
+cargo test --manifest-path plugins/web-counter/Cargo.toml
+nix-shell --run 'node ts-implementation/web-react-runtime/scripts/smoke.mjs'
 ```
 
 ---
@@ -233,16 +208,15 @@ when `disclosure.binding` changes:
 
 ## Shared renderer utilities (Rust crate)
 
-Both renderers use the same Rust crate for:
+Host runtimes use the same Rust core for:
 
 - `normalizeScreen()` — fill defaults, compute `_reactivity`
 - `trackReactiveBindings()` — wire StateStore → ExprResolver subscriptions
-- `resolveGap()`, `resolveGridColumns()`, `resolveAspectRatio()` — semantic layout helpers
-- `formatNodeValue()` — locale-aware Intl formatting for `ValueNode`
 - `PermissionGuard` — permission checking
 
-The Web renderer calls these via the unode WASM module or a TypeScript
-port. The TUI renderer calls them directly as Rust functions.
+The Web host calls these through `unode_web_host.wasm`. The TUI runtime calls
+them directly as Rust functions. Framework adapters should not port these
+semantics.
 
 ---
 

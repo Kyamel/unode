@@ -1,138 +1,71 @@
-# unode Roadmap
+# Unode Roadmap
 
-## Current state
+## Current State
 
-The TypeScript implementation is feature-complete for the web renderer:
-- Canonical AST with normalization (`_reactivity`, `_subtreeReactivity`)
-- `MemoryStateStore` with path subscriptions
-- `ExprResolver` interface (declared, not yet wired to renderer)
-- Plugin runtime with route registry, action registry, i18n
-- Svelte web renderer consuming canonical AST
+Unode is moving from a legacy TypeScript prototype to a Rust/WASM architecture.
+The Rust core is no longer only a schema port: it now includes normalization,
+state, resolver tracking, patch planning, IR lowering, permissions, transport,
+and a working browser host slice.
 
-**Known issues in the TypeScript implementation:**
+The current web proof runs:
 
-1. **Global state invalidation** — `rendererStateRevision` invalidates all
-   components on any state write. Fixed in the Rust implementation by design
-   (per-path subscriptions from the start).
+- a Rust plugin compiled to `wasm32-unknown-unknown`;
+- `unode_web_host.wasm`, built from `crates/unode-web-host`;
+- JavaScript glue that wires plugin `host_call` operations;
+- a keyed React adapter over `IrScreen` and `IrPatchOp`.
 
-2. **Screen resolution after mount** — `ScreenHost` resolves screens in
-   `onMount`, so `preloadData` on hover does nothing for plugin screens.
-   Fixed in the Rust implementation via `+page.ts load()`.
+React is the first adapter, not the framework requirement. Svelte, Vue, or a
+custom adapter should consume the same IR contract.
 
-3. **Plugin activation re-runs on every navigation** — `ensurePluginsActivated`
-   re-fetches the plugin registry on each call. Fixed by session-level caching.
+## Near-Term Priorities
 
-4. **`ExprResolver` never connected** — the tracking system exists but the
-   renderer uses `rendererStateRevision` instead. Fixed in the Rust
-   implementation where the resolver is connected from day one.
+### 1. Stabilize Core Protocol Boundaries
 
----
+- Document the roles of raw `ScreenNode`, `CanonicalScreen`, and `IrScreen`.
+- Decide which layer is public ABI and which layers are host-internal.
+- Expand golden tests for normalization, IR lowering, and patch planning.
+- Keep the protocol fully serializable.
 
-## Migration phases
+### 2. Harden The Plugin WASM ABI
 
-### Phase 0 — Fix TypeScript renderer (parallel to Rust work)
+- Validate required exports and ABI versions consistently.
+- Improve host-call error envelopes.
+- Add tests for permission-denied and missing-host-function behavior.
+- Keep one plugin artifact usable by both Web and TUI runtimes.
 
-Before or alongside the Rust migration, fix the known issues in the existing
-TypeScript renderer so the product is not blocked:
+### 3. Package The Web Host Model
 
-1. Cache `ensurePluginsActivated` in session memory — one-day fix
-2. Move screen resolution to `+page.ts load()` — two-day fix
-3. Replace `rendererStateRevision` with `SvelteStateAdapter` per-path stores
+- Promote the React slice from proof-of-concept into a reusable package shape.
+- Keep framework adapters thin: IR in, patch ops applied, user actions out.
+- Add documentation for embedding in React and for writing alternate adapters.
+- Avoid reimplementing core semantics in TypeScript.
 
-These fixes are described in detail in `RENDERER.md`. They are independent of
-the Rust migration and should ship first.
+### 4. Build The Domain Bridge Pattern
 
-### Phase 1 — unode in Rust (Weeks 1–2)
+- Flesh out app-specific bridge crates such as `mugens-domain` and `mugens-sdk`.
+- Add domain models, method-level permission metadata, and host-call bindings.
+- Keep domain UI sugar out of `crates/unode`.
+- Document plugin anchors and shell slots as app-owned extension points.
 
-- AST types with Serde
-- `MemoryStateStore`
-- `ExprResolver` with tracking
-- `normalizeScreen` with defaults, `_reactivity`, id validation
-- `trackReactiveBindings`
-- Transport layer (JSON envelope)
-- Unit tests against TypeScript normalize spec to verify parity
+### 5. Continue The TUI Runtime
 
-**Success criterion:** Rust normalize produces identical JSON to TypeScript normalize
-for the same input. Verified by a test that runs both and diffs the output.
+- Connect `unode-tui-runtime` session/loading helpers to a full Ratatui loop.
+- Render the same IR/canonical semantics in terminal form.
+- Share permission and state behavior with the web host.
+- Verify that the same plugin `.wasm` can drive both environments.
 
-### Phase 2 — unode-plugin-sdk in Rust (Week 3)
+## Legacy TypeScript Role
 
-- DSL builders for all node types
-- `PluginContext` wrapping host function calls
-- WASM export boilerplate (`plugin_manifest`, `plugin_load`, `plugin_render`, `plugin_dispatch`)
-- Memory allocation protocol (`unode_alloc`, `unode_dealloc`)
-- One complete plugin rewritten in Rust as proof
+`ts-implementation/` is now reference and migration material, plus the home of
+the current web React runtime slice. The old same-process TypeScript plugin
+runtime should not be treated as the target security model because it does not
+provide the WASM sandbox boundary Unode needs.
 
-**Success criterion:** A plugin written in Rust compiles to `.wasm` and its
-`plugin_render()` output, when deserialized and normalized, matches the expected
-`CanonicalScreen` structure.
+## What Should Not Change
 
-### Phase 3 — mugen-bridge in Rust (Week 4)
-
-- Domain models (`WorkSummary`, `ChapterSummary`, etc.)
-- `CatalogApi`, `LibraryApi`, `ReaderApi` traits
-- Host function registration for both web and TUI renderers
-- Permission metadata (`HOST_FN_META`)
-- Locale provider implementation
-- Domain sugar (`workBanner`, `chapterList`)
-
-**Success criterion:** A Rust plugin using `mugen-bridge` compiles to WASM, and
-all domain API calls succeed when the WASM is instantiated with real host function
-implementations.
-
-### Phase 4 — Web renderer WASM integration (Week 5)
-
-- `unode-web-runtime` crate with `wasm-bindgen` entry points
-- Replace TypeScript runtime call with WASM instantiation in `PluginScreenHost`
-- Implement host functions as JS closures in TypeScript
-- Implement `SvelteStateAdapter` for per-path reactivity
-- Move screen resolution to `+page.ts load()`
-
-**Success criterion:** All existing plugin screens render correctly using the Rust
-WASM backend. TypeScript runtime is removed from the active path.
-
-### Phase 5 — TUI renderer (Weeks 6–8)
-
-See `IMPLEMENTATION.md` Phase 5 for detailed steps.
-
-**Success criterion:** A plugin that renders correctly on Web also renders
-correctly in the terminal, from the same `.wasm` file.
-
----
-
-## What changes for plugin authors
-
-**Nothing visible.** Plugins are written in Rust against `unode-plugin-sdk`.
-The SDK API is designed to match the ergonomics of the TypeScript DSL. The
-same concepts exist: `ui.stack()`, `ui.text()`, `ctx.state.set()`,
-`ctx.api::<CatalogApi>()`.
-
-The build step changes: instead of `tsc`, plugin authors run
-`cargo build --target wasm32-unknown-unknown`. The CLI toolchain handles this.
-
----
-
-## What does NOT change
-
-- The canonical AST schema — JSON format is identical
-- Plugin permission declaration and approval flow
-- The app bridge concept (domain APIs, permission metadata)
-- i18n model (plugin-owned catalogs, `ctx.locale()` for current locale)
-- The two-mode reactivity model (local SPA-like + route-driven)
-- Slot system (plugin-to-plugin UI injection)
-
----
-
-## Compatibility notes
-
-During the migration, the TypeScript and Rust implementations will coexist:
-
-- TypeScript plugins continue to work via the Javy/QuickJS WASM model
-  (TypeScript compiled to WASM via esbuild + Javy)
-- Rust plugins compile to native WASM
-- Both run on the same Wasmtime/WebAssembly runtime
-- The host cannot distinguish between them — both export the same interface
-
-This means scan groups can continue writing TypeScript plugins while the
-Rust infrastructure is being developed. The migration is opt-in per plugin,
-not a flag day.
+- Plugins describe semantic UI, not DOM or terminal layout.
+- Host state owns reactivity; plugin render is not called for ordinary state
+  writes.
+- Permissions are enforced by the host boundary.
+- The core remains domain-agnostic and renderer-agnostic.
+- Web embedding remains framework-agnostic.

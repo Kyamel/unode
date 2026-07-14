@@ -45,6 +45,11 @@ impl std::fmt::Debug for MemoryStateStore {
 }
 
 impl MemoryStateStore {
+    /// Creates a host-owned screen state store.
+    ///
+    /// The optional seed is a flat map of dot-separated paths. For example,
+    /// `{ "ui.count": 1 }` is expanded internally so `get("ui.count")` works.
+    /// The seed is retained as the reset baseline for the current screen.
     pub fn new(seed: Option<BTreeMap<String, JsonValue>>) -> Self {
         let initial_seed = expand_flat_object(seed.unwrap_or_default());
         let data = JsonValue::Object(to_json_map(&initial_seed));
@@ -60,6 +65,11 @@ impl MemoryStateStore {
         }
     }
 
+    /// Runs several writes as one notification cycle.
+    ///
+    /// Use this on the host side after draining multiple plugin host calls. The
+    /// store queues changed paths while the closure runs, then flushes listeners
+    /// once at the end.
     pub fn batch(&mut self, f: impl FnOnce(&mut Self)) {
         self.batch_depth += 1;
         f(self);
@@ -112,6 +122,10 @@ impl MemoryStateStore {
 }
 
 impl StateStore for MemoryStateStore {
+    /// Reads a JSON value by dot-separated path.
+    ///
+    /// Array indices are supported as numeric path segments, for example
+    /// `items.0.title`.
     fn get(&self, path: &str) -> Option<&JsonValue> {
         get_by_path(&self.data, path)
     }
@@ -126,11 +140,19 @@ impl StateStore for MemoryStateStore {
         }
     }
 
+    /// Writes a JSON value by dot-separated path and notifies subscribers.
+    ///
+    /// Missing intermediate objects or arrays are created as needed. Empty paths
+    /// are ignored.
     fn set(&mut self, path: &str, value: JsonValue) {
         set_by_path(&mut self.data, path, value);
         self.queue_notify(path);
     }
 
+    /// Merges a flat data map into the current state.
+    ///
+    /// This is used for plugin `load()` data and screen `initial_state`. Keys are
+    /// expanded as paths before being merged into the nested JSON object.
     fn merge_data(&mut self, data: BTreeMap<String, JsonValue>) {
         let expanded = expand_flat_object(data);
         merge_into_object(&mut self.data, JsonValue::Object(to_json_map(&expanded)));
