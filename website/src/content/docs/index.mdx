@@ -1,40 +1,74 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: Unode
+description: A renderer-agnostic, plugin-first semantic UI protocol. Write UI once in a WASM sandbox; render it on web and terminal hosts.
+template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
+  tagline: Write plugin UI once as serializable intent. Run it sandboxed in WASM. Render it natively on web and terminal.
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: Get started
+      link: /getting-started/introduction/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
+    - text: View on GitHub
+      link: https://github.com/Kyamel/unode
       icon: external
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Alpha">
+Unode is in **alpha**. The protocol, ABI, and runtime boundaries are still
+stabilizing and may change between releases. It is ready to build and
+experiment with, not yet to depend on in production.
+</Aside>
+
+## What is Unode?
+
+Unode is an experimental UI framework for **plugin-first** applications. A
+plugin describes a screen once as serializable *semantic intent* — a heading, a
+danger action, a cover image — never pixels or colors. Plugins compile to
+WebAssembly and run inside a sandbox. Environment-specific runtimes then render
+that intent in its right native shape: DOM on the web, terminal cells in a TUI.
+
+The core protocol is written in Rust. The wire format is JSON/IR, so Unode can
+be embedded in applications built with React, Svelte, Vue, or any other stack.
+
+<CardGrid stagger>
+	<Card title="Intent, not pixels" icon="pencil">
+		Plugins declare *what* something is. The renderer decides how it looks
+		on each host. One screen definition, many native renderings.
+	</Card>
+	<Card title="Sandboxed by default" icon="approve-check">
+		Plugins run as WASM modules with isolated linear memory. They can only
+		touch the outside world through explicit, permission-gated host calls.
+	</Card>
+	<Card title="Granular reactivity" icon="random">
+		Host-owned state drives Solid-style targeted updates. A state write
+		patches only the bound nodes — `render()` is never called again.
+	</Card>
+	<Card title="Framework-agnostic" icon="puzzle">
+		React and Svelte are maintained adapters over the same IR and patch
+		ops. Add a Vue or custom adapter without touching core semantics.
+	</Card>
+</CardGrid>
 
 ## Next steps
 
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
+<CardGrid>
+	<Card title="Understand the model" icon="open-book">
+		Start with the [Introduction](/getting-started/introduction/) to learn
+		what Unode is — and what it deliberately is not.
 	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
+	<Card title="Build a plugin" icon="rocket">
+		Follow the [Quickstart](/getting-started/quickstart/) to build the
+		reactive `web-counter` plugin from scratch.
 	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
+	<Card title="Learn the architecture" icon="setting">
+		Read the [Architecture](/concepts/architecture/) to see how the core,
+		bridge, runtime, and renderer layers fit together.
 	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
+	<Card title="Check the roadmap" icon="list-format">
+		See the [Roadmap](/reference/roadmap/) for where the migration stands
+		and what is coming next.
 	</Card>
 </CardGrid>
