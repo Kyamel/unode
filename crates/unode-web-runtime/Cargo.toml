@@ -1,0 +1,13 @@
+[package]
+name = "unode-web-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+unode = { path = "../unode" }
+unode-sdk = { path = "../unode-sdk" }
+unode-runtime = { path = "../unode-runtime" }

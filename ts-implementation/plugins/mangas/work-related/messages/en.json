@@ -1,0 +1,13 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav_mangas": "Mangas",
+  "manga_tab_meta": "Meta",
+  "manga_tab_chapters": "Chapters",
+  "manga_tab_staff": "Staff",
+  "manga_tab_related": "Related",
+  "related_screen_subtitle": "Jump to sequels, spin-offs and other related works.",
+  "catalog_related_empty_title": "No related works found.",
+  "catalog_related_placeholder": "No related works found.",
+  "failed_to_load": "Failed to load",
+  "value_na": "N/A"
+}

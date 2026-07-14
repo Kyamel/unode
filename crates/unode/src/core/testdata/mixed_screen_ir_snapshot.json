@@ -1,0 +1,641 @@
+{
+  "t": "screen",
+  "p": {
+    "_hs": "n",
+    "_k": "screen",
+    "_r": "r",
+    "_sr": "c",
+    "id": "screen",
+    "rf": [
+      "ti"
+    ],
+    "sd": [
+      {
+        "b": "screen.title"
+      }
+    ],
+    "sf": {
+      "subtitle": "Library"
+    },
+    "subtitle": {
+      "v": "Library"
+    },
+    "title": {
+      "b": "screen.title"
+    }
+  },
+  "c": [
+    {
+      "t": "section",
+      "p": {
+        "_k": "hero",
+        "_r": "r",
+        "_sr": "r",
+        "desc": {
+          "v": "Featured today"
+        },
+        "rf": [
+          "ti"
+        ],
+        "sd": [
+          {
+            "b": "hero.title"
+          }
+        ],
+        "sf": {
+          "description": "Featured today",
+          "role": "section"
+        },
+        "title": {
+          "b": "hero.title"
+        }
+      },
+      "c": [
+        {
+          "t": "text",
+          "p": {
+            "_k": "hero-text",
+            "_r": "r",
+            "_sr": "r",
+            "content": {
+              "b": "hero.subtitle"
+            },
+            "em": "strong",
+            "rf": [
+              "ct"
+            ],
+            "role": "subtitle",
+            "sd": [
+              {
+                "b": "hero.subtitle"
+              }
+            ],
+            "sf": {
+              "emphasis": "strong",
+              "role": "subtitle",
+              "tone": "info",
+              "truncate": true
+            },
+            "tone": "info",
+            "tr": true
+          }
+        },
+        {
+          "t": "pressable",
+          "p": {
+            "_k": "hero-open",
+            "_r": "s",
+            "_sr": "s",
+            "act": {
+              "p": {
+                "to": "details"
+              },
+              "t": "navigate"
+            },
+            "label": {
+              "v": "Open"
+            },
+            "sf": {
+              "label": "Open"
+            }
+          },
+          "c": [
+            {
+              "t": "text",
+              "p": {
+                "_k": "hero-open-text",
+                "_r": "s",
+                "_sr": "s",
+                "content": {
+                  "v": "Open details"
+                },
+                "em": "normal",
+                "role": "body",
+                "sf": {
+                  "content": "Open details",
+                  "emphasis": "normal",
+                  "role": "body"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "t": "grid",
+      "p": {
+        "_k": "gallery",
+        "_r": "r",
+        "_sr": "r",
+        "cols": {
+          "b": 2,
+          "m": 4
+        },
+        "cont": {
+          "k": "remote",
+          "label": {
+            "v": "More"
+          },
+          "load": {
+            "t": "loadmore"
+          },
+          "loading": {
+            "b": "gallery.loading_label"
+          },
+          "more": true
+        },
+        "gap": "lg",
+        "rf": [
+          "co"
+        ],
+        "sd": [
+          {
+            "b": "gallery.loading_label"
+          }
+        ],
+        "sf": {
+          "gap": "lg"
+        }
+      },
+      "c": [
+        {
+          "t": "badge",
+          "p": {
+            "_k": "featured-badge",
+            "_r": "s",
+            "_sr": "s",
+            "label": {
+              "v": "Featured"
+            },
+            "sf": {
+              "label": "Featured",
+              "tone": "success"
+            },
+            "tone": "success"
+          }
+        },
+        {
+          "t": "media",
+          "p": {
+            "_k": "cover",
+            "_r": "s",
+            "_sr": "s",
+            "alt": "Cover image",
+            "ar": "poster",
+            "exp": true,
+            "kind": "cover",
+            "ref": {
+              "name": "cover-art",
+              "type": "asset"
+            },
+            "sf": {
+              "alt": "Cover image",
+              "aspectRatio": "poster",
+              "expandable": true,
+              "mediaKind": "cover"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "t": "list",
+      "p": {
+        "_k": "chapters",
+        "_r": "r",
+        "_sr": "r",
+        "cont": {
+          "bind": "chapters.visible",
+          "init": 10,
+          "k": "inc",
+          "label": {
+            "b": "chapters.more_label"
+          },
+          "step": 10
+        },
+        "density": "normal",
+        "rf": [
+          "co"
+        ],
+        "sd": [
+          {
+            "b": "chapters.more_label"
+          }
+        ],
+        "sf": {
+          "density": "normal"
+        }
+      },
+      "c": [
+        {
+          "t": "item",
+          "p": {
+            "_k": "chapter-1",
+            "_r": "s",
+            "_sr": "r",
+            "id": "chapter-1"
+          },
+          "c": [
+            {
+              "t": "leading",
+              "c": [
+                {
+                  "t": "icon",
+                  "p": {
+                    "_k": "chapter-icon",
+                    "_r": "s",
+                    "_sr": "s",
+                    "label": "Chapter",
+                    "name": "book",
+                    "sf": {
+                      "label": "Chapter",
+                      "name": "book",
+                      "tone": "muted"
+                    },
+                    "tone": "muted"
+                  }
+                }
+              ]
+            },
+            {
+              "t": "primary",
+              "c": [
+                {
+                  "t": "text",
+                  "p": {
+                    "_k": "chapter-title",
+                    "_r": "r",
+                    "_sr": "r",
+                    "content": {
+                      "b": "chapter.title"
+                    },
+                    "em": "normal",
+                    "rf": [
+                      "ct"
+                    ],
+                    "role": "body",
+                    "sd": [
+                      {
+                        "b": "chapter.title"
+                      }
+                    ],
+                    "sf": {
+                      "emphasis": "normal",
+                      "role": "body"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "t": "trailing",
+              "c": [
+                {
+                  "t": "value",
+                  "p": {
+                    "_k": "chapter-pages",
+                    "_r": "r",
+                    "_sr": "r",
+                    "fmt": "number",
+                    "rf": [
+                      "va"
+                    ],
+                    "role": "caption",
+                    "sd": [
+                      {
+                        "b": "chapter.pages"
+                      }
+                    ],
+                    "sf": {
+                      "format": "number",
+                      "role": "caption",
+                      "tone": "muted"
+                    },
+                    "tone": "muted",
+                    "value": {
+                      "b": "chapter.pages"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "t": "disclosure",
+      "p": {
+        "_h": "v",
+        "_hs": "v",
+        "_k": "filters",
+        "_r": "r",
+        "_sr": "r",
+        "bind": "ui.filters_open",
+        "label": {
+          "v": "Filters"
+        },
+        "labelExp": {
+          "b": "ui.filters_expanded_label"
+        },
+        "rf": [
+          "bs",
+          "lx"
+        ],
+        "sd": [
+          {
+            "b": "ui.filters_expanded_label"
+          },
+          {
+            "b": "ui.filters_open"
+          }
+        ],
+        "sf": {
+          "binding": "ui.filters_open",
+          "label": "Filters"
+        }
+      },
+      "c": [
+        {
+          "t": "form",
+          "p": {
+            "_k": "search-form",
+            "_r": "s",
+            "_sr": "r",
+            "name": "search",
+            "sf": {
+              "name": "search"
+            },
+            "submit": {
+              "t": "submit"
+            }
+          },
+          "c": [
+            {
+              "t": "input",
+              "p": {
+                "_k": "query",
+                "_r": "r",
+                "_sr": "r",
+                "dis": {
+                  "b": "filters.disabled"
+                },
+                "help": {
+                  "b": "filters.help"
+                },
+                "kind": "text",
+                "label": {
+                  "v": "Query"
+                },
+                "name": "query",
+                "ph": {
+                  "v": "Type to search"
+                },
+                "req": false,
+                "rf": [
+                  "va",
+                  "ht",
+                  "di"
+                ],
+                "sd": [
+                  {
+                    "b": "filters.disabled"
+                  },
+                  {
+                    "b": "filters.help"
+                  },
+                  {
+                    "b": "filters.query"
+                  }
+                ],
+                "sf": {
+                  "inputKind": "text",
+                  "label": "Query",
+                  "name": "query",
+                  "placeholder": "Type to search",
+                  "required": false
+                },
+                "value": {
+                  "b": "filters.query"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "t": "menu",
+      "p": {
+        "_k": "sort-menu",
+        "_r": "r",
+        "_sr": "r",
+        "align": "start",
+        "intent": "primary",
+        "label": {
+          "v": "Sort"
+        },
+        "rf": [
+          "mi"
+        ],
+        "sd": [
+          {
+            "b": "menu.popular_disabled"
+          },
+          {
+            "b": "menu.popular_label"
+          }
+        ],
+        "sf": {
+          "align": "start",
+          "intent": "primary",
+          "label": "Sort"
+        }
+      },
+      "c": [
+        {
+          "t": "menu-item",
+          "p": {
+            "do": {
+              "p": {
+                "sort": "recent"
+              },
+              "t": "navigate"
+            },
+            "id": "recent",
+            "label": {
+              "v": "Recent"
+            },
+            "sel": true
+          }
+        },
+        {
+          "t": "menu-item",
+          "p": {
+            "dis": {
+              "b": "menu.popular_disabled"
+            },
+            "do": {
+              "p": {
+                "sort": "popular"
+              },
+              "t": "navigate"
+            },
+            "id": "popular",
+            "label": {
+              "b": "menu.popular_label"
+            },
+            "sel": false
+          }
+        }
+      ]
+    },
+    {
+      "t": "if",
+      "p": {
+        "_h": "n",
+        "_hs": "n",
+        "_k": "upsell",
+        "_r": "c",
+        "_sr": "c",
+        "if": {
+          "b": "flags.show_upsell"
+        },
+        "rf": [
+          "if"
+        ],
+        "sd": [
+          {
+            "b": "flags.show_upsell"
+          }
+        ]
+      },
+      "c": [
+        {
+          "t": "status",
+          "p": {
+            "_k": "promo-status",
+            "_r": "r",
+            "_sr": "r",
+            "msg": {
+              "b": "promo.message"
+            },
+            "rf": [
+              "ms"
+            ],
+            "sd": [
+              {
+                "b": "promo.message"
+              }
+            ],
+            "severity": "info",
+            "sf": {
+              "severity": "info",
+              "title": "Promo"
+            },
+            "title": {
+              "v": "Promo"
+            }
+          },
+          "c": [
+            {
+              "t": "action",
+              "p": {
+                "_k": "promo-cta",
+                "_r": "r",
+                "_sr": "r",
+                "dis": {
+                  "b": "promo.disabled"
+                },
+                "do": {
+                  "t": "navigate"
+                },
+                "icon": "sparkles",
+                "intent": "primary",
+                "label": {
+                  "v": "View"
+                },
+                "rf": [
+                  "di"
+                ],
+                "sd": [
+                  {
+                    "b": "promo.disabled"
+                  }
+                ],
+                "sf": {
+                  "intent": "primary",
+                  "label": "View",
+                  "leadingIcon": "sparkles",
+                  "variant": "button"
+                },
+                "variant": "button"
+              }
+            }
+          ]
+        },
+        {
+          "t": "empty",
+          "p": {
+            "_k": "promo-empty",
+            "_r": "s",
+            "_sr": "s",
+            "icon": "sparkles",
+            "msg": {
+              "v": "Come back soon"
+            },
+            "sf": {
+              "icon": "sparkles",
+              "message": "Come back soon",
+              "title": "Nothing yet"
+            },
+            "title": {
+              "v": "Nothing yet"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "t": "slot",
+      "p": {
+        "_k": "footer-slot",
+        "_r": "s",
+        "_sr": "r",
+        "name": "footer",
+        "sf": {
+          "name": "footer"
+        }
+      },
+      "c": [
+        {
+          "t": "loading",
+          "p": {
+            "_k": "footer-loading",
+            "_r": "r",
+            "_sr": "r",
+            "label": {
+              "b": "footer.label"
+            },
+            "progress": {
+              "b": "footer.progress"
+            },
+            "rf": [
+              "lb",
+              "pg"
+            ],
+            "sd": [
+              {
+                "b": "footer.label"
+              },
+              {
+                "b": "footer.progress"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

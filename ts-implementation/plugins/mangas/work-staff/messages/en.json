@@ -1,0 +1,12 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav_mangas": "Mangas",
+  "manga_tab_meta": "Meta",
+  "manga_tab_chapters": "Chapters",
+  "manga_tab_staff": "Staff",
+  "manga_tab_related": "Related",
+  "staff_screen_subtitle": "See the main people credited for this work.",
+  "catalog_staff_empty": "No staff found.",
+  "failed_to_load": "Failed to load",
+  "value_na": "N/A"
+}

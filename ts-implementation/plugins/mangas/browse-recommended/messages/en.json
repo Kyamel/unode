@@ -1,0 +1,12 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav_mangas": "Mangas",
+  "catalog_tab_hot": "Hot",
+  "catalog_tab_recent": "Recent",
+  "catalog_tab_recommended": "Recommended",
+  "catalog_tab_friends": "Friends",
+  "catalog_browse_title": "Browse mangas",
+  "catalog_browse_subtitle": "Explore the latest manga entries from the plugin runtime.",
+  "catalog_empty_recommended": "No recommendations yet.",
+  "failed_to_load": "Failed to load"
+}

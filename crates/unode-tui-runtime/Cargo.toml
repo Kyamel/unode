@@ -1,0 +1,14 @@
+[package]
+name = "unode-tui-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+unode-sdk = { path = "../unode-sdk" }
+unode = { path = "../unode" }
+unode-runtime = { path = "../unode-runtime" }
+wasmtime = "43"

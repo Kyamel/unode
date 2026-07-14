@@ -1,0 +1,23 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav_mangas": "Mangas",
+  "manga_tab_meta": "Meta",
+  "manga_tab_chapters": "Chapters",
+  "manga_tab_staff": "Staff",
+  "manga_tab_related": "Related",
+  "chapters_screen_subtitle": "Browse the available chapters and open the reader from here.",
+  "filter_section_title": "Language Filter",
+  "filter_section_description": "Open the menu to switch the visible chapter language.",
+  "filter_language_button": "Language: {label}",
+  "filter_language_all": "All",
+  "chapters_count_badge": "{count} chapters",
+  "filter_active_badge": "Filter: {label}",
+  "chapter_title": "Chapter {number}",
+  "chapter_title_fallback": "Chapter",
+  "chapter_volume": "Vol. {volume}",
+  "chapter_language_unknown": "??",
+  "chapters_empty_title": "No chapters found.",
+  "chapters_empty_message": "This work does not have chapters available yet.",
+  "load_more_chapters": "Load more chapters",
+  "failed_to_load": "Failed to load"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "unode",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./index.ts",
+    "./api/*": "./api/*.ts",
+    "./core": "./core/index.ts",
+    "./core/*": "./core/*.ts",
+    "./renderer/*": "./renderer/*.ts",
+    "./runtime/*": "./runtime/*.ts",
+    "./registries/*": "./registries/*.ts",
+    "./storage/*": "./storage/*.ts",
+    "./utils/*": "./utils/*.ts"
+  }
+}

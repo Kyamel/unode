@@ -1,0 +1,17 @@
+[package]
+name = "mgn"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+mugens-domain = { path = "../mugens-domain" }
+mugens-sdk = { path = "../mugens-sdk" }
+tui-renderer = { path = "../renderer" }
+unode-runtime = { path = "../unode-runtime" }
+unode-tui-runtime = { path = "../unode-tui-runtime" }
+unode-sdk = { path = "../unode-sdk" }
+anyhow.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+serde_json.workspace = true
