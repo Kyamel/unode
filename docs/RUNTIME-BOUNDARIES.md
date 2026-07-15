@@ -83,12 +83,15 @@ Renderers sit below the runtime and should not own security decisions:
 
 - a web adapter such as React or Svelte reads IR and applies patches
 - a Ratatui renderer does the same in terminal form
+- a renderer SDK can provide shared TypeScript helpers for custom web renderers,
+  but remains presentation/adaptation code rather than runtime authority
 
 Renderers consume:
 
 - IR screens
 - IR patch ops
 - screen chrome metadata such as `routeTabs`
+- action dispatch callbacks supplied by the host runtime
 
 Renderers do not own:
 
@@ -96,3 +99,9 @@ Renderers do not own:
 - sandbox policy
 - plugin activation
 - registry state
+- host capability decisions
+
+The intended web shape is a shared renderer-core package plus thin framework
+adapters. Applications should be able to provide their own component map for
+semantic nodes while reusing Unode's store, patch application, keyed
+subscriptions, and fallback behavior.

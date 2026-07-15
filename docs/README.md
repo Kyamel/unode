@@ -56,12 +56,14 @@ TUI Renderer (Rust)
 | File | Contents |
 |---|---|
 | `ARCHITECTURE.md` | Layer model, design principles, lifecycle |
+| `UI-FLOW.md` | Mermaid diagram of plugin UI data, host normalization, renderer IR, actions, and patches |
 | `AST.md` | Node taxonomy, expression model, serialization |
 | `RUNTIME.md` | Plugin contract, route lifecycle, state model |
 | `REACTIVITY.md` | Granular reactive updates, ExprResolver, StateStore |
 | `RENDERER.md` | Renderer responsibilities, Web and TUI parity |
 | `WASM.md` | WASM execution model, sandboxing, host functions |
 | `PLUGIN-WASM-ABI.md` | ABI names, request envelopes, and runtime validation path |
+| `COMPONENT-MODEL.md` | Incremental Component Model/WIT compatibility plan for Rust and TypeScript SDKs |
 | `TUI-RUNTIME-SESSIONS.md` | Why TUI uses activation-scoped guest sessions and how to optimize safely |
 | `PERMISSIONS.md` | Two-layer permission system |
 | `I18N.md` | Locale contract, plugin-owned translations |

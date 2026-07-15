@@ -31,6 +31,72 @@ navigation or explicit refresh triggers a new load/render cycle.
 
 ---
 
+## Renderer SDK target
+
+The renderer surface should become easy enough that an application team can
+define how plugin UI looks in their product without rebuilding the plugin
+runtime. The application should import a TypeScript SDK, provide component
+mappings for semantic nodes, and keep the hard runtime work in Unode.
+
+The target split is:
+
+- **Renderer core SDK:** shared TypeScript package with `IrScreen`, `IrNode`,
+  `IrPatchOp`, `ScreenStore`, patch application, node-key helpers, value
+  unwrapping, unknown-node fallback behavior, and diagnostics.
+- **Framework adapters:** small packages for React, Svelte, Vue, or other
+  clients. They subscribe to node keys, mount children, and expose framework
+  idioms, but do not own Unode semantics.
+- **Application renderer spec:** app-owned mapping from semantic node types to
+  design-system components. This is where the host decides how plugin-provided
+  `text`, `section`, `action`, `list`, `input`, `status`, and other nodes appear.
+
+Conceptually, a React host should be able to write something like:
+
+```typescript
+import { createReactRenderer } from "@unode/renderer-react";
+import { Button, Card, Text } from "./design-system";
+
+export const PluginRenderer = createReactRenderer({
+  nodes: {
+    text({ props }) {
+      return <Text tone={props.tone} role={props.role}>{props.content}</Text>;
+    },
+    section({ props, children }) {
+      return <Card title={props.title}>{children}</Card>;
+    },
+    action({ props, dispatch }) {
+      return (
+        <Button
+          intent={props.intent}
+          disabled={props.disabled}
+          onClick={() => dispatch(props.action)}
+        >
+          {props.label}
+        </Button>
+      );
+    },
+  },
+});
+```
+
+The exact API can change, but these constraints should not:
+
+- Apps control presentation, density, design-system components, and platform
+  interaction details.
+- Plugins control only semantic intent and symbolic actions.
+- The SDK owns patch correctness, keyed subscriptions, fallback rendering, and
+  common safety checks.
+- Framework-specific packages stay thin enough that new adapters can be written
+  without copying runtime logic.
+- Renderer specs do not receive plugin internals, raw WASM access, or permission
+  enforcement hooks.
+
+This matches the broader Unode architecture: the plugin declares intent, the
+host runtime enforces capabilities, and the renderer decides how intent becomes
+native UI.
+
+---
+
 ## Web host + framework adapters
 
 ### Architecture

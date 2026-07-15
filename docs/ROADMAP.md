@@ -32,17 +32,46 @@ custom adapter should consume the same IR contract.
 - Improve host-call error envelopes.
 - Add tests for permission-denied and missing-host-function behavior.
 - Keep one plugin artifact usable by both Web and TUI runtimes.
+- Investigate TypeScript-authored plugins as a second SDK path while preserving
+  the same JSON protocol and host capability model.
+- Add Component Model compatibility as a parallel loading path, starting with
+  the JSON-preserving WIT contract in `wit/unode-plugin.wit`.
 
-### 3. Package The Web Host Model
+### 3. Normalize The Renderer Authoring Surface
+
+The next product-shaped step is to make custom renderers easy to author. An app
+team should be able to keep Unode's plugin runtime, WASM isolation, IR patches,
+and reactivity model, while replacing only the visual mapping from semantic
+nodes to that app's design system.
+
+The target shape is a small TypeScript renderer SDK:
+
+- `unode-renderer-core` owns IR types, `ScreenStore`, patch application, node
+  lookup helpers, literal/binding unwrapping, unknown-node fallback behavior, and
+  shared renderer diagnostics.
+- `unode-renderer-react`, `unode-renderer-svelte`, and future adapters own only
+  framework subscription glue and component mounting.
+- Applications provide a `RendererSpec` or equivalent node map that says how
+  `text`, `section`, `action`, `list`, `input`, and other semantic nodes become
+  local UI components.
+- The spec receives normalized props, children, action dispatch, and renderer
+  context, but it does not receive plugin WASM internals or permission state.
+- Default React and Svelte renderers should be examples of the same public SDK,
+  not special internal paths.
+
+This keeps the plugin protocol stable while letting each host define how plugins
+look and feel inside its own application.
+
+### 4. Package The Web Host Model
 
 - Promote the React and Svelte slices from proofs-of-concept into reusable
-  package shapes.
+  package shapes built on the renderer SDK.
 - Keep framework adapters thin: IR in, patch ops applied, user actions out.
 - Add documentation for embedding in React/Svelte and for writing alternate
   adapters.
 - Avoid reimplementing core semantics in TypeScript.
 
-### 4. Refine Reactivity Granularity
+### 5. Refine Reactivity Granularity
 
 The current reactivity model is intentionally closer to Solid-style
 targeted updates than to classic virtual DOM diffing:
@@ -87,14 +116,14 @@ Known framework parallels:
 Future work should keep the protocol serializable while improving authoring
 ergonomics around paths, computed bindings, and keyed collections.
 
-### 5. Build The Domain Bridge Pattern
+### 6. Build The Domain Bridge Pattern
 
 - Flesh out app-specific bridge crates such as `mugens-domain` and `mugens-sdk`.
 - Add domain models, method-level permission metadata, and host-call bindings.
 - Keep domain UI sugar out of `crates/unode`.
 - Document plugin anchors and shell slots as app-owned extension points.
 
-### 6. Continue The TUI Runtime
+### 7. Continue The TUI Runtime
 
 - Connect `unode-tui-runtime` session/loading helpers to a full Ratatui loop.
 - Render the same IR/canonical semantics in terminal form.

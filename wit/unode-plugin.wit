@@ -1,0 +1,34 @@
+package unode:plugin@0.1.0;
+
+/// Initial Component Model shape for Unode plugins.
+///
+/// This intentionally preserves JSON at the boundary. The canonical Unode AST,
+/// lifecycle envelopes, and host-call envelopes remain the source of truth while
+/// hosts learn how to load WebAssembly components in parallel with today's raw
+/// pointer/length ABI.
+interface lifecycle {
+    /// Returns PluginManifestEnvelope JSON.
+    manifest: func() -> string;
+
+    /// Receives PluginLoadRequest JSON and returns arbitrary plugin data JSON.
+    load: func(request-json: string) -> string;
+
+    /// Receives PluginRenderRequest JSON and returns ScreenNode JSON.
+    render: func(request-json: string) -> string;
+
+    /// Receives PluginDispatchRequest JSON and returns PluginDispatchResponse JSON.
+    dispatch: func(request-json: string) -> string;
+}
+
+interface host {
+    /// Receives HostCallEnvelope JSON and returns a host-defined response JSON.
+    ///
+    /// Capability checks still belong to the host runtime. Plugins should not
+    /// infer capability access from the presence of this import alone.
+    call: func(envelope-json: string) -> string;
+}
+
+world unode-plugin {
+    import host;
+    export lifecycle;
+}
