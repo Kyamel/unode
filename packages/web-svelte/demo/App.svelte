@@ -3,14 +3,29 @@
   import * as webHostModule from "../pkg/unode_web_host.js";
   import webHostWasmUrl from "../pkg/unode_web_host_bg.wasm?url";
   import {
+    defineRenderer,
+    h,
     HostSession,
+    hostSlot,
     ScreenStore,
     StateWriteSink,
     UnodeScreen,
     WebPluginRegistry,
     WebRuntime,
   } from "../src";
+  import Button from "./Button.svelte";
   import pluginWasmUrl from "./web_counter_plugin.wasm?url";
+
+  // Recipes written once in the universal TS language: `action` nodes render as
+  // the host's native <Button> via a host slot; the rest use built-in recipes.
+  const renderer = defineRenderer()
+    .recipe("action", ({ label, prop, action }) =>
+      hostSlot("Button", { children: label, intent: prop("intent"), action }),
+    )
+    .recipe("section", ({ title, children }) =>
+      h("section", { class: "ds-card" }, title ? h("h2", {}, title) : null, children),
+    )
+    .build();
 
   const PLUGIN_ROUTE_PATTERN = "/plugins/web-counter";
   const pluginRegistry = new WebPluginRegistry().register({
@@ -81,7 +96,7 @@
 {#if error}
   <pre class="unode-error">{error}</pre>
 {:else if store && runtime}
-  <UnodeScreen {store} onAction={runtime.onAction} />
+  <UnodeScreen {store} onAction={runtime.onAction} {renderer} components={{ Button }} />
 {:else}
   <p>Loading unode runtime...</p>
 {/if}

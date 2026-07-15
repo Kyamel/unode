@@ -1,25 +1,29 @@
 <script lang="ts">
-  import { nodeKey, rendererPropsOf } from "unode-renderer";
-  import type { OnAction } from "./renderer";
-  import type { ScreenStore } from "unode-renderer";
-  import UnodeNode from "./UnodeNode.svelte";
+  import { defineRenderer, type Renderer, type ScreenStore } from "unode-renderer";
+  import { createSveltePortal, type HostComponents, type OnAction } from "./renderer.svelte";
 
   interface Props {
     store: ScreenStore;
-    onAction: OnAction;
+    onAction?: OnAction;
+    /** A renderer from `defineRenderer()`. Defaults to the built-in recipes. */
+    renderer?: Renderer;
+    /** Host components that fulfill `hostSlot(name)` holes. */
+    components?: HostComponents;
   }
 
-  let { store, onAction }: Props = $props();
-  let screenProps = $derived(rendererPropsOf(store.screen.p));
-  let title = $derived(screenProps.title);
+  let { store, onAction, renderer, components = {} }: Props = $props();
+
+  const fallbackRenderer = defineRenderer().build();
+  let host: HTMLElement;
+
+  $effect(() => {
+    const active = renderer ?? fallbackRenderer;
+    const handle = active.mount(host, store, {
+      onAction,
+      portal: createSveltePortal(components),
+    });
+    return () => handle.unmount();
+  });
 </script>
 
-<section class="unode-screen">
-  {#if title != null}
-    <h1 class="unode-title">{String(title)}</h1>
-  {/if}
-
-  {#each store.screen.c ?? [] as node (nodeKey(node))}
-    <UnodeNode {node} {store} {onAction} />
-  {/each}
-</section>
+<div class="unode-root" bind:this={host}></div>
