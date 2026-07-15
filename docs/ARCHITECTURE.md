@@ -22,6 +22,35 @@ app concept. Domain knowledge lives entirely in the app bridge.
 
 ---
 
+## External reference: A2UI
+
+[A2UI](https://a2ui.org/) is a useful external reference for Unode's
+intent-based UI direction. A2UI focuses on agent-driven interfaces where a
+producer sends declarative JSON component descriptions across a trust boundary
+and the client renders them with pre-approved native widgets instead of
+executing arbitrary UI code.
+
+Unode should learn from the same broad ideas:
+
+- declarative UI data instead of executable UI code;
+- a closed component/catalog surface controlled by the host;
+- structure and state kept separate enough to support reactive updates;
+- renderer-owned presentation, theming, accessibility, and interaction details;
+- framework-agnostic renderers that can map one protocol to multiple clients.
+
+The key difference is scope. A2UI is primarily an agent/client protocol for
+rich generated interfaces across web, mobile, and desktop renderers. Unode is a
+plugin-first application runtime: plugins compile to WASM, cross explicit host
+capability boundaries, and should render the same semantic screen through Web
+and TUI hosts. A2UI is therefore inspiration for protocol and renderer design,
+not a dependency or replacement for Unode's WASM plugin architecture.
+
+This comparison reinforces the current Unode direction: keep plugins describing
+intent, keep the protocol JSON-serializable, keep styling and platform behavior
+inside trusted renderers, and keep host capabilities explicit.
+
+---
+
 ## Layer model
 
 ### 1. unode core (Rust crate, compiled to .wasm)
