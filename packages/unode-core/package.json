@@ -1,0 +1,19 @@
+{
+  "name": "unode-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared browser runtime primitives for Unode web adapters.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "unode-renderer": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

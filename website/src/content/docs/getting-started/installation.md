@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Prerequisites and commands to build the Unode workspace, plugins, and web runtimes locally.
+description: Prerequisites and commands to build the Unode workspace, plugins, and web packages locally.
 ---
 
 Unode is a Rust-first monorepo. This page gets a local build working end to end:
@@ -47,13 +47,13 @@ the demos consume in sync: workspace crates, plugin WASM (debug + release),
 nix-shell --run ./build.sh
 ```
 
-This produces artifacts for the MGN TUI app and both web runtimes
-(`runtimes/web-react` and `runtimes/web-svelte`).
+This produces artifacts for the MGN TUI app and both web packages
+(`packages/web-react` and `packages/web-svelte`).
 
 ## Build pieces individually
 
 Compile a plugin to WebAssembly — the same artifact both the web and TUI
-runtimes consume:
+packages consume:
 
 ```sh
 cargo build \
@@ -68,7 +68,7 @@ bindings:
 cargo build -p unode-web-host --target wasm32-unknown-unknown --release
 
 wasm-bindgen --target web \
-  --out-dir runtimes/web-react/pkg \
+  --out-dir packages/web-react/pkg \
   --out-name unode_web_host \
   target/wasm32-unknown-unknown/release/unode_web_host.wasm
 ```
@@ -86,8 +86,8 @@ cargo test --manifest-path plugins/web-counter/Cargo.toml
 After `build.sh` has synced the artifacts:
 
 ```sh
-nix-shell --run ./runtimes/web-react/build.sh
-nix-shell --run ./runtimes/web-svelte/build.sh
+nix-shell --run ./packages/web-react/build.sh
+nix-shell --run ./packages/web-svelte/build.sh
 ```
 
 Next: build a plugin from scratch in the

@@ -38,25 +38,32 @@ define how plugin UI looks in their product without rebuilding the plugin
 runtime. The application should import a TypeScript SDK, provide component
 mappings for semantic nodes, and keep the hard runtime work in Unode.
 
-The target split is:
+The target split is now starting to exist in `packages/`:
 
-- **Renderer core SDK:** shared TypeScript package with `IrScreen`, `IrNode`,
-  `IrPatchOp`, `ScreenStore`, patch application, node-key helpers, value
-  unwrapping, unknown-node fallback behavior, and diagnostics.
-- **Framework adapters:** small packages for React, Svelte, Vue, or other
-  clients. They subscribe to node keys, mount children, and expose framework
-  idioms, but do not own Unode semantics.
+- **Web runtime core:** `packages/unode-core`, a shared TypeScript package
+  for plugin WASM instantiation, host-session loading, plugin registries,
+  state-write buffering, and action dispatch. This is runtime glue, not
+  renderer customization.
+- **Renderer core SDK:** `packages/unode-renderer`, a shared TypeScript
+  package with `IrScreen`, `IrNode`, `IrPatchOp`, `ScreenStore`, patch
+  application, node-key helpers, value unwrapping, prop normalization,
+  unknown-node fallback behavior, and diagnostics.
+- **Framework adapters:** `packages/web-react` now exposes
+  `createReactRenderer()`. `packages/web-svelte` consumes the shared runtime and
+  renderer cores. Vue or other clients should follow the same shape: subscribe
+  to node keys, mount children, and expose framework idioms, but do not own
+  Unode semantics.
 - **Application renderer spec:** app-owned mapping from semantic node types to
   design-system components. This is where the host decides how plugin-provided
   `text`, `section`, `action`, `list`, `input`, `status`, and other nodes appear.
 
 Conceptually, a React host should be able to write something like:
 
-```typescript
-import { createReactRenderer } from "@unode/renderer-react";
+```tsx
+import { createReactRenderer } from "unode-react";
 import { Button, Card, Text } from "./design-system";
 
-export const PluginRenderer = createReactRenderer({
+export const { UnodeScreen } = createReactRenderer({
   nodes: {
     text({ props }) {
       return <Text tone={props.tone} role={props.role}>{props.content}</Text>;
@@ -126,8 +133,8 @@ Framework adapter
   └── renderer components subscribe by node key, not by global revision
 ```
 
-The maintained web proofs live in `runtimes/web-react` and
-`runtimes/web-svelte`. React and Svelte are adapter choices, not core
+The maintained web proofs live in `packages/web-react` and
+`packages/web-svelte`. React and Svelte are adapter choices, not core
 dependencies. The Rust web host owns normalization, dependency tracking, state
 snapshots, and patch planning.
 
@@ -173,8 +180,8 @@ activation as host state, not component-local state.
 ```sh
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run 'node runtimes/web-react/scripts/smoke.mjs'
-nix-shell --run 'node runtimes/web-svelte/scripts/smoke.mjs'
+nix-shell --run 'node packages/web-react/scripts/smoke.mjs'
+nix-shell --run 'node packages/web-svelte/scripts/smoke.mjs'
 ```
 
 ---
@@ -277,7 +284,7 @@ when `disclosure.binding` changes:
 
 ## Shared renderer utilities (Rust crate)
 
-Host runtimes use the same Rust core for:
+Host packages use the same Rust core for:
 
 - `normalizeScreen()` — fill defaults, compute `_reactivity`
 - `trackReactiveBindings()` — wire StateStore → ExprResolver subscriptions

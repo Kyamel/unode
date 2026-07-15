@@ -9,7 +9,7 @@ April snapshot that said the Rust runtime pieces were mostly placeholders.
 
 The migration is not a direct port of the legacy TypeScript implementation. The
 goal is to make Unode a Rust-first, serializable, plugin-first UI protocol that
-can run in Web and TUI environments through separate runtimes.
+can run in Web and TUI environments through separate packages.
 
 Unode should provide:
 
@@ -31,7 +31,7 @@ Unode should provide:
 - `crates/unode-web-host` is the browser-side Rust core compiled through
   `wasm-bindgen`. It owns the web session pipeline: normalize, seed state, track
   dependencies, lower to IR, and plan patch ops.
-- `runtimes/web-react` and `runtimes/web-svelte` are the maintained browser
+- `packages/web-react` and `packages/web-svelte` are the maintained browser
   vertical slices.
   They instantiate both `plugin.wasm` and `unode_web_host.wasm`, wire host
   calls, store keyed IR, and render through framework adapters.
@@ -55,12 +55,12 @@ The current tree has working React and Svelte web runtime slices:
   - `initial_patches()` resolves symbolic bindings after mount;
   - `apply_writes()` applies state writes and returns targeted `IrPatchOp`s;
   - `state_snapshot()` feeds current host state back to plugin dispatch.
-- `runtimes/web-react`
+- `packages/web-react`
   - JS plugin host using native `WebAssembly.instantiate`;
   - typed host-session wrapper over `unode-web-host`;
   - bridge that drains plugin host calls into state writes;
   - keyed `ScreenStore` and React adapter.
-- `runtimes/web-svelte`
+- `packages/web-svelte`
   - same plugin host, host-session wrapper, dispatch bridge, and keyed
     `ScreenStore` shape as the React slice;
   - Svelte adapter that subscribes by node key through `createSubscriber`;
@@ -127,8 +127,8 @@ Useful checks for the current slice:
 ```sh
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run 'node runtimes/web-react/scripts/smoke.mjs'
-nix-shell --run 'cd runtimes/web-react && pnpm run typecheck'
-nix-shell --run 'node runtimes/web-svelte/scripts/smoke.mjs'
-nix-shell --run 'cd runtimes/web-svelte && pnpm run typecheck'
+nix-shell --run 'node packages/web-react/scripts/smoke.mjs'
+nix-shell --run 'cd packages/web-react && pnpm run typecheck'
+nix-shell --run 'node packages/web-svelte/scripts/smoke.mjs'
+nix-shell --run 'cd packages/web-svelte && pnpm run typecheck'
 ```

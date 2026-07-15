@@ -24,8 +24,10 @@ embedded in applications written with React, Svelte, Vue, or another framework.
 | `crates/mugens-domain` / `crates/mugens-sdk` | Example/domain bridge crates for app-specific models, permissions, and UI sugar. |
 | `crates/mgn` | Example native Rust TUI application that wires the runtime, renderer, and Mugens bridge together. |
 | `plugins/` | Rust WASM example plugins, including `web-counter`. |
-| `runtimes/web-react` | Maintained React web adapter and JS bridge for `plugin.wasm + unode_web_host.wasm`. |
-| `runtimes/web-svelte` | Maintained Svelte web adapter using the same plugin, host WASM, bridge shape, and keyed patch store. |
+| `packages/unode-core` | Shared TypeScript browser runtime library: plugin loading, web host session, registries, state-write sink, and dispatch loop. |
+| `packages/unode-renderer` | Shared TypeScript renderer library: IR types, keyed `ScreenStore`, patch application, and renderer prop helpers. |
+| `packages/web-react` | React adapter package (`unode-react`) with `createReactRenderer()`. |
+| `packages/web-svelte` | Svelte adapter package (`unode-svelte`) using the shared core and renderer packages. |
 | `ts-implementation/` | Deprecated legacy TypeScript prototype kept only as migration reference. |
 | `docs/` | Architecture, runtime, ABI, reactivity, permissions, and migration documentation. |
 
@@ -66,8 +68,8 @@ role belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
 cargo test --workspace
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run ./runtimes/web-react/build.sh
-nix-shell --run ./runtimes/web-svelte/build.sh
+nix-shell --run ./packages/web-react/build.sh
+nix-shell --run ./packages/web-svelte/build.sh
 ```
 
 See `docs/README.md` for the document map and `AGENTS.md` for contributor

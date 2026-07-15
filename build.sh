@@ -77,11 +77,11 @@ build_plugin_wasm "$ROOT/plugins/web-counter/Cargo.toml" "web-counter"
 step "Building unode-web-host WASM (release)"
 cargo build -p unode-web-host --target wasm32-unknown-unknown --release
 
-generate_web_host_bindings "$ROOT/runtimes/web-react" "React"
-generate_web_host_bindings "$ROOT/runtimes/web-svelte" "Svelte"
+generate_web_host_bindings "$ROOT/packages/web-react" "React"
+generate_web_host_bindings "$ROOT/packages/web-svelte" "Svelte"
 
-copy_web_counter_demo_wasm "$ROOT/runtimes/web-react" "React"
-copy_web_counter_demo_wasm "$ROOT/runtimes/web-svelte" "Svelte"
+copy_web_counter_demo_wasm "$ROOT/packages/web-react" "React"
+copy_web_counter_demo_wasm "$ROOT/packages/web-svelte" "Svelte"
 
 step "Done"
 echo "Artifacts are in sync for MGN, web-react, and web-svelte."

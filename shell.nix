@@ -11,7 +11,7 @@ pkgs.mkShell {
     lld              # provides wasm-ld for the wasm32-unknown-unknown target
     wasmtime
 
-    # Web runtime slice (runtimes/web-react)
+    # Web runtime slice (packages/web-react)
     wasm-bindgen-cli # 0.2.108, must match `wasm-bindgen` crate pin
     binaryen         # wasm-opt, for optional release size optimization
     nodejs_22

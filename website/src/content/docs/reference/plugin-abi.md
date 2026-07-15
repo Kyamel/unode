@@ -1,10 +1,10 @@
 ---
 title: Plugin WASM ABI
-description: The raw plugin exports, the SDK macro that generates them, and how host runtimes validate the contract.
+description: The raw plugin exports, the SDK macro that generates them, and how host packages validate the contract.
 ---
 
 The plugin contract is split into three layers: the SDK that authors use, the
-raw ABI it generates, and the host runtimes that validate and drive it.
+raw ABI it generates, and the host packages that validate and drive it.
 
 ## `unode-sdk` — what you write
 
@@ -58,7 +58,7 @@ plugin_dispatch_result_len() -> len
 Data crosses as `(ptr, len)` pairs into WASM linear memory — see
 [WASM Sandbox](/concepts/wasm-sandbox/) for the memory protocol.
 
-## Host runtimes — what validates and drives it
+## Host packages — what validates and drives it
 
 **`unode-web-runtime`** validates ABI version compatibility, required export
 presence, and the permission profile, then handles browser-side instantiation
@@ -83,7 +83,7 @@ cargo build --target wasm32-unknown-unknown --release
 ```
 
 The resulting `.wasm` is a single artifact that **both** the web and TUI
-runtimes consume. On the web it runs beside `unode_web_host.wasm`; the two
+packages consume. On the web it runs beside `unode_web_host.wasm`; the two
 modules do not instantiate each other.
 
 ## Why one ABI

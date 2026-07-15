@@ -31,7 +31,7 @@ custom adapter should consume the same IR contract.
 - Validate required exports and ABI versions consistently.
 - Improve host-call error envelopes.
 - Add tests for permission-denied and missing-host-function behavior.
-- Keep one plugin artifact usable by both Web and TUI runtimes.
+- Keep one plugin artifact usable by both Web and TUI packages.
 - Investigate TypeScript-authored plugins as a second SDK path while preserving
   the same JSON protocol and host capability model.
 - Add Component Model compatibility as a parallel loading path, starting with
@@ -44,13 +44,18 @@ team should be able to keep Unode's plugin runtime, WASM isolation, IR patches,
 and reactivity model, while replacing only the visual mapping from semantic
 nodes to that app's design system.
 
-The target shape is a small TypeScript renderer SDK:
+The initial shape now exists for React and should be expanded:
 
-- `unode-renderer-core` owns IR types, `ScreenStore`, patch application, node
-  lookup helpers, literal/binding unwrapping, unknown-node fallback behavior, and
-  shared renderer diagnostics.
-- `unode-renderer-react`, `unode-renderer-svelte`, and future adapters own only
-  framework subscription glue and component mounting.
+- `packages/unode-core` owns shared browser runtime glue: plugin WASM
+  instantiation, host-session loading, plugin registry, state-write buffering,
+  and action dispatch.
+- `packages/unode-renderer` owns IR types, `ScreenStore`, patch application,
+  node lookup helpers, literal/binding unwrapping, prop normalization,
+  unknown-node fallback behavior, and shared renderer diagnostics.
+- `packages/web-react` exposes `createReactRenderer()` and should become the
+  reference framework adapter shape.
+- `packages/web-svelte` now consumes both shared cores; future adapters should
+  own only framework subscription glue and component mounting.
 - Applications provide a `RendererSpec` or equivalent node map that says how
   `text`, `section`, `action`, `list`, `input`, and other semantic nodes become
   local UI components.
@@ -133,8 +138,8 @@ ergonomics around paths, computed bindings, and keyed collections.
 ## Legacy TypeScript Role
 
 `ts-implementation/` is deprecated reference and migration material. The current
-web React and Svelte runtime slices live in `runtimes/web-react` and
-`runtimes/web-svelte`. The old same-process TypeScript plugin runtime should not
+web React and Svelte runtime slices live in `packages/web-react` and
+`packages/web-svelte`. The old same-process TypeScript plugin runtime should not
 be treated as the target security model because it does not provide the WASM
 sandbox boundary Unode needs.
 

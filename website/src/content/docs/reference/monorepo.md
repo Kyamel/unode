@@ -23,8 +23,8 @@ model described in [Architecture](/concepts/architecture/).
 
 | Path                  | Purpose                                                                                         |
 | --------------------- | ----------------------------------------------------------------------------------------------- |
-| `runtimes/web-react`  | Maintained React web adapter and JS bridge for `plugin.wasm` + `unode_web_host.wasm`.            |
-| `runtimes/web-svelte` | Maintained Svelte web adapter using the same plugin, host WASM, bridge shape, and keyed patch store. |
+| `packages/web-react`  | Maintained React web adapter and JS bridge for `plugin.wasm` + `unode_web_host.wasm`.            |
+| `packages/web-svelte` | Maintained Svelte web adapter using the same plugin, host WASM, bridge shape, and keyed patch store. |
 
 React and Svelte are maintained adapters over the same framework-agnostic
 boundary — neither leaks into core semantics. A Vue or custom adapter consumes
@@ -57,5 +57,5 @@ belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
 ## Do not add work under `ts-implementation/`
 
 `ts-implementation/` is deprecated reference material. Promote current web work
-into `runtimes/web-react`, `runtimes/web-svelte`, or a future runtime package —
+into `packages/web-react`, `packages/web-svelte`, or a future runtime package —
 never back into the legacy prototype.

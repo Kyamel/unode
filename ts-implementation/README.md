@@ -5,7 +5,7 @@ migration reference for the pre-Rust Unode prototype.
 
 Do not add new runtime, renderer, bridge, or plugin work here.
 
-Current web work lives in `runtimes/web-react`, which uses the intended
+Current web work lives in `packages/web-react`, which uses the intended
 architecture:
 
 ```text

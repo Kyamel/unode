@@ -205,7 +205,7 @@ cargo build --manifest-path plugins/web-counter/Cargo.toml \
   --target wasm32-unknown-unknown --release
 ```
 
-The resulting `.wasm` is the same artifact both the web and TUI runtimes
+The resulting `.wasm` is the same artifact both the web and TUI packages
 consume.
 
 ## What just happened

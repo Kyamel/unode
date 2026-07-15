@@ -32,7 +32,7 @@ unode_sdk::export_plugin! {
 
 The macro generates the raw C ABI exports. The host contract does not change.
 
-## Host runtimes
+## Host packages
 
 ### `unode-web-runtime`
 
@@ -79,7 +79,7 @@ cargo build --target wasm32-unknown-unknown --release
 ```
 
 The resulting plugin `.wasm` file is the same artifact that both Web and TUI
-runtimes consume. On the web, it runs beside `unode_web_host.wasm`; the two
+packages consume. On the web, it runs beside `unode_web_host.wasm`; the two
 modules do not instantiate each other.
 
 ## Why this matters
@@ -135,7 +135,7 @@ Pros:
 
 - likely smallest and closest to the existing `wasm32-unknown-unknown` ABI;
 - no embedded JavaScript engine inside every plugin;
-- host runtimes can keep the same validation model with minimal changes.
+- host packages can keep the same validation model with minimal changes.
 
 Costs:
 

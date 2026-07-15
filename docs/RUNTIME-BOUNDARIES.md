@@ -36,7 +36,7 @@ Owns shared host-runtime concepts that both Web and TUI need:
 
 This crate deliberately does not know about Svelte, Ratatui, or Mugens.
 
-## Host-specific runtimes
+## Host-specific packages
 
 ### `unode-web-runtime`
 

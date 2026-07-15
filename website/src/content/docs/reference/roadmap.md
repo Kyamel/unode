@@ -46,7 +46,7 @@ or custom adapter consumes the same IR contract.
 ## Legacy TypeScript
 
 `ts-implementation/` is deprecated reference and migration material. The current
-web runtime lives in `runtimes/web-react` and `runtimes/web-svelte`. The old
+web runtime lives in `packages/web-react` and `packages/web-svelte`. The old
 same-process TypeScript runtime is **not** the target security model — it does
 not provide the WASM sandbox boundary Unode needs.
 

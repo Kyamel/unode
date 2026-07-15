@@ -69,6 +69,6 @@ TUI Renderer (Rust)
 | `I18N.md` | Locale contract, plugin-owned translations |
 | `HOST-BRIDGE.md` | App bridge shape, domain APIs |
 | `IMPLEMENTATION.md` | Step-by-step guide for implementing unode in Rust |
-| `RUNTIME-BOUNDARIES.md` | Division between `unode`, SDKs, runtimes, and renderers |
+| `RUNTIME-BOUNDARIES.md` | Division between `unode`, SDKs, packages, and renderers |
 | `MIGRATION-STATUS.md` | Current snapshot of the Rust/WASM migration and remaining risks |
 | `ROADMAP.md` | Forward migration path from the legacy TypeScript prototype to Rust |

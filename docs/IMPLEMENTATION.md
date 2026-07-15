@@ -424,8 +424,8 @@ const writes = hostCallSink.drainStateWrites();
 store.apply(session.applyWrites(writes));
 ```
 
-The maintained adapters are React (`runtimes/web-react`) and Svelte
-(`runtimes/web-svelte`). A Vue or custom adapter should consume the same IR and
+The maintained adapters are React (`packages/web-react`) and Svelte
+(`packages/web-svelte`). A Vue or custom adapter should consume the same IR and
 patch ops.
 
 ---

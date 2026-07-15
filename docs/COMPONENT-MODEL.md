@@ -103,7 +103,7 @@ Costs:
 - WIT does not yet validate the structure of `ScreenNode` or `ActionRef`;
 - SDKs still need JSON schema/types generated from Rust or maintained alongside
   Rust;
-- host runtimes need component-loading paths in addition to raw module loading.
+- host packages need component-loading paths in addition to raw module loading.
 
 ### Phase 2: typed WIT for stable envelopes
 
