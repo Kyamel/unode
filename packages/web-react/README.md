@@ -29,34 +29,30 @@ live in `unode-renderer`.
 ## Custom React renderers
 
 Apps can keep Unode's runtime, store, patches, and action dispatch while
-replacing the visual node mapping:
+replacing only the visual recipes they care about. The default renderer is
+functional out of the box, so this starts as a small override layer:
 
 ```tsx
-import { createReactRenderer } from "unode-react";
+import { defineReactRenderer } from "unode-react";
 import { Button, Panel, Text } from "./design-system";
 
-export const { UnodeScreen } = createReactRenderer({
-  nodes: {
-    text({ props }) {
-      return <Text tone={props.tone}>{props.content}</Text>;
-    },
-    section({ children }) {
-      return <Panel>{children}</Panel>;
-    },
-    action({ props, dispatch }) {
-      return (
-        <Button disabled={Boolean(props.disabled)} onClick={() => dispatch(props.action)}>
-          {props.label}
-        </Button>
-      );
-    },
-  },
-});
+export const { UnodeScreen } = defineReactRenderer()
+  .recipe("text", ({ content, role }) => <Text role={role}>{content}</Text>)
+  .recipe("section", ({ title, children }) => <Panel title={title}>{children}</Panel>)
+  .recipe("action", ({ label, intent, disabled, run }) => (
+    <Button intent={intent} disabled={disabled} onClick={run}>
+      {label}
+    </Button>
+  ))
+  .build();
 ```
 
-The renderer spec receives normalized props, rendered children, raw child nodes,
-and `dispatch(ActionRef)`. It does not receive plugin WASM internals, permission
-state, or host capabilities.
+Recipes receive normalized props plus common semantic helpers such as `content`,
+`label`, `title`, `intent`, `disabled`, and `run()`. The lower-level
+`createReactRenderer({ nodes })` API is still available when an adapter needs raw
+`node`, `props`, `childNodes`, `dispatch(ActionRef)`, or manual child rendering.
+Renderer code never receives plugin WASM internals, permission state, or host
+capabilities.
 
 ## Build & run
 

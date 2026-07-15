@@ -1,221 +1,134 @@
-// React adapter: mounts Unode IR with per-node subscriptions while letting apps
-// provide their own semantic-node-to-design-system mapping.
+// React adapter: a thin mount target for the universal Unode renderer.
+//
+// The renderer itself (recipes, reactivity, patching) lives in `unode-renderer`
+// and produces DOM. React's only jobs here are (1) hosting that DOM in a ref and
+// (2) fulfilling `hostSlot(name)` holes with the host app's own React components
+// through React portals. There is no React-specific renderer to maintain.
 
 import {
-  createContext,
-  useContext,
-  useSyncExternalStore,
-  type ReactNode as ReactNodeValue,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
 } from "react";
+import { createPortal } from "react-dom";
 
 import {
-  nodeKey,
-  rendererPropsOf,
-  type ActionRef,
-  type IrNode,
+  defineRenderer,
+  type HostPortalAdapter,
+  type HostSlotHandle,
+  type HostSlotRequest,
   type OnAction,
-  ScreenStore,
+  type Renderer,
+  type ScreenStore,
 } from "unode-renderer";
 
 export type { OnAction };
 
-export interface ReactRendererNodeContext {
-  node: IrNode;
-  type: string;
+/** Maps a `hostSlot(name)` to the host's React component. */
+export type HostComponents = Record<string, ComponentType<HostComponentProps>>;
+
+/** Props a host component receives: the plugin's props plus a `dispatch`. */
+export type HostComponentProps = Record<string, unknown> & { dispatch: OnAction };
+
+interface PortalEntry {
+  id: number;
+  container: Element;
+  name: string;
   props: Record<string, unknown>;
-  children: ReactNodeValue;
-  childNodes: IrNode[];
   dispatch: OnAction;
-  renderChildren(nodes?: IrNode[]): ReactNodeValue;
 }
 
-export type ReactNodeRenderer = (ctx: ReactRendererNodeContext) => ReactNodeValue;
+class ReactPortalAdapter implements HostPortalAdapter {
+  readonly entries = new Map<number, PortalEntry>();
+  private seq = 0;
+  private readonly listeners = new Set<() => void>();
 
-export interface ReactRendererSpec {
-  screen?: ReactNodeRenderer;
-  nodes?: Record<string, ReactNodeRenderer>;
-  fallback?: ReactNodeRenderer;
+  constructor(public components: HostComponents) {}
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private emit(): void {
+    this.listeners.forEach((listener) => listener());
+  }
+
+  mount(container: Element, request: HostSlotRequest): HostSlotHandle {
+    const id = this.seq++;
+    this.entries.set(id, {
+      id,
+      container,
+      name: request.name,
+      props: request.props,
+      dispatch: request.dispatch,
+    });
+    this.emit();
+    return {
+      update: (props) => {
+        const entry = this.entries.get(id);
+        if (entry) {
+          entry.props = props;
+          this.emit();
+        }
+      },
+      unmount: () => {
+        this.entries.delete(id);
+        this.emit();
+      },
+    };
+  }
 }
 
-interface ResolvedReactRendererSpec {
-  screen: ReactNodeRenderer;
-  nodes: Record<string, ReactNodeRenderer>;
-  fallback: ReactNodeRenderer;
-}
-
-interface RuntimeContext {
-  store: ScreenStore;
-  onAction: OnAction;
-  spec: ResolvedReactRendererSpec;
-}
+const defaultRenderer = defineRenderer().build();
 
 export interface UnodeScreenProps {
   store: ScreenStore;
-  onAction: OnAction;
+  onAction?: OnAction;
+  /** A renderer from `defineRenderer()`. Defaults to the built-in recipes. */
+  renderer?: Renderer;
+  /** Host components that fulfill `hostSlot(name)` holes. */
+  components?: HostComponents;
 }
 
-export interface UnodeNodeProps {
-  node: IrNode;
+/**
+ * Mounts a Unode screen. Pass a `renderer` to customize recipes and
+ * `components` to back any `hostSlot` with native React components.
+ */
+export function UnodeScreen({
+  store,
+  onAction,
+  renderer = defaultRenderer,
+  components = {},
+}: UnodeScreenProps) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const [, force] = useState(0);
+  const adapterRef = useRef<ReactPortalAdapter | null>(null);
+  if (!adapterRef.current) adapterRef.current = new ReactPortalAdapter(components);
+  const adapter = adapterRef.current;
+  adapter.components = components;
+
+  useEffect(() => adapter.subscribe(() => force((n) => n + 1)), [adapter]);
+
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el) return;
+    const handle = renderer.mount(el, store, { onAction, portal: adapter });
+    return () => handle.unmount();
+  }, [store, renderer, onAction, adapter]);
+
+  return (
+    <div ref={hostRef} className="unode-root">
+      {[...adapter.entries.values()].map((entry) => {
+        const Component = adapter.components[entry.name];
+        if (!Component) return null;
+        return createPortal(
+          <Component {...entry.props} dispatch={entry.dispatch} />,
+          entry.container,
+          String(entry.id),
+        );
+      })}
+    </div>
+  );
 }
-
-function classToken(value: unknown, fallback: string): string {
-  return String(value ?? fallback);
-}
-
-function actionValue(value: unknown): ActionRef | undefined {
-  if (value && typeof value === "object" && "t" in value) {
-    return value as ActionRef;
-  }
-  return undefined;
-}
-
-const defaultFallback: ReactNodeRenderer = ({ children }) => children;
-
-const defaultScreen: ReactNodeRenderer = ({ props, children }) => (
-  <section className="unode-screen">
-    {props.title != null && <h1 className="unode-title">{String(props.title)}</h1>}
-    {children}
-  </section>
-);
-
-export const defaultReactNodes: Record<string, ReactNodeRenderer> = {
-  text({ props }) {
-    const role = classToken(props.role, "body");
-    return <p className={`unode-text unode-text--${role}`}>{String(props.content ?? "")}</p>;
-  },
-
-  actions({ children }) {
-    return <div className="unode-actions">{children}</div>;
-  },
-
-  action({ props, dispatch }) {
-    const action = actionValue(props.action);
-    const intent = classToken(props.intent, "secondary");
-
-    return (
-      <button
-        className={`unode-action unode-action--${intent}`}
-        disabled={Boolean(props.disabled)}
-        onClick={() => action && dispatch(action)}
-      >
-        {String(props.label ?? "")}
-      </button>
-    );
-  },
-
-  stack({ children }) {
-    return <div className="unode-stack">{children}</div>;
-  },
-
-  inline({ children }) {
-    return <div className="unode-inline">{children}</div>;
-  },
-
-  section({ children }) {
-    return <section className="unode-section">{children}</section>;
-  },
-};
-
-export const defaultReactRendererSpec: ResolvedReactRendererSpec = {
-  screen: defaultScreen,
-  nodes: defaultReactNodes,
-  fallback: defaultFallback,
-};
-
-function resolveSpec(spec: ReactRendererSpec = {}): ResolvedReactRendererSpec {
-  return {
-    screen: spec.screen ?? defaultReactRendererSpec.screen,
-    nodes: { ...defaultReactRendererSpec.nodes, ...(spec.nodes ?? {}) },
-    fallback: spec.fallback ?? defaultReactRendererSpec.fallback,
-  };
-}
-
-export function createReactRenderer(spec: ReactRendererSpec = {}) {
-  const resolvedSpec = resolveSpec(spec);
-  const Ctx = createContext<RuntimeContext | null>(null);
-
-  function useRuntime(): RuntimeContext {
-    const ctx = useContext(Ctx);
-    if (!ctx) throw new Error("UnodeNode used outside <UnodeScreen>");
-    return ctx;
-  }
-
-  function useNodeVersion(key: string, store: ScreenStore): void {
-    useSyncExternalStore(
-      (wake) => store.subscribe(key, wake),
-      () => store.version(key),
-      () => store.version(key),
-    );
-  }
-
-  function Children({ nodes }: { nodes: IrNode[] }) {
-    return (
-      <>
-        {nodes.map((node) => (
-          <UnodeNode key={nodeKey(node) || undefined} node={node} />
-        ))}
-      </>
-    );
-  }
-
-  function renderChildren(nodes: IrNode[] = []): ReactNodeValue {
-    return <Children nodes={nodes} />;
-  }
-
-  function UnodeScreen({ store, onAction }: UnodeScreenProps) {
-    const props = rendererPropsOf(store.screen.p);
-    const children = renderChildren(store.screen.c ?? []);
-
-    return (
-      <Ctx.Provider value={{ store, onAction, spec: resolvedSpec }}>
-        {resolvedSpec.screen({
-          node: store.screen as unknown as IrNode,
-          type: "screen",
-          props,
-          children,
-          childNodes: store.screen.c ?? [],
-          dispatch: onAction,
-          renderChildren,
-        })}
-      </Ctx.Provider>
-    );
-  }
-
-  function UnodeNode({ node }: UnodeNodeProps) {
-    const { store, onAction, spec } = useRuntime();
-    const key = nodeKey(node);
-
-    // Subscribe first (hooks must run unconditionally), then honor structural
-    // replacements delivered by "rn" / "rc" patches.
-    useNodeVersion(key, store);
-
-    const snapshot = store.snapshotOf(node);
-    if (snapshot.replacement && nodeKey(snapshot.replacement) !== snapshot.key) {
-      return <UnodeNode node={snapshot.replacement} />;
-    }
-
-    const children = renderChildren(snapshot.children);
-    const renderer = spec.nodes[snapshot.type] ?? spec.fallback;
-
-    return (
-      <>
-        {renderer({
-          node: snapshot.node,
-          type: snapshot.type,
-          props: snapshot.props,
-          children,
-          childNodes: snapshot.children,
-          dispatch: onAction,
-          renderChildren,
-        })}
-      </>
-    );
-  }
-
-  return { UnodeScreen, UnodeNode };
-}
-
-const defaultRenderer = createReactRenderer();
-
-export const UnodeScreen = defaultRenderer.UnodeScreen;
-export const UnodeNode = defaultRenderer.UnodeNode;

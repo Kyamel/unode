@@ -33,10 +33,10 @@ navigation or explicit refresh triggers a new load/render cycle.
 
 ## Renderer SDK target
 
-The renderer surface should become easy enough that an application team can
-define how plugin UI looks in their product without rebuilding the plugin
-runtime. The application should import a TypeScript SDK, provide component
-mappings for semantic nodes, and keep the hard runtime work in Unode.
+The renderer surface should be easy enough that an application team can define
+how plugin UI looks in their product without rebuilding the plugin runtime. The
+default package should already render a functional UI; applications should then
+override only the semantic recipes that need to match their design system.
 
 The target split is now starting to exist in `packages/`:
 
@@ -44,47 +44,69 @@ The target split is now starting to exist in `packages/`:
   for plugin WASM instantiation, host-session loading, plugin registries,
   state-write buffering, and action dispatch. This is runtime glue, not
   renderer customization.
-- **Renderer core SDK:** `packages/unode-renderer`, a shared TypeScript
-  package with `IrScreen`, `IrNode`, `IrPatchOp`, `ScreenStore`, patch
-  application, node-key helpers, value unwrapping, prop normalization,
-  unknown-node fallback behavior, and diagnostics.
-- **Framework adapters:** `packages/web-react` now exposes
-  `createReactRenderer()`. `packages/web-svelte` consumes the shared runtime and
-  renderer cores. Vue or other clients should follow the same shape: subscribe
-  to node keys, mount children, and expose framework idioms, but do not own
-  Unode semantics.
+- **Renderer core SDK:** `packages/unode-renderer` is *the* renderer. It is a
+  single, framework-free TypeScript package: `IrScreen`/`IrNode`/`IrPatchOp`,
+  the keyed `ScreenStore`, prop normalization, the ergonomic recipe context, the
+  `defineRenderer()` recipe/builder/override API, the `h()`/`hostSlot()` virtual
+  nodes, and a DOM backend that walks the IR, subscribes each node to its key,
+  and reconciles recipe output into real DOM. Because recipes return neutral
+  VNodes and the backend targets the DOM, the same renderer runs in any web
+  context — vanilla, React, Svelte, Vue.
+- **Framework packages are mount targets, not renderers.** `packages/web-react`
+  and `packages/web-svelte` are demo apps plus a thin `<UnodeScreen>` wrapper
+  (~40 lines each). The wrapper mounts the DOM renderer into a host element and
+  provides a **portal** that fulfills `hostSlot(name)` holes with the host app's
+  own native components. There is no per-framework renderer to keep in sync; a
+  Vue package would only add its own portal wrapper.
 - **Application renderer spec:** app-owned mapping from semantic node types to
   design-system components. This is where the host decides how plugin-provided
   `text`, `section`, `action`, `list`, `input`, `status`, and other nodes appear.
 
-Conceptually, a React host should be able to write something like:
+The preferred customization path is recipe-based. Recipes are written once, in
+the universal TS language, and receive both the raw node details and promoted
+semantic helpers like `label`, `content`, `intent`, `disabled`, and `run()`.
+They return neutral VNodes via `h()`, or defer to a host-native component via
+`hostSlot()`:
+
+```ts
+import { defineRenderer, h, hostSlot } from "unode-renderer";
+
+export const renderer = defineRenderer()
+  .recipe("text", ({ content, role }) =>
+    h("p", { class: `prose prose--${role}` }, content))
+  .recipe("section", ({ title, children }) =>
+    h("section", { class: "card" }, title ? h("h2", {}, title) : null, children))
+  // Deep integration: this plugin node renders as the host app's OWN component.
+  .recipe("action", ({ label, intent, disabled, run }) =>
+    hostSlot("Button", { intent, disabled, onClick: run, children: label }))
+  .build();
+```
+
+Mount it wherever the app lives. Frameworks supply the portal that maps
+`hostSlot` names to native components:
 
 ```tsx
-import { createReactRenderer } from "unode-react";
-import { Button, Card, Text } from "./design-system";
-
-export const { UnodeScreen } = createReactRenderer({
-  nodes: {
-    text({ props }) {
-      return <Text tone={props.tone} role={props.role}>{props.content}</Text>;
-    },
-    section({ props, children }) {
-      return <Card title={props.title}>{children}</Card>;
-    },
-    action({ props, dispatch }) {
-      return (
-        <Button
-          intent={props.intent}
-          disabled={props.disabled}
-          onClick={() => dispatch(props.action)}
-        >
-          {props.label}
-        </Button>
-      );
-    },
-  },
-});
+// React demo
+<UnodeScreen renderer={renderer} store={store} onAction={onAction}
+  components={{ Button: MyButton, Card: MyCard }} />
 ```
+
+```ts
+// Vanilla — no framework, no portal needed for pure-DOM recipes
+renderer.mount(document.getElementById("app")!, store, { onAction });
+```
+
+### `hostSlot` — the deep-integration primitive
+
+`hostSlot(name, props)` is a first-class VNode: a hole the renderer fills with a
+host-provided component. The DOM backend creates a placeholder element and hands
+it to the active `HostPortalAdapter`; the React wrapper turns that into a React
+portal, the Svelte wrapper mounts a Svelte component, and a plain DOM app can
+supply its own factory. This is how a plugin node becomes the host's own
+design-system `Button` — and, symmetrically, how plugin UI is placed into host
+chrome regions (`renderer.mountNodes(headerEl, contributions, store)` for
+`shell:header-actions`). The plugin still only expresses intent; the host owns
+presentation and keeps a single renderer to maintain.
 
 The exact API can change, but these constraints should not:
 
