@@ -6,7 +6,7 @@ members = [
   "crates/unode-web-runtime",
   "crates/unode-web-host",
   "crates/unode-tui-runtime",
-  "crates/renderer",
+  "crates/tui-renderer",
   "crates/mugens-domain",
   "crates/mugens-sdk",
   "crates/mgn",
