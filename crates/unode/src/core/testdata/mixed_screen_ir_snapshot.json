@@ -1,22 +1,8 @@
 {
   "t": "screen",
   "p": {
-    "_hs": "n",
     "_k": "screen",
-    "_r": "r",
-    "_sr": "c",
     "id": "screen",
-    "rf": [
-      "ti"
-    ],
-    "sd": [
-      {
-        "b": "screen.title"
-      }
-    ],
-    "sf": {
-      "subtitle": "Library"
-    },
     "subtitle": {
       "v": "Library"
     },
@@ -29,22 +15,8 @@
       "t": "section",
       "p": {
         "_k": "hero",
-        "_r": "r",
-        "_sr": "r",
         "desc": {
           "v": "Featured today"
-        },
-        "rf": [
-          "ti"
-        ],
-        "sd": [
-          {
-            "b": "hero.title"
-          }
-        ],
-        "sf": {
-          "description": "Featured today",
-          "role": "section"
         },
         "title": {
           "b": "hero.title"
@@ -55,27 +27,11 @@
           "t": "text",
           "p": {
             "_k": "hero-text",
-            "_r": "r",
-            "_sr": "r",
             "content": {
               "b": "hero.subtitle"
             },
             "em": "strong",
-            "rf": [
-              "ct"
-            ],
             "role": "subtitle",
-            "sd": [
-              {
-                "b": "hero.subtitle"
-              }
-            ],
-            "sf": {
-              "emphasis": "strong",
-              "role": "subtitle",
-              "tone": "info",
-              "truncate": true
-            },
             "tone": "info",
             "tr": true
           }
@@ -84,8 +40,6 @@
           "t": "pressable",
           "p": {
             "_k": "hero-open",
-            "_r": "s",
-            "_sr": "s",
             "act": {
               "p": {
                 "to": "details"
@@ -94,9 +48,6 @@
             },
             "label": {
               "v": "Open"
-            },
-            "sf": {
-              "label": "Open"
             }
           },
           "c": [
@@ -104,18 +55,11 @@
               "t": "text",
               "p": {
                 "_k": "hero-open-text",
-                "_r": "s",
-                "_sr": "s",
                 "content": {
                   "v": "Open details"
                 },
                 "em": "normal",
-                "role": "body",
-                "sf": {
-                  "content": "Open details",
-                  "emphasis": "normal",
-                  "role": "body"
-                }
+                "role": "body"
               }
             }
           ]
@@ -126,8 +70,6 @@
       "t": "grid",
       "p": {
         "_k": "gallery",
-        "_r": "r",
-        "_sr": "r",
         "cols": {
           "b": 2,
           "m": 4
@@ -145,32 +87,15 @@
           },
           "more": true
         },
-        "gap": "lg",
-        "rf": [
-          "co"
-        ],
-        "sd": [
-          {
-            "b": "gallery.loading_label"
-          }
-        ],
-        "sf": {
-          "gap": "lg"
-        }
+        "gap": "lg"
       },
       "c": [
         {
           "t": "badge",
           "p": {
             "_k": "featured-badge",
-            "_r": "s",
-            "_sr": "s",
             "label": {
               "v": "Featured"
-            },
-            "sf": {
-              "label": "Featured",
-              "tone": "success"
             },
             "tone": "success"
           }
@@ -179,8 +104,6 @@
           "t": "media",
           "p": {
             "_k": "cover",
-            "_r": "s",
-            "_sr": "s",
             "alt": "Cover image",
             "ar": "poster",
             "exp": true,
@@ -188,12 +111,6 @@
             "ref": {
               "name": "cover-art",
               "type": "asset"
-            },
-            "sf": {
-              "alt": "Cover image",
-              "aspectRatio": "poster",
-              "expandable": true,
-              "mediaKind": "cover"
             }
           }
         }
@@ -203,8 +120,6 @@
       "t": "list",
       "p": {
         "_k": "chapters",
-        "_r": "r",
-        "_sr": "r",
         "cont": {
           "bind": "chapters.visible",
           "init": 10,
@@ -214,26 +129,13 @@
           },
           "step": 10
         },
-        "density": "normal",
-        "rf": [
-          "co"
-        ],
-        "sd": [
-          {
-            "b": "chapters.more_label"
-          }
-        ],
-        "sf": {
-          "density": "normal"
-        }
+        "density": "normal"
       },
       "c": [
         {
           "t": "item",
           "p": {
             "_k": "chapter-1",
-            "_r": "s",
-            "_sr": "r",
             "id": "chapter-1"
           },
           "c": [
@@ -244,15 +146,8 @@
                   "t": "icon",
                   "p": {
                     "_k": "chapter-icon",
-                    "_r": "s",
-                    "_sr": "s",
                     "label": "Chapter",
                     "name": "book",
-                    "sf": {
-                      "label": "Chapter",
-                      "name": "book",
-                      "tone": "muted"
-                    },
                     "tone": "muted"
                   }
                 }
@@ -265,25 +160,11 @@
                   "t": "text",
                   "p": {
                     "_k": "chapter-title",
-                    "_r": "r",
-                    "_sr": "r",
                     "content": {
                       "b": "chapter.title"
                     },
                     "em": "normal",
-                    "rf": [
-                      "ct"
-                    ],
-                    "role": "body",
-                    "sd": [
-                      {
-                        "b": "chapter.title"
-                      }
-                    ],
-                    "sf": {
-                      "emphasis": "normal",
-                      "role": "body"
-                    }
+                    "role": "body"
                   }
                 }
               ]
@@ -295,23 +176,8 @@
                   "t": "value",
                   "p": {
                     "_k": "chapter-pages",
-                    "_r": "r",
-                    "_sr": "r",
                     "fmt": "number",
-                    "rf": [
-                      "va"
-                    ],
                     "role": "caption",
-                    "sd": [
-                      {
-                        "b": "chapter.pages"
-                      }
-                    ],
-                    "sf": {
-                      "format": "number",
-                      "role": "caption",
-                      "tone": "muted"
-                    },
                     "tone": "muted",
                     "value": {
                       "b": "chapter.pages"
@@ -327,33 +193,13 @@
     {
       "t": "disclosure",
       "p": {
-        "_h": "v",
-        "_hs": "v",
         "_k": "filters",
-        "_r": "r",
-        "_sr": "r",
         "bind": "ui.filters_open",
         "label": {
           "v": "Filters"
         },
         "labelExp": {
           "b": "ui.filters_expanded_label"
-        },
-        "rf": [
-          "bs",
-          "lx"
-        ],
-        "sd": [
-          {
-            "b": "ui.filters_expanded_label"
-          },
-          {
-            "b": "ui.filters_open"
-          }
-        ],
-        "sf": {
-          "binding": "ui.filters_open",
-          "label": "Filters"
         }
       },
       "c": [
@@ -361,12 +207,7 @@
           "t": "form",
           "p": {
             "_k": "search-form",
-            "_r": "s",
-            "_sr": "r",
             "name": "search",
-            "sf": {
-              "name": "search"
-            },
             "submit": {
               "t": "submit"
             }
@@ -376,8 +217,6 @@
               "t": "input",
               "p": {
                 "_k": "query",
-                "_r": "r",
-                "_sr": "r",
                 "dis": {
                   "b": "filters.disabled"
                 },
@@ -393,29 +232,6 @@
                   "v": "Type to search"
                 },
                 "req": false,
-                "rf": [
-                  "va",
-                  "ht",
-                  "di"
-                ],
-                "sd": [
-                  {
-                    "b": "filters.disabled"
-                  },
-                  {
-                    "b": "filters.help"
-                  },
-                  {
-                    "b": "filters.query"
-                  }
-                ],
-                "sf": {
-                  "inputKind": "text",
-                  "label": "Query",
-                  "name": "query",
-                  "placeholder": "Type to search",
-                  "required": false
-                },
                 "value": {
                   "b": "filters.query"
                 }
@@ -429,28 +245,10 @@
       "t": "menu",
       "p": {
         "_k": "sort-menu",
-        "_r": "r",
-        "_sr": "r",
         "align": "start",
         "intent": "primary",
         "label": {
           "v": "Sort"
-        },
-        "rf": [
-          "mi"
-        ],
-        "sd": [
-          {
-            "b": "menu.popular_disabled"
-          },
-          {
-            "b": "menu.popular_label"
-          }
-        ],
-        "sf": {
-          "align": "start",
-          "intent": "primary",
-          "label": "Sort"
         }
       },
       "c": [
@@ -494,46 +292,20 @@
     {
       "t": "if",
       "p": {
-        "_h": "n",
-        "_hs": "n",
         "_k": "upsell",
-        "_r": "c",
-        "_sr": "c",
         "if": {
           "b": "flags.show_upsell"
-        },
-        "rf": [
-          "if"
-        ],
-        "sd": [
-          {
-            "b": "flags.show_upsell"
-          }
-        ]
+        }
       },
       "c": [
         {
           "t": "status",
           "p": {
             "_k": "promo-status",
-            "_r": "r",
-            "_sr": "r",
             "msg": {
               "b": "promo.message"
             },
-            "rf": [
-              "ms"
-            ],
-            "sd": [
-              {
-                "b": "promo.message"
-              }
-            ],
             "severity": "info",
-            "sf": {
-              "severity": "info",
-              "title": "Promo"
-            },
             "title": {
               "v": "Promo"
             }
@@ -543,8 +315,6 @@
               "t": "action",
               "p": {
                 "_k": "promo-cta",
-                "_r": "r",
-                "_sr": "r",
                 "dis": {
                   "b": "promo.disabled"
                 },
@@ -556,20 +326,6 @@
                 "label": {
                   "v": "View"
                 },
-                "rf": [
-                  "di"
-                ],
-                "sd": [
-                  {
-                    "b": "promo.disabled"
-                  }
-                ],
-                "sf": {
-                  "intent": "primary",
-                  "label": "View",
-                  "leadingIcon": "sparkles",
-                  "variant": "button"
-                },
                 "variant": "button"
               }
             }
@@ -579,16 +335,9 @@
           "t": "empty",
           "p": {
             "_k": "promo-empty",
-            "_r": "s",
-            "_sr": "s",
             "icon": "sparkles",
             "msg": {
               "v": "Come back soon"
-            },
-            "sf": {
-              "icon": "sparkles",
-              "message": "Come back soon",
-              "title": "Nothing yet"
             },
             "title": {
               "v": "Nothing yet"
@@ -601,38 +350,19 @@
       "t": "slot",
       "p": {
         "_k": "footer-slot",
-        "_r": "s",
-        "_sr": "r",
-        "name": "footer",
-        "sf": {
-          "name": "footer"
-        }
+        "name": "footer"
       },
       "c": [
         {
           "t": "loading",
           "p": {
             "_k": "footer-loading",
-            "_r": "r",
-            "_sr": "r",
             "label": {
               "b": "footer.label"
             },
             "progress": {
               "b": "footer.progress"
-            },
-            "rf": [
-              "lb",
-              "pg"
-            ],
-            "sd": [
-              {
-                "b": "footer.label"
-              },
-              {
-                "b": "footer.progress"
-              }
-            ]
+            }
           }
         }
       ]

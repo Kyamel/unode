@@ -463,53 +463,21 @@ fn lower_action(n: &CanonicalActionNode) -> IrNode {
     }
 }
 
+/// Injects the only canonical metadata the renderer needs: the stable node key
+/// (`_k`) used to address patches.
+///
+/// The reactivity classification (`reactivity`/`subtree_reactivity`, shape
+/// hints), `reactive_fields`, `structural_dependencies`, and the `static_fields`
+/// snapshot are deliberately NOT lowered into the IR. They are computed for and
+/// consumed by the host-side planner, which operates on the retained
+/// `CanonicalScreen` — nothing ever reads them back from the IR. Keeping them
+/// off the wire makes the IR a pure render payload.
+///
+/// A future out-of-process renderer that runs its own reactivity should ship the
+/// (already `Serialize`/`Deserialize`) `CanonicalScreen` and lower locally,
+/// rather than reintroducing this metadata into the IR.
 fn inject_meta(p: &mut BTreeMap<String, JsonValue>, meta: &CanonicalMetadata) {
     p.insert("_k".into(), json!(meta.key));
-    p.insert("_r".into(), json!(rx_code(meta.reactivity)));
-    p.insert("_sr".into(), json!(rx_code(meta.subtree_reactivity)));
-    if meta.shape_reactivity != ShapeReactivity::Static {
-        p.insert("_h".into(), json!(shape_code(meta.shape_reactivity)));
-    }
-    if meta.subtree_shape_reactivity != ShapeReactivity::Static {
-        p.insert(
-            "_hs".into(),
-            json!(shape_code(meta.subtree_shape_reactivity)),
-        );
-    }
-    if !meta.reactive_fields.is_empty() {
-        p.insert(
-            "rf".into(),
-            json!(
-                meta.reactive_fields
-                    .iter()
-                    .map(|field| reactive_field_code(*field))
-                    .collect::<Vec<_>>()
-            ),
-        );
-    }
-    if !meta.structural_dependencies.is_empty() {
-        p.insert(
-            "sd".into(),
-            JsonValue::Array(
-                meta.structural_dependencies
-                    .iter()
-                    .map(lower_structural_dependency)
-                    .collect(),
-            ),
-        );
-    }
-
-    if !meta.static_fields.is_empty() {
-        p.insert("sf".into(), lower_static_fields(&meta.static_fields));
-    }
-}
-
-fn lower_static_fields(fields: &BTreeMap<String, Primitive>) -> JsonValue {
-    let mut out = serde_json::Map::new();
-    for (k, v) in fields {
-        out.insert(k.clone(), lower_primitive(v));
-    }
-    JsonValue::Object(out)
 }
 
 fn wrap_group(group: &str, nodes: &[CanonicalUiNode]) -> Vec<IrNode> {
@@ -647,34 +615,10 @@ fn lower_patch_value(value: &PatchValue) -> JsonValue {
     }
 }
 
-fn lower_structural_dependency(value: &StructuralDependency) -> JsonValue {
-    match value {
-        StructuralDependency::Binding { path } => json!({ "b": path }),
-        StructuralDependency::Param { name } => json!({ "pa": name }),
-    }
-}
-
 fn action_type_name(action_type: &ActionType) -> String {
     match action_type {
         ActionType::Core(core) => enum_name(core),
         ActionType::Custom(s) => s.clone(),
-    }
-}
-
-fn rx_code(value: NodeReactivity) -> &'static str {
-    match value {
-        NodeReactivity::Static => "s",
-        NodeReactivity::Reactive => "r",
-        NodeReactivity::Conditional => "c",
-    }
-}
-
-fn shape_code(value: ShapeReactivity) -> &'static str {
-    match value {
-        ShapeReactivity::Static => "s",
-        ShapeReactivity::Visibility => "v",
-        ShapeReactivity::ReplaceChildren => "c",
-        ShapeReactivity::ReplaceNode => "n",
     }
 }
 
@@ -774,7 +718,7 @@ mod tests {
 
     use super::{
         IrPatchOp, inject_meta, lower_action_ref, lower_continuation, lower_patch_op,
-        lower_patch_ops, lower_screen, lower_static_fields,
+        lower_patch_ops, lower_screen,
     };
 
     fn base(id: &str) -> NodeBase {
@@ -1111,24 +1055,10 @@ mod tests {
     }
 
     #[test]
-    fn lowers_static_fields_and_meta_compactly() {
-        let fields = BTreeMap::from([
-            ("label".to_string(), Some(json!("Continue"))),
-            ("count".to_string(), Some(json!(3))),
-            ("enabled".to_string(), Some(json!(true))),
-            ("hint".to_string(), None),
-        ]);
-
-        assert_eq!(
-            lower_static_fields(&fields),
-            json!({
-                "count": 3,
-                "enabled": true,
-                "hint": null,
-                "label": "Continue"
-            })
-        );
-
+    fn inject_meta_emits_only_the_node_key() {
+        // Reactivity classification, reactive fields, structural dependencies and
+        // the static-field snapshot all stay host-side on `CanonicalScreen`. The
+        // IR carries only `_k`, the stable key used to address patches.
         let meta = CanonicalMetadata {
             key: "node-1".to_string(),
             reactivity: NodeReactivity::Reactive,
@@ -1144,33 +1074,13 @@ mod tests {
                     name: "tab".to_string(),
                 },
             ],
-            static_fields: fields,
+            static_fields: BTreeMap::from([("label".to_string(), Some(json!("Continue")))]),
         };
         let mut out = BTreeMap::new();
 
         inject_meta(&mut out, &meta);
 
-        assert_eq!(
-            json!(out),
-            json!({
-                "_k": "node-1",
-                "_h": "v",
-                "_hs": "n",
-                "_r": "r",
-                "_sr": "c",
-                "rf": ["lb"],
-                "sd": [
-                    { "b": "ui.open" },
-                    { "pa": "tab" }
-                ],
-                "sf": {
-                    "count": 3,
-                    "enabled": true,
-                    "hint": null,
-                    "label": "Continue"
-                }
-            })
-        );
+        assert_eq!(json!(out), json!({ "_k": "node-1" }));
     }
 
     #[test]
@@ -1270,17 +1180,9 @@ mod tests {
                         "t": "text",
                         "p": {
                             "_k": "patched-node",
-                            "_r": "r",
-                            "_sr": "r",
                             "content": { "b": "work.name" },
                             "em": "normal",
-                            "rf": ["ct"],
-                            "role": "body",
-                            "sd": [{ "b": "work.name" }],
-                            "sf": {
-                                "emphasis": "normal",
-                                "role": "body"
-                            }
+                            "role": "body"
                         }
                     }
                 },
@@ -1292,33 +1194,18 @@ mod tests {
                             "t": "text",
                             "p": {
                                 "_k": "child-a",
-                                "_r": "s",
-                                "_sr": "s",
                                 "content": { "v": "Alpha" },
                                 "em": "normal",
-                                "role": "body",
-                                "sf": {
-                                    "content": "Alpha",
-                                    "emphasis": "normal",
-                                    "role": "body"
-                                }
+                                "role": "body"
                             }
                         },
                         {
                             "t": "text",
                             "p": {
                                 "_k": "child-b",
-                                "_r": "r",
-                                "_sr": "r",
                                 "content": { "b": "beta.title" },
                                 "em": "normal",
-                                "rf": ["ct"],
-                                "role": "body",
-                                "sd": [{ "b": "beta.title" }],
-                                "sf": {
-                                    "emphasis": "normal",
-                                    "role": "body"
-                                }
+                                "role": "body"
                             }
                         }
                     ]

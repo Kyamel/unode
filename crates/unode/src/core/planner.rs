@@ -761,46 +761,26 @@ mod tests {
                     "n": {
                         "t": "if",
                         "p": {
-                            "_h": "n",
-                            "_hs": "n",
                             "_k": "upsell",
-                            "_r": "c",
-                            "_sr": "c",
-                            "if": { "b": "flags.show_upsell" },
-                            "rf": ["if"],
-                            "sd": [{ "b": "flags.show_upsell" }]
+                            "if": { "b": "flags.show_upsell" }
                         },
                         "c": [
                             {
                                 "t": "text",
                                 "p": {
                                     "_k": "upsell-on",
-                                    "_r": "s",
-                                    "_sr": "s",
                                     "content": { "v": "On" },
                                     "em": "normal",
-                                    "role": "body",
-                                    "sf": {
-                                        "content": "On",
-                                        "emphasis": "normal",
-                                        "role": "body"
-                                    }
+                                    "role": "body"
                                 }
                             },
                             {
                                 "t": "text",
                                 "p": {
                                     "_k": "upsell-off",
-                                    "_r": "s",
-                                    "_sr": "s",
                                     "content": { "v": "Off" },
                                     "em": "normal",
-                                    "role": "body",
-                                    "sf": {
-                                        "content": "Off",
-                                        "emphasis": "normal",
-                                        "role": "body"
-                                    }
+                                    "role": "body"
                                 }
                             }
                         ]

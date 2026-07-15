@@ -2184,6 +2184,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "unode-devtools"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "unode",
+ "unode-sdk",
+ "unode-tui-runtime",
+]
+
+[[package]]
 name = "unode-runtime"
 version = "0.1.0"
 dependencies = [

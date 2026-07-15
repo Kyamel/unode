@@ -143,15 +143,15 @@ fn parse_args() -> Result<Args> {
 
 fn print_help() {
     println!(
-        "Usage: cargo run -p mgn --bin dump-plugin -- [plugin] [--only section] [--route path] [--state key=json]\n\
+        "Usage: cargo run -p unode-devtools --bin dump-plugin -- [plugin] [--only section] [--route path] [--state key=json]\n\
 \n\
 Plugins: web-counter, sanity-check\n\
 Sections: manifest, load-request, load-response, render-request, raw-ast, canonical-ast, ir\n\
 \n\
 Examples:\n\
-  cargo run -p mgn --bin dump-plugin -- web-counter\n\
-  cargo run -p mgn --bin dump-plugin -- web-counter --only ir\n\
-  cargo run -p mgn --bin dump-plugin -- web-counter --state ui.count=3 --state ui.countLabel='\"Count: 3\"'"
+  cargo run -p unode-devtools --bin dump-plugin -- web-counter\n\
+  cargo run -p unode-devtools --bin dump-plugin -- web-counter --only ir\n\
+  cargo run -p unode-devtools --bin dump-plugin -- web-counter --state ui.count=3 --state ui.countLabel='\"Count: 3\"'"
     );
 }
 
