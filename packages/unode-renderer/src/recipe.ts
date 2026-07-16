@@ -30,7 +30,7 @@ export interface Renderer {
 }
 
 /** Functional, framework-free defaults. Every one is overridable. */
-export const defaultRecipes: Record<string, Recipe> = {
+export const defaultRecipes = {
   screen: ({ props, children }) =>
     h(
       "section",
@@ -51,21 +51,27 @@ export const defaultRecipes: Record<string, Recipe> = {
   inline: ({ children }) => h("div", { class: "unode-inline" }, children),
 
   section: ({ children }) => h("section", { class: "unode-section" }, children),
-};
+} satisfies Record<string, Recipe>;
+
+export type BuiltinNodeType = keyof typeof defaultRecipes;
 
 export const defaultFallback: Recipe = ({ children }) => children;
 
 export interface RendererBuilder {
   /** Recipe for the screen root (sugar for `.recipe("screen", ...)`). */
   screen(recipe: Recipe): this;
-  /** Override a single node type. */
-  recipe(type: string, recipe: Recipe): this;
-  /** Override many node types at once. */
-  recipes(map: Record<string, Recipe>): this;
+  /** Override a built-in node type. Use `.custom()` for app-defined node types. */
+  recipe(type: BuiltinNodeType, recipe: Recipe): this;
+  /** Override many built-in node types at once. */
+  recipes(map: Partial<Record<BuiltinNodeType, Recipe>>): this;
+  /** Register an app-defined node type. */
+  custom(type: string, recipe: Recipe): this;
+  /** Register many app-defined node types. */
+  customs(map: Record<string, Recipe>): this;
   /** Alias of `recipe`, mirroring the lower-level "node" vocabulary. */
-  node(type: string, recipe: Recipe): this;
+  node(type: BuiltinNodeType, recipe: Recipe): this;
   /** Alias of `recipes`. */
-  nodes(map: Record<string, Recipe>): this;
+  nodes(map: Partial<Record<BuiltinNodeType, Recipe>>): this;
   /** Recipe used for unknown node types. */
   fallback(recipe: Recipe): this;
   /** The resolved spec (defaults merged with overrides). */
@@ -87,21 +93,31 @@ class RendererBuilderImpl implements RendererBuilder {
     return this.recipe("screen", recipe);
   }
 
-  recipe(type: string, recipe: Recipe): this {
+  recipe(type: BuiltinNodeType, recipe: Recipe): this {
     this.overrides[type] = recipe;
     return this;
   }
 
-  recipes(map: Record<string, Recipe>): this {
+  recipes(map: Partial<Record<BuiltinNodeType, Recipe>>): this {
     Object.assign(this.overrides, map);
     return this;
   }
 
-  node(type: string, recipe: Recipe): this {
+  custom(type: string, recipe: Recipe): this {
+    this.overrides[type] = recipe;
+    return this;
+  }
+
+  customs(map: Record<string, Recipe>): this {
+    Object.assign(this.overrides, map);
+    return this;
+  }
+
+  node(type: BuiltinNodeType, recipe: Recipe): this {
     return this.recipe(type, recipe);
   }
 
-  nodes(map: Record<string, Recipe>): this {
+  nodes(map: Partial<Record<BuiltinNodeType, Recipe>>): this {
     return this.recipes(map);
   }
 
@@ -122,7 +138,7 @@ class RendererBuilderImpl implements RendererBuilder {
   }
 }
 
-/** Entry point: `defineRenderer().recipe("action", ...).build()`. */
+/** Entry point: `defineRenderer().recipe("action", ...).custom("app.card", ...).build()`. */
 export function defineRenderer(base?: Partial<RendererSpec>): RendererBuilder {
   return new RendererBuilderImpl(base);
 }

@@ -85,6 +85,9 @@ export const renderer = defineRenderer()
   .build();
 ```
 
+Built-in node names are typed. Use `.custom("app.node", recipe)` when an app
+intentionally introduces a node type outside the core Unode set.
+
 Mount it wherever the app lives. Frameworks supply the portal that maps
 `hostSlot` names to native components:
 

@@ -76,6 +76,7 @@ export {
   defaultFallback,
   defaultRecipes,
   defineRenderer,
+  type BuiltinNodeType,
   type Recipe,
   type Renderer,
   type RendererBuilder,
