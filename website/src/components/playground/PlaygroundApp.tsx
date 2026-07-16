@@ -236,6 +236,14 @@ export default function PlaygroundApp() {
 		[plugins, selectedPluginId],
 	);
 
+	const activeRoutePattern = useMemo(
+		() =>
+			selected
+				? resolvePluginRoute(selected, routeTo ?? defaultRouteFor(selected))?.pattern
+				: undefined,
+		[selected, routeTo],
+	);
+
 	const appendEvent = useCallback((entry: Omit<EventLogEntry, 'id'>) => {
 		setEvents((current) => [{ ...entry, id: eventId.current++ }, ...current].slice(0, 10));
 	}, []);
@@ -512,7 +520,7 @@ export default function PlaygroundApp() {
 							<button
 								key={route.pattern}
 								type="button"
-								className={route.pattern === routeRef.current?.pattern ? 'is-active' : ''}
+								className={route.pattern === activeRoutePattern ? 'is-active' : ''}
 								disabled={route.pattern.includes(':')}
 								title={route.screenKind}
 								onClick={() => navigateTo(route.pattern)}

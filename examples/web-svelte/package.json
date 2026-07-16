@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "svelte-check --tsconfig ./tsconfig.json && vite build",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "lint": "eslint demo scripts vite.config.ts svelte.config.js"
   },
   "dependencies": {
     "unode-core": "workspace:*",

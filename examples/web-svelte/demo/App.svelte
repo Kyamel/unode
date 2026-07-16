@@ -41,6 +41,7 @@
   let error: string | null = $state(null);
 
   function routeTargetForCurrentLocation() {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive URL helper
     const url = new URL(window.location.href);
 
     if (url.pathname === "/") {

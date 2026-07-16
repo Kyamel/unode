@@ -11,7 +11,8 @@
     "unode-renderer": "workspace:*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
   },
   "devDependencies": {
     "typescript": "^5.5.4"

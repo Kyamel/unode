@@ -1,3 +1,7 @@
+/* eslint-disable react-hooks/refs --
+ * The portal adapter is a deliberate external-store pattern: a lazily
+ * ref-initialized registry whose entries are rendered as portals, kept in
+ * sync via subscribe + forced re-render. */
 import { defineRenderer, OnAction, Renderer, ScreenStore } from "unode-renderer";
 import { HostComponents } from "./renderer";
 import { useEffect, useRef, useState } from "react";
