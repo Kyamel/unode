@@ -3,8 +3,10 @@ pub mod host_call;
 pub mod loader;
 pub mod memory;
 pub mod session;
+pub mod state;
 pub mod wasmtime_guest;
 
+pub use state::{PluginState, resolve_screen_state};
 use unode::core::permissions::PermissionProfile;
 use unode_runtime::{HostedRuntime, RuntimeTarget};
 

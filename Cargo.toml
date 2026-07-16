@@ -10,6 +10,7 @@ members = [
   "crates/unode-ratatui-renderer",
   "crates/tui-playground",
   "crates/unode-devtools",
+  "examples/tui-ratatui",
 ]
 resolver = "2"
 

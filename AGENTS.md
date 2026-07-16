@@ -28,6 +28,7 @@ and render the result through environment-specific packages.
 - `packages/unode-react` contains the maintained React mount package.
 - `packages/unode-svelte` contains the maintained Svelte mount package.
 - `examples/web-react` and `examples/web-svelte` contain the maintained web demos.
+- `examples/tui-ratatui` is the minimal ratatui host demo (main/App/Button, mirroring the web examples).
 - `crates/tui-playground` is an example/application binary, not the reusable TUI runtime.
 - `plugins/` contains example WASM plugins.
 - `ts-implementation/` contains deprecated legacy TypeScript code kept only as

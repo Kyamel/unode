@@ -204,9 +204,10 @@ fn actions_recipe() -> (NodeKind, TuiRecipe) {
                 .constraints(constraints)
                 .split(area);
 
+            // Route each button through the registry so a host override of
+            // the `Action` recipe also applies inside action groups.
             for (child, chunk) in node.children.iter().zip(chunks.iter()) {
-                let active = !is_disabled(child) && ctx.focus_next(true);
-                actions::render_action(ctx.surface, *chunk, child, active);
+                ctx.render(&UiNode::Action(child.clone()), region(*chunk));
             }
         },
     )

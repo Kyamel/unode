@@ -2157,6 +2157,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "tui-ratatui-example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crossterm",
+ "ratatui",
+ "serde_json",
+ "unode",
+ "unode-plugin-sdk",
+ "unode-ratatui-renderer",
+ "unode-tui-runtime",
+]
+
+[[package]]
 name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

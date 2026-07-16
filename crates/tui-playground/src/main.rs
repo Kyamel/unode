@@ -32,9 +32,10 @@ mod shell_registry;
 #[cfg(test)]
 mod tests;
 
-use plugin_registry::{LoadedPlugin, load_runtime_plugins, resolve_screen_state};
+use plugin_registry::{LoadedPlugin, load_runtime_plugins};
 use route::parse_route;
 use shell_registry::register_builtin_shell;
+use unode_tui_runtime::resolve_screen_state;
 
 fn main() -> Result<()> {
     let mut app = App::new()?;

@@ -5,7 +5,7 @@ pub mod tui_shell;
 pub mod util;
 
 pub use recipes::{
-    RatatuiBackend, TuiRecipe, TuiRenderCtx, TuiRenderer, ratatui_renderer,
+    RatatuiBackend, TuiRecipe, TuiRenderCtx, TuiRenderer, ratatui_renderer, rect, region,
     render_vertical_children,
 };
 pub use screen::{
