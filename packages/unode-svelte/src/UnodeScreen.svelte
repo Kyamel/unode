@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { defineRenderer, type Renderer, type ScreenStore } from "unode-renderer";
+  import { defineRenderer, type Renderer, type ScreenStore } from "unode-web-renderer";
   import { createSveltePortal, type HostComponents, type OnAction } from "./renderer.svelte";
 
   interface Props {

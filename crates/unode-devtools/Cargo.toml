@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 unode = { path = "../unode" }
-unode-sdk = { path = "../unode-sdk" }
+unode-plugin-sdk = { path = "../unode-plugin-sdk" }
 unode-tui-runtime = { path = "../unode-tui-runtime" }
 anyhow.workspace = true
 serde.workspace = true

@@ -2,7 +2,7 @@
 
 The plugin contract is now split into three layers:
 
-## `unode-sdk`
+## `unode-plugin-sdk`
 
 Owns the ABI names and request envelopes:
 
@@ -23,7 +23,7 @@ fn render(request: &PluginRenderRequest) -> ScreenNode { /* ... */ }
 fn render_slot(request: &PluginRenderSlotRequest) -> PluginRenderSlotResponse { /* ... */ }
 fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { /* ... */ }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest,
     load: load,
     render: render,
@@ -107,7 +107,7 @@ requires the plugin source language to be Rust.
 
 What is Rust-specific today is the authoring surface:
 
-- `unode-sdk` reexports the Rust AST and DSL builders;
+- `unode-plugin-sdk` reexports the Rust AST and DSL builders;
 - `export_plugin!()` generates the raw C ABI exports;
 - helper functions such as `host::state_set()` wrap the `host_call` import;
 - Rust tests can call plugin lifecycle functions directly before export.

@@ -137,7 +137,7 @@ UI to regions of the host app's own chrome — the navigation sidebar, the heade
 action bar, the bottom navigation on mobile.
 
 These regions exist outside any plugin screen. They are owned by the app shell
-(the web application's layout components, or the `mgn` TUI app frame). Plugins
+(the web application's layout components, or the `tui-playground` TUI app frame). Plugins
 declare UI slot contributions in the manifest, while data-only shell entries
 such as navigation items live in host-owned registries.
 

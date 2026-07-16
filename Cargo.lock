@@ -1119,22 +1119,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mgn"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "crossterm",
- "ratatui",
- "serde",
- "serde_json",
- "tui-renderer",
- "unode",
- "unode-runtime",
- "unode-sdk",
- "unode-tui-runtime",
-]
-
-[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2157,16 +2141,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2"
 
 [[package]]
-name = "tui-renderer"
+name = "tui-playground"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "crossterm",
  "ratatui",
+ "serde",
  "serde_json",
  "unode",
- "unode-renderer",
+ "unode-plugin-sdk",
+ "unode-ratatui-renderer",
  "unode-runtime",
+ "unode-tui-runtime",
 ]
 
 [[package]]
@@ -2233,8 +2220,31 @@ dependencies = [
  "serde",
  "serde_json",
  "unode",
- "unode-sdk",
+ "unode-plugin-sdk",
  "unode-tui-runtime",
+]
+
+[[package]]
+name = "unode-plugin-sdk"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "unode",
+]
+
+[[package]]
+name = "unode-ratatui-renderer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crossterm",
+ "ratatui",
+ "serde_json",
+ "unode",
+ "unode-renderer",
+ "unode-runtime",
 ]
 
 [[package]]
@@ -2252,16 +2262,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "unode",
-]
-
-[[package]]
-name = "unode-sdk"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "unode",
+ "unode-plugin-sdk",
 ]
 
 [[package]]
@@ -2272,8 +2273,8 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "unode",
+ "unode-plugin-sdk",
  "unode-runtime",
- "unode-sdk",
  "wasmtime",
 ]
 
@@ -2295,8 +2296,8 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "unode",
+ "unode-plugin-sdk",
  "unode-runtime",
- "unode-sdk",
 ]
 
 [[package]]

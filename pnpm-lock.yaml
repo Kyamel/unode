@@ -35,12 +35,12 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
-      unode-core:
-        specifier: workspace:*
-        version: link:../../packages/unode-core
       unode-react:
         specifier: workspace:*
         version: link:../../packages/unode-react
+      unode-web-core:
+        specifier: workspace:*
+        version: link:../../packages/unode-web-core
     devDependencies:
       '@types/react':
         specifier: ^18.3.5
@@ -63,12 +63,12 @@ importers:
       svelte:
         specifier: ^5.7.0
         version: 5.56.5(@typescript-eslint/types@8.64.0)
-      unode-core:
-        specifier: workspace:*
-        version: link:../../packages/unode-core
       unode-svelte:
         specifier: workspace:*
         version: link:../../packages/unode-svelte
+      unode-web-core:
+        specifier: workspace:*
+        version: link:../../packages/unode-web-core
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^4.0.0
@@ -83,16 +83,6 @@ importers:
         specifier: ^5.4.0
         version: 5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)
 
-  packages/unode-core:
-    dependencies:
-      unode-renderer:
-        specifier: workspace:*
-        version: link:../unode-renderer
-    devDependencies:
-      typescript:
-        specifier: ^5.5.4
-        version: 5.9.3
-
   packages/unode-react:
     dependencies:
       react:
@@ -101,9 +91,9 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
-      unode-renderer:
+      unode-web-renderer:
         specifier: workspace:*
-        version: link:../unode-renderer
+        version: link:../unode-web-renderer
     devDependencies:
       '@types/react':
         specifier: ^18.3.5
@@ -115,20 +105,14 @@ importers:
         specifier: ^5.5.4
         version: 5.9.3
 
-  packages/unode-renderer:
-    devDependencies:
-      typescript:
-        specifier: ^5.5.4
-        version: 5.9.3
-
   packages/unode-svelte:
     dependencies:
       svelte:
         specifier: ^5.7.0
         version: 5.56.5(@typescript-eslint/types@8.64.0)
-      unode-renderer:
+      unode-web-renderer:
         specifier: workspace:*
-        version: link:../unode-renderer
+        version: link:../unode-web-renderer
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^4.0.0
@@ -142,6 +126,22 @@ importers:
       vite:
         specifier: ^5.4.0
         version: 5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)
+
+  packages/unode-web-core:
+    dependencies:
+      unode-web-renderer:
+        specifier: workspace:*
+        version: link:../unode-web-renderer
+    devDependencies:
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
+
+  packages/unode-web-renderer:
+    devDependencies:
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
 
   website:
     dependencies:

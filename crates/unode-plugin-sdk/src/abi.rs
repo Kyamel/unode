@@ -176,7 +176,7 @@ macro_rules! export_allocators {
 /// fn render(request: &PluginRenderRequest) -> ScreenNode { ... }
 /// fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { ... }
 ///
-/// unode_sdk::export_plugin! {
+/// unode_plugin_sdk::export_plugin! {
 ///     manifest: manifest,
 ///     load: load,
 ///     render: render,
@@ -467,7 +467,7 @@ mod tests {
         let call = HostCallEnvelope {
             operation: "navigation.navigate".to_string(),
             params: BTreeMap::from([
-                (String::from("to"), json!("/app/mangas/hot")),
+                (String::from("to"), json!("/app/samples/hot")),
                 (String::from("replace"), json!(false)),
             ]),
         };
@@ -475,7 +475,7 @@ mod tests {
         let bytes = encode_json_bytes(&call).expect("encode");
         let decoded = decode_json_bytes::<HostCallEnvelope>(&bytes).expect("decode");
         assert_eq!(decoded.operation, "navigation.navigate");
-        assert_eq!(decoded.params.get("to"), Some(&json!("/app/mangas/hot")));
+        assert_eq!(decoded.params.get("to"), Some(&json!("/app/samples/hot")));
     }
 
     #[test]

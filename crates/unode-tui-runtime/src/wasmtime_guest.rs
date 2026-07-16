@@ -7,7 +7,7 @@ use wasmtime::{
     Caller, Config, Engine, Extern, Instance, Linker, Memory, Module, Store, TypedFunc,
 };
 
-use unode_sdk::{
+use unode_plugin_sdk::{
     EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN, EXPORT_PLUGIN_LOAD,
     EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_MANIFEST_LEN,
     EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_PLUGIN_RENDER_SLOT,
@@ -104,8 +104,8 @@ impl WasmtimeGuest {
                     plugin_id: "external.plugin".to_string(),
                     grants: vec![],
                 },
-                manifest: unode_sdk::PluginManifestEnvelope {
-                    abi_version: unode_sdk::UNODE_PLUGIN_ABI_VERSION.to_string(),
+                manifest: unode_plugin_sdk::PluginManifestEnvelope {
+                    abi_version: unode_plugin_sdk::UNODE_PLUGIN_ABI_VERSION.to_string(),
                     manifest: unode::core::runtime::PluginManifest::default(),
                 },
                 exports: Default::default(),

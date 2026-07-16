@@ -1,5 +1,5 @@
 [package]
-name = "tui-renderer"
+name = "unode-ratatui-renderer"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

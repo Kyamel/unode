@@ -14,7 +14,7 @@ import {
   StateWriteSink,
   WebPluginRegistry,
   WebRuntime,
-} from "unode-core";
+} from "unode-web-core";
 import { Button } from "./Button";
 
 const renderer = defineRenderer()

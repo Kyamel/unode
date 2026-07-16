@@ -11,20 +11,20 @@ model described in [Architecture](/concepts/architecture/).
 | Path                    | Purpose                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
 | `crates/unode`          | Core protocol: renderer-agnostic AST, normalization, state, resolver, IR, patch planning, transport. |
-| `crates/unode-sdk`      | Rust plugin authoring SDK: DSL builders, manifests, permissions, ABI envelopes, allocators, i18n. |
+| `crates/unode-plugin-sdk`      | Rust plugin authoring SDK: DSL builders, manifests, permissions, ABI envelopes, allocators, i18n. |
 | `crates/unode-runtime`  | Shared host-runtime concepts: registries, targets, permission-guarded runtime wrappers.           |
 | `crates/unode-web-host` | Rust core pipeline compiled to WASM for browsers; normalizes screens, tracks reactivity, emits IR patches. |
 | `crates/unode-web-runtime` | Web runtime boundary helpers: plugin loading, host calls, memory, bridge validation.           |
 | `crates/unode-tui-runtime` | TUI runtime boundary helpers using Wasmtime-oriented plugin sessions and host calls.           |
 | `crates/renderer`       | TUI rendering work using Ratatui.                                                                 |
-| `crates/mgn`            | Example native Rust TUI application wiring runtime, renderer, and a domain bridge together.        |
+| `crates/tui-playground`            | Example native Rust TUI application wiring runtime, renderer, and a domain bridge together.        |
 
 ## Runtimes
 
 | Path                  | Purpose                                                                                         |
 | --------------------- | ----------------------------------------------------------------------------------------------- |
-| `packages/unode-core` | Shared browser runtime for plugin WASM loading, host sessions, state writes, and dispatch.       |
-| `packages/unode-renderer` | Shared framework-free renderer, keyed store, recipes, DOM backend, and host-slot contract.   |
+| `packages/unode-web-core` | Shared browser runtime for plugin WASM loading, host sessions, state writes, and dispatch.       |
+| `packages/unode-web-renderer` | Shared framework-free renderer, keyed store, recipes, DOM backend, and host-slot contract.   |
 | `packages/unode-react` | React mount target and host-slot portal glue.                                                   |
 | `packages/unode-svelte` | Svelte mount target and host-slot portal glue.                                                 |
 | `examples/web-react`  | Maintained React demo app for `plugin.wasm` + `unode_web_host.wasm`.                            |
@@ -54,7 +54,7 @@ The TUI stack needs no matching `unode-tui-host` crate because the TUI host is
 already native Rust: `unode-tui-runtime` calls `crates/unode` directly while it
 manages Wasmtime instances, host calls, and terminal session lifecycle.
 
-`crates/mgn` lives under `crates/` because it is a workspace binary that
+`crates/tui-playground` lives under `crates/` because it is a workspace binary that
 integrates Unode for one app — it is **not** the reusable TUI runtime. That role
 belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
 

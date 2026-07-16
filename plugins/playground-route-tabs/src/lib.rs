@@ -1,9 +1,9 @@
 use serde_json::{Value as JsonValue, json};
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode,
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
-    PluginManifestEnvelope, PluginRenderRequest, ScreenNode, TextRole, Tone,
-    StateKey, UNODE_PLUGIN_ABI_VERSION, permission, route_group,
+    PluginManifestEnvelope, PluginRenderRequest, ScreenNode, StateKey, TextRole, Tone,
+    UNODE_PLUGIN_ABI_VERSION, perm, route_group,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.route-tabs";
@@ -17,34 +17,33 @@ const SHIP_COUNT: StateKey<u32> = StateKey::new("routeTabs.shipCount");
 const LAST_SHIP: StateKey<String> = StateKey::new("routeTabs.lastShip");
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Demonstrates manifest route groups with a tabs intent.")
-            .author("unode")
-            .permission(
-                permission("route.navigate")
-                    .required(true)
-                    .reason("Switch playground route tabs."),
-            )
-            // Three screens grouped with a tabs intent. The host derives the
-            // tab bar (and the active tab) from the matched route; the ship
-            // badge is a state binding, so it updates with plugin state.
-            .route_group(route_group("flow").tabs())
-            .routes([
-                unode_sdk::route(COMPOSE_PATH)
-                    .group("flow")
-                    .label("Compose")
-                    .badge("slot"),
-                unode_sdk::route(REVIEW_PATH).group("flow").label("Review"),
-                unode_sdk::route(SHIP_PATH)
-                    .group("flow")
-                    .label("Ship")
-                    .badge_bind(SHIP_COUNT.path()),
-            ])
-            .build(),
-    }
+    ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Demonstrates manifest route groups with a tabs intent.")
+        .author("unode")
+        .permission(
+            perm("route.navigate")
+                .required(true)
+                .reason("Switch playground route tabs."),
+        )
+        // Three screens grouped with a tabs intent. The host derives the
+        // tab bar (and the active tab) from the matched route; the ship
+        // badge is a state binding, so it updates with plugin state.
+        .route_group(route_group("flow").tabs())
+        .routes([
+            unode_plugin_sdk::route(COMPOSE_PATH)
+                .group("flow")
+                .label("Compose")
+                .badge("slot"),
+            unode_plugin_sdk::route(REVIEW_PATH)
+                .group("flow")
+                .label("Review"),
+            unode_plugin_sdk::route(SHIP_PATH)
+                .group("flow")
+                .label("Ship")
+                .badge_bind(SHIP_COUNT.path()),
+        ])
+        .envelope()
 }
 
 fn navigate_action(to: &str) -> ActionRef {
@@ -192,7 +191,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,
@@ -203,7 +202,7 @@ unode_sdk::export_plugin! {
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
-    use unode_sdk::prelude::route_tabs_view;
+    use unode_plugin_sdk::prelude::route_tabs_view;
 
     #[test]
     fn manifest_groups_three_routes_as_tabs() {
@@ -230,7 +229,7 @@ mod tests {
     fn ship_increment_writes_two_states_and_refreshes() {
         ui::host::clear_recorded_host_calls();
         let response = dispatch_response(&PluginDispatchRequest {
-            route: unode_sdk::prelude::ResolvedRoute {
+            route: unode_plugin_sdk::prelude::ResolvedRoute {
                 pattern: SHIP_PATH.to_string(),
                 params: Default::default(),
                 query: Default::default(),
@@ -240,10 +239,7 @@ mod tests {
                 params: None,
                 confirm: None,
             },
-            state_snapshot: BTreeMap::from([(
-                SHIP_COUNT.path().to_string(),
-                serde_json::json!(5),
-            )]),
+            state_snapshot: BTreeMap::from([(SHIP_COUNT.path().to_string(), serde_json::json!(5))]),
             locale: None,
         });
 
@@ -261,7 +257,7 @@ mod tests {
     #[test]
     fn render_branches_on_route_pattern() {
         let screen = render_screen(&PluginRenderRequest {
-            route: unode_sdk::prelude::ResolvedRoute {
+            route: unode_plugin_sdk::prelude::ResolvedRoute {
                 pattern: SHIP_PATH.to_string(),
                 params: Default::default(),
                 query: Default::default(),

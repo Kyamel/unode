@@ -1,8 +1,8 @@
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
-use unode_sdk::abi::AbiError;
-use unode_sdk::{decode_json_bytes, encode_json_bytes};
+use unode_plugin_sdk::abi::AbiError;
+use unode_plugin_sdk::{decode_json_bytes, encode_json_bytes};
 
 #[derive(Debug, Error)]
 pub enum TuiMemoryError {

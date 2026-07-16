@@ -15,8 +15,8 @@ The web examples use the same Rust/WASM core boundary:
 
 | Path | Role |
 |---|---|
-| `unode-core` | Shared browser runtime SDK primitives: plugin WASM instantiation, host-session wrapper, plugin registry, state-write sink, and dispatch loop. |
-| `unode-renderer` | Shared TypeScript renderer SDK primitives: IR types, `ScreenStore`, patch application, node helpers, prop normalization, and fallback behavior. |
+| `unode-web-core` | Shared browser runtime SDK primitives: plugin WASM instantiation, host-session wrapper, plugin registry, state-write sink, and dispatch loop. |
+| `unode-web-renderer` | Shared TypeScript renderer SDK primitives: IR types, `ScreenStore`, patch application, node helpers, prop normalization, and fallback behavior. |
 | `unode-react` | React mount target for the shared renderer, plus host-slot portal glue. |
 | `unode-svelte` | Svelte mount target for the shared renderer, plus host-slot portal glue. |
 

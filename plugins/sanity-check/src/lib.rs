@@ -1,13 +1,13 @@
 use serde_json::{Value as JsonValue, json};
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode,
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
     PluginManifestEnvelope, PluginRenderRequest, ScreenNode, TextRole, Tone,
-    UNODE_PLUGIN_ABI_VERSION, route_group,
+    route_group,
 };
 
 #[cfg(test)]
-use unode_sdk::prelude::{StringOrExpr, UiNode};
+use unode_plugin_sdk::prelude::{StringOrExpr, UiNode};
 
 const PLUGIN_ID: &str = "dev.unode.sanity-check";
 const PLUGIN_NAME: &str = "Sanity Check";
@@ -15,30 +15,27 @@ const ROUTE_PATH: &str = "/plugins/sanity-check";
 const INSPECT_ROUTE_PATH: &str = "/plugins/sanity-check/inspect";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: unode_sdk::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Runtime-loaded WASM sanity-check plugin for the MGN TUI shell.")
-            .author("Unode")
-            // One plugin, two screens: the host registers both routes and
-            // dispatches matching navigations back through `plugin_render`.
-            // The group asks for tabs; the renderer decides whether to honor
-            // it (tab bar) or present the routes as separate screens.
-            .route_group(route_group("main").tabs())
-            .routes([
-                unode_sdk::route(ROUTE_PATH)
-                    .screen_kind(format!("{PLUGIN_ID}.overview"))
-                    .group("main")
-                    .label("Overview")
-                    .badge("wasm"),
-                unode_sdk::route(INSPECT_ROUTE_PATH)
-                    .screen_kind(format!("{PLUGIN_ID}.inspect"))
-                    .group("main")
-                    .label("Inspect"),
-            ])
-            .build(),
-    }
+    unode_plugin_sdk::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Runtime-loaded WASM sanity-check plugin for the TUI playground shell.")
+        .author("Unode")
+        // One plugin, two screens: the host registers both routes and
+        // dispatches matching navigations back through `plugin_render`.
+        // The group asks for tabs; the renderer decides whether to honor
+        // it (tab bar) or present the routes as separate screens.
+        .route_group(route_group("main").tabs())
+        .routes([
+            unode_plugin_sdk::route(ROUTE_PATH)
+                .screen_kind(format!("{PLUGIN_ID}.overview"))
+                .group("main")
+                .label("Overview")
+                .badge("wasm"),
+            unode_plugin_sdk::route(INSPECT_ROUTE_PATH)
+                .screen_kind(format!("{PLUGIN_ID}.inspect"))
+                .group("main")
+                .label("Inspect"),
+        ])
+        .envelope()
 }
 
 fn load_response(request: &PluginLoadRequest) -> JsonValue {
@@ -303,7 +300,7 @@ fn render_text_value(value: &StringOrExpr) -> String {
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,
@@ -315,8 +312,8 @@ mod tests {
     use super::{ROUTE_PATH, flatten_lines, manifest_envelope, render_screen};
     use serde_json::json;
     use std::collections::BTreeMap;
-    use unode_sdk::PluginRenderRequest;
-    use unode_sdk::prelude::ResolvedRoute;
+    use unode_plugin_sdk::PluginRenderRequest;
+    use unode_plugin_sdk::prelude::ResolvedRoute;
 
     #[test]
     fn manifest_has_expected_plugin_identity() {

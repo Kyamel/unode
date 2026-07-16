@@ -14,9 +14,9 @@
     "noEmit": true,
     "types": ["vite/client"],
     "paths": {
-      "unode-core": ["../../packages/unode-core/src"],
+      "unode-web-core": ["../../packages/unode-web-core/src"],
       "unode-react": ["../../packages/unode-react/src"],
-      "unode-renderer": ["../../packages/unode-renderer/src"]
+      "unode-web-renderer": ["../../packages/unode-web-renderer/src"]
     }
   },
   "include": ["demo", "vite.config.ts"]

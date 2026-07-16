@@ -9,5 +9,5 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 unode = { path = "../unode" }
-unode-sdk = { path = "../unode-sdk" }
+unode-plugin-sdk = { path = "../unode-plugin-sdk" }
 unode-runtime = { path = "../unode-runtime" }

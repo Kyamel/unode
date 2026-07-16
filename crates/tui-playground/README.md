@@ -1,6 +1,6 @@
-# mgn
+# tui-playground
 
-`mgn` is the example terminal application that wires the Unode pieces together
+`tui-playground` is the example terminal application that wires the Unode pieces together
 for the Mugens domain.
 
 It is an application crate, not the reusable TUI runtime. It lives under
@@ -33,4 +33,4 @@ for `state.set` live in `src/plugin_registry.rs`.
 - reusable Wasmtime ABI helpers;
 - reusable Ratatui node rendering primitives.
 
-Those belong in `unode`, `unode-sdk`, `unode-tui-runtime`, and `tui-renderer`.
+Those belong in `unode`, `unode-plugin-sdk`, `unode-tui-runtime`, and `unode-ratatui-renderer`.

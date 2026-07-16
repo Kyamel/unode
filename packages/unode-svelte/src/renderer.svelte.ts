@@ -1,6 +1,6 @@
 // Svelte adapter: portal glue for the universal Unode renderer.
 //
-// As with React, the renderer itself lives in `unode-renderer` and produces DOM.
+// As with React, the renderer itself lives in `unode-web-renderer` and produces DOM.
 // Svelte only fulfills `hostSlot(name)` holes with native Svelte components.
 //
 // This is a `.svelte.ts` rune module so the portal can hand each mounted
@@ -13,9 +13,9 @@ import type {
   HostPortalAdapter,
   HostSlotHandle,
   HostSlotRequest,
-} from "unode-renderer";
+} from "unode-web-renderer";
 
-export type { OnAction } from "unode-renderer";
+export type { OnAction } from "unode-web-renderer";
 
 /** Maps a `hostSlot(name)` to the host's Svelte component. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

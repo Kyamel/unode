@@ -13,8 +13,8 @@
     "noEmit": true,
     "types": ["vite/client"],
     "paths": {
-      "unode-core": ["../../packages/unode-core/src"],
-      "unode-renderer": ["../../packages/unode-renderer/src"],
+      "unode-web-core": ["../../packages/unode-web-core/src"],
+      "unode-web-renderer": ["../../packages/unode-web-renderer/src"],
       "unode-svelte": ["../../packages/unode-svelte/src"]
     }
   },

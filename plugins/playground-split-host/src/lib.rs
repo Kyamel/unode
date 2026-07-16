@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
 use serde_json::{Value as JsonValue, json};
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
     PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
-    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, permission,
+    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, perm,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.split-host";
@@ -15,19 +15,16 @@ const CONTRIBUTOR_COUNT_PATH: &str = "split.contributorApprovals";
 const CONTRIBUTOR_LABEL_PATH: &str = "split.contributorLabel";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Owns a split screen and exposes SlotNode anchors for other plugins.")
-            .author("unode")
-            .permission(
-                permission("screen.refresh")
-                    .required(true)
-                    .reason("Refresh the host-owned pane."),
-            )
-            .build(),
-    }
+    ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Owns a split screen and exposes SlotNode anchors for other plugins.")
+        .author("unode")
+        .permission(
+            perm("screen.refresh")
+                .required(true)
+                .reason("Refresh the host-owned pane."),
+        )
+        .envelope()
 }
 
 fn custom(action: &str) -> ActionRef {
@@ -59,7 +56,10 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
             (HOST_COUNT_PATH.to_string(), json!(0)),
             (HOST_LABEL_PATH.to_string(), json!(host_label(0))),
             (CONTRIBUTOR_COUNT_PATH.to_string(), json!(0)),
-            (CONTRIBUTOR_LABEL_PATH.to_string(), json!(contributor_label(0))),
+            (
+                CONTRIBUTOR_LABEL_PATH.to_string(),
+                json!(contributor_label(0)),
+            ),
         ]))
         .children(ui::nodes![
             ui::grid()
@@ -137,7 +137,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,

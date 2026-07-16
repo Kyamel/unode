@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use thiserror::Error;
 use unode::core::permissions::PermissionProfile;
-use unode_sdk::{PluginManifestEnvelope, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION};
+use unode_plugin_sdk::{PluginManifestEnvelope, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION};
 
 #[derive(Debug, Clone)]
 pub enum WebPluginSource {
@@ -101,7 +101,7 @@ mod tests {
     use std::sync::Arc;
 
     use unode::core::permissions::PermissionProfile;
-    use unode_sdk::{
+    use unode_plugin_sdk::{
         PluginManifestEnvelope, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION, plugin_manifest,
     };
 

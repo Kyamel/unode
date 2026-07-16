@@ -1,9 +1,9 @@
 use serde_json::{Value as JsonValue, json};
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
     PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
     PluginRenderRequest, PluginRenderSlotRequest, PluginRenderSlotResponse, ScreenNode,
-    SlotContributionDecl, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, permission,
+    SlotContributionDecl, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, perm,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.split-contributor";
@@ -14,38 +14,35 @@ const HOST_COUNT_PATH: &str = "split.hostRefreshes";
 const HOST_LABEL_PATH: &str = "split.hostLabel";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Contributes UI into Split Screen Host slots.")
-            .author("unode")
-            .permission(
-                permission("slot.contribute:playground.split")
-                    .required(true)
-                    .reason("Render UI into playground split slots."),
-            )
-            .permission(
-                permission("contributor.approve")
-                    .required(true)
-                    .reason("Handle approval actions from contributed UI."),
-            )
-            .slot_contributions([
-                SlotContributionDecl {
-                    id: "right-approval".to_string(),
-                    target: "playground.split:right".to_string(),
-                    priority: 100,
-                    when: None,
-                },
-                SlotContributionDecl {
-                    id: "footer-status".to_string(),
-                    target: "playground.split:footer".to_string(),
-                    priority: 50,
-                    when: None,
-                },
-            ])
-            .build(),
-    }
+    ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Contributes UI into Split Screen Host slots.")
+        .author("unode")
+        .permission(
+            perm("slot.contribute:playground.split")
+                .required(true)
+                .reason("Render UI into playground split slots."),
+        )
+        .permission(
+            perm("contributor.approve")
+                .required(true)
+                .reason("Handle approval actions from contributed UI."),
+        )
+        .slot_contributions([
+            SlotContributionDecl {
+                id: "right-approval".to_string(),
+                target: "playground.split:right".to_string(),
+                priority: 100,
+                when: None,
+            },
+            SlotContributionDecl {
+                id: "footer-status".to_string(),
+                target: "playground.split:footer".to_string(),
+                priority: 50,
+                when: None,
+            },
+        ])
+        .envelope()
 }
 
 fn custom(action: &str) -> ActionRef {
@@ -154,7 +151,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,
@@ -165,13 +162,16 @@ unode_sdk::export_plugin! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use unode_sdk::prelude::ResolvedRoute;
+    use unode_plugin_sdk::prelude::ResolvedRoute;
 
     #[test]
     fn manifest_declares_slot_contributions() {
         let manifest = manifest_envelope().manifest;
         assert_eq!(manifest.slot_contributions.len(), 2);
-        assert_eq!(manifest.slot_contributions[0].target, "playground.split:right");
+        assert_eq!(
+            manifest.slot_contributions[0].target,
+            "playground.split:right"
+        );
     }
 
     #[test]

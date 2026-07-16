@@ -46,16 +46,16 @@ nodes to that app's design system.
 
 The initial shape now exists for React and should be expanded:
 
-- `packages/unode-core` owns shared browser runtime glue: plugin WASM
+- `packages/unode-web-core` owns shared browser runtime glue: plugin WASM
   instantiation, host-session loading, plugin registry, state-write buffering,
   and action dispatch.
-- `packages/unode-renderer` owns IR types, `ScreenStore`, patch application,
+- `packages/unode-web-renderer` owns IR types, `ScreenStore`, patch application,
   node lookup helpers, literal/binding unwrapping, prop normalization,
   unknown-node fallback behavior, and shared renderer diagnostics.
 - `packages/unode-react` and `packages/unode-svelte` are thin mount packages for
   the shared renderer and framework-native host-slot portals.
 - `examples/web-react` and `examples/web-svelte` are private demos that wire
-  those packages to `unode-core`, generated WASM artifacts, and example plugins.
+  those packages to `unode-web-core`, generated WASM artifacts, and example plugins.
 - Applications provide a `RendererSpec` or equivalent node map that says how
   `text`, `section`, `action`, `list`, `input`, and other semantic nodes become
   local UI components.
@@ -123,7 +123,7 @@ ergonomics around paths, computed bindings, and keyed collections.
 
 ### 6. Build The Domain Bridge Pattern
 
-- Flesh out app-specific bridge crates such as `mugens-domain` and `mugens-sdk`.
+- Flesh out app-specific bridge crates such as `app-domain` and `app-sdk`.
 - Add domain models, method-level permission metadata, and host-call bindings.
 - Keep domain UI sugar out of `crates/unode`.
 - Document plugin anchors and shell slots as app-owned extension points.

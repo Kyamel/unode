@@ -12,7 +12,7 @@ During the first end-to-end Wasmtime integration, we found a stability bug in th
 
 Reusing the same long-lived guest instance across these activation cycles eventually caused a WASM trap during `plugin_render`.
 
-The exact regression is preserved in the `mgn` app test:
+The exact regression is preserved in the `tui-playground` app test:
 
 - `app_survives_three_full_plugin_navigation_cycles`
 
@@ -63,7 +63,7 @@ So the current rule is:
 
 Compared to the previous workaround, this is already better:
 
-- the ephemeral policy moved out of `mgn` and into `unode-tui-runtime`
+- the ephemeral policy moved out of `tui-playground` and into `unode-tui-runtime`
 - `Module` compilation is cached
 - `plugin_load` is now session startup work, not something the shell manually repeats before every call
 

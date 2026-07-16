@@ -11,7 +11,7 @@ use unode::core::runtime::{
 /// domain-specific method group. Mark permissions as required when the plugin
 /// cannot function without them; optional permissions can be granted later by
 /// host policy.
-pub fn permission(permission: impl Into<String>) -> PermissionRequestBuilder {
+pub fn perm(permission: impl Into<String>) -> PermissionRequestBuilder {
     PermissionRequestBuilder {
         request: PermissionRequest {
             permission: permission.into(),
@@ -296,6 +296,15 @@ impl PluginManifestBuilder {
     pub fn build(self) -> PluginManifest {
         self.manifest
     }
+
+    /// Wraps the built manifest in the ABI envelope hosts read from the
+    /// `plugin_manifest` export, filling in the current plugin ABI version.
+    pub fn envelope(self) -> crate::abi::PluginManifestEnvelope {
+        crate::abi::PluginManifestEnvelope {
+            abi_version: crate::abi::UNODE_PLUGIN_ABI_VERSION.to_string(),
+            manifest: self.build(),
+        }
+    }
 }
 
 impl Default for PluginManifestBuilder {
@@ -311,7 +320,7 @@ impl Default for PluginManifestBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{permission, plugin_manifest, route};
+    use super::{perm, plugin_manifest, route};
 
     #[test]
     fn builds_manifest_with_permissions() {
@@ -321,7 +330,7 @@ mod tests {
             .author("Lucas")
             .require("catalog.read")
             .permission(
-                permission("http.fetch")
+                perm("http.fetch")
                     .required(true)
                     .reason("load remote data")
                     .allow_origin("https://api.example.com"),

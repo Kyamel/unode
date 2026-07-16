@@ -12,7 +12,7 @@ export type PluginManifestEnvelope = {
 	manifest: PluginManifest;
 };
 
-import type { ManifestRouteDecl, ManifestRouteGroupDecl } from 'unode-core';
+import type { ManifestRouteDecl, ManifestRouteGroupDecl } from 'unode-web-core';
 
 export type PluginRouteDecl = ManifestRouteDecl;
 export type PluginRouteGroupDecl = ManifestRouteGroupDecl;

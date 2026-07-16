@@ -23,7 +23,7 @@ The bridge answers: "what can a plugin do in *this* app?"
 ## Bridge structure
 
 ```
-mugens-sdk/
+app-sdk/
   src/
     lib.rs
     api/
@@ -114,7 +114,7 @@ Bridge-level sugar builds rich UI layouts from unode core primitives.
 Plugins import these helpers instead of building the layout by hand.
 
 ```rust
-// mugens-sdk/src/sugar/work_banner.rs
+// app-sdk/src/sugar/work_banner.rs
 pub fn work_banner(view_model: &WorkBannerViewModel) -> UiNode {
     ui::stack(Some(Gap::Sm), vec![
         ui::media(MediaNode {
@@ -138,7 +138,7 @@ pub fn work_banner(view_model: &WorkBannerViewModel) -> UiNode {
 }
 ```
 
-This sugar is Mugen-specific and lives in the bridge crate, not in unode.
+This sugar is app-specific and lives in the bridge crate, not in unode.
 
 ---
 
@@ -168,7 +168,7 @@ domain APIs. unode would be unchanged.
 | `locale_get` contract | unode | Interface only |
 | `locale_get` implementation | Bridge | App owns locale state |
 | i18n catalog registry | unode | Generic, plugin-owned catalogs |
-| `WorkSummary` model | Bridge | Mugen-specific |
-| `catalog_get_work` host fn | Bridge | Mugen-specific |
+| `WorkSummary` model | Bridge | app-specific |
+| `catalog_get_work` host fn | Bridge | app-specific |
 | Navigation items, commands | unode | Generic plugin registration |
-| Route tab chrome | Bridge (or app shell) | Mugen-specific navigation pattern |
+| Route tab chrome | Bridge (or app shell) | app-specific navigation pattern |

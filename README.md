@@ -15,21 +15,20 @@ embedded in applications written with React, Svelte, Vue, or another framework.
 | Path | Purpose |
 |---|---|
 | `crates/unode` | Renderer-agnostic AST, normalization, state, resolver, IR, patch planning, transport, and core runtime types. |
-| `crates/unode-sdk` | Rust plugin authoring SDK: DSL reexports, manifests, permissions, ABI envelopes, allocators, and i18n helpers. |
+| `crates/unode-plugin-sdk` | Rust plugin authoring SDK: DSL reexports, manifests, permissions, ABI envelopes, allocators, and i18n helpers. |
 | `crates/unode-runtime` | Shared host-runtime concepts such as registries, targets, and permission-guarded runtime wrappers. |
 | `crates/unode-web-host` | Rust core pipeline compiled to WASM for browser hosts; normalizes screens, tracks reactivity, and emits IR patches. |
 | `crates/unode-web-runtime` | Web runtime boundary helpers for plugin loading, host calls, memory, and bridge validation. |
 | `crates/unode-tui-runtime` | TUI runtime boundary helpers using Wasmtime-oriented plugin sessions and host calls. |
 | `crates/renderer` | TUI rendering work using Ratatui concepts. |
-| `crates/mugens-domain` / `crates/mugens-sdk` | Example/domain bridge crates for app-specific models, permissions, and UI sugar. |
-| `crates/mgn` | Example native Rust TUI application that wires the runtime, renderer, and Mugens bridge together. |
+| `crates/tui-playground` | Example native Rust TUI application that wires the runtime, renderer, and Mugens bridge together. |
 | `plugins/` | Rust WASM example plugins, including `web-counter`. |
-| `packages/unode-core` | Shared TypeScript browser runtime library: plugin loading, web host session, registries, state-write sink, and dispatch loop. |
-| `packages/unode-renderer` | Shared TypeScript renderer library: IR types, keyed `ScreenStore`, patch application, and renderer prop helpers. |
+| `packages/unode-web-core` | Shared TypeScript browser runtime library: plugin loading, web host session, registries, state-write sink, and dispatch loop. |
+| `packages/unode-web-renderer` | Shared TypeScript renderer library: IR types, keyed `ScreenStore`, patch application, and renderer prop helpers. |
 | `packages/unode-react` | React mount package for the shared renderer, including host-slot portal glue. |
 | `packages/unode-svelte` | Svelte mount package for the shared renderer, including host-slot portal glue. |
-| `examples/web-react` | Private React demo app that wires `unode-core`, `unode-react`, and the `web-counter` plugin. |
-| `examples/web-svelte` | Private Svelte demo app that wires `unode-core`, `unode-svelte`, and the `web-counter` plugin. |
+| `examples/web-react` | Private React demo app that wires `unode-web-core`, `unode-react`, and the `web-counter` plugin. |
+| `examples/web-svelte` | Private Svelte demo app that wires `unode-web-core`, `unode-svelte`, and the `web-counter` plugin. |
 | `ts-implementation/` | Deprecated legacy TypeScript prototype kept only as migration reference. |
 | `docs/` | Architecture, runtime, ABI, reactivity, permissions, and migration documentation. |
 
@@ -60,7 +59,7 @@ host is already native Rust. `unode-tui-runtime` can call `crates/unode`
 directly while it manages Wasmtime plugin instances, host calls, and terminal
 session lifecycle.
 
-`crates/mgn` is in `crates/` because it is a Rust workspace package/binary that
+`crates/tui-playground` is in `crates/` because it is a Rust workspace package/binary that
 integrates Unode for one app. It is not the reusable TUI runtime itself; that
 role belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
 

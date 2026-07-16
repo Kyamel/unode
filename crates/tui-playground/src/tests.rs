@@ -5,11 +5,13 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use serde_json::{Value as JsonValue, json};
-use tui_renderer::{TuiFocusedPane, TuiMainContent};
-use unode_sdk::prelude::{ActionRef, ActionType, PermissionProfile, ResolvedRoute, ScreenNode};
-use unode_sdk::{
+use unode_plugin_sdk::prelude::{
+    ActionRef, ActionType, PermissionProfile, ResolvedRoute, ScreenNode,
+};
+use unode_plugin_sdk::{
     PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginRenderRequest,
 };
+use unode_ratatui_renderer::{TuiFocusedPane, TuiMainContent};
 use unode_tui_runtime::{TuiHostCallDispatcher, WasmtimeGuest};
 
 use crate::App;
@@ -133,7 +135,7 @@ fn warns_when_plugin_source_is_newer_than_wasm() {
     };
 
     let _ = PermissionProfile {
-        plugin_id: "mgn.shell".to_string(),
+        plugin_id: "tui-playground.shell".to_string(),
         grants: vec![],
     };
     assert!(wasm_path.exists());
@@ -141,7 +143,8 @@ fn warns_when_plugin_source_is_newer_than_wasm() {
 
 #[test]
 fn prefers_newest_wasm_artifact() {
-    let plugin_root = std::env::temp_dir().join(format!("mgn-test-{}", std::process::id()));
+    let plugin_root =
+        std::env::temp_dir().join(format!("tui-playground-test-{}", std::process::id()));
     let _ = fs::remove_dir_all(&plugin_root);
     let debug_path =
         plugin_root.join("target/wasm32-unknown-unknown/debug/sanity_check_plugin.wasm");

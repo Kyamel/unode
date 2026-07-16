@@ -3,7 +3,7 @@ use std::path::Path;
 use serde::de::DeserializeOwned;
 use serde_json::Value as JsonValue;
 use thiserror::Error;
-use unode_sdk::{
+use unode_plugin_sdk::{
     PluginDispatchRequest, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
     PluginRenderSlotRequest,
 };

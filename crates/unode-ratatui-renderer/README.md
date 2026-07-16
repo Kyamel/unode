@@ -1,6 +1,6 @@
-# tui-renderer
+# unode-ratatui-renderer
 
-`tui-renderer` is the terminal renderer crate for Unode screens.
+`unode-ratatui-renderer` is the terminal renderer crate for Unode screens.
 
 It translates Unode screen/chrome concepts into Ratatui-oriented terminal
 rendering structures. It should stay focused on drawing and terminal interaction

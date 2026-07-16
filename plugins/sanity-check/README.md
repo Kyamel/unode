@@ -1,7 +1,7 @@
 # Sanity Check Plugin
 
 This plugin is a minimal Rust `cdylib` compiled to `wasm32-unknown-unknown` and
-loaded at runtime by the MGN TUI shell through `unode-tui-runtime`.
+loaded at runtime by the TUI playground shell through `unode-tui-runtime`.
 
 ## Host test
 
@@ -29,7 +29,7 @@ the wasm target automatically uses `wasm-ld`.
 ## TUI smoke run
 
 ```bash
-cargo run -p mgn
+cargo run -p tui-playground
 ```
 
 Inside the shell, the `Sanity Check` navigation item opens the plugin route and

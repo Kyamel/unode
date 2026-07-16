@@ -25,13 +25,13 @@ Unode should provide:
 - `crates/unode/src/core` now contains substantial Rust core behavior: AST, DSL,
   canonical normalization, state, resolver, reactivity tracking, patch planning,
   IR lowering, transport, permissions, runtime types, and tests.
-- `crates/unode-sdk` exists and exposes plugin authoring pieces: manifest
+- `crates/unode-plugin-sdk` exists and exposes plugin authoring pieces: manifest
   builders, permission helpers, i18n helpers, ABI envelopes, allocator exports,
   and core DSL reexports.
 - `crates/unode-web-host` is the browser-side Rust core compiled through
   `wasm-bindgen`. It owns the web session pipeline: normalize, seed state, track
   dependencies, lower to IR, and plan patch ops.
-- `packages/unode-core`, `packages/unode-renderer`, `packages/unode-react`, and
+- `packages/unode-web-core`, `packages/unode-web-renderer`, `packages/unode-react`, and
   `packages/unode-svelte` are the maintained browser packages.
 - `examples/web-react` and `examples/web-svelte` are the maintained browser
   vertical slices. They instantiate both `plugin.wasm` and
@@ -41,7 +41,7 @@ Unode should provide:
 - `crates/unode-web-runtime` and `crates/unode-tui-runtime` contain runtime
   boundary helpers for loading, memory, host calls, ABI bridges, and TUI plugin
   sessions.
-- Domain bridge crates (`mugens-domain`, `mugens-sdk`) are still thin compared
+- Domain bridge crates (`app-domain`, `app-sdk`) are still thin compared
   with the intended app-specific bridge.
 - The old TypeScript implementation remains useful as reference material, but
   it should no longer be described as the active target architecture.
@@ -57,11 +57,11 @@ The current tree has working React and Svelte web runtime slices:
   - `initial_patches()` resolves symbolic bindings after mount;
   - `apply_writes()` applies state writes and returns targeted `IrPatchOp`s;
   - `state_snapshot()` feeds current host state back to plugin dispatch.
-- `packages/unode-core`
+- `packages/unode-web-core`
   - JS plugin host using native `WebAssembly.instantiate`;
   - typed host-session wrapper over `unode-web-host`;
   - bridge that drains plugin host calls into state writes.
-- `packages/unode-renderer`
+- `packages/unode-web-renderer`
   - keyed `ScreenStore`, IR helpers, recipe builder, DOM renderer, and host-slot
     contract.
 - `packages/unode-react` and `packages/unode-svelte`

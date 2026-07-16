@@ -22,5 +22,5 @@ sessions, plugin loading, host calls, and memory access.
 - app-level terminal event loops;
 - domain-specific APIs.
 
-The TUI stack should combine this crate with `unode`, `tui-renderer`, and the
+The TUI stack should combine this crate with `unode`, `unode-ratatui-renderer`, and the
 application crate.

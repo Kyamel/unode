@@ -23,8 +23,7 @@ pub use i18n::{
     PluginI18n, PluginTranslator, msg, msg_with,
 };
 pub use manifest::{
-    PermissionRequestBuilder, PluginManifestBuilder, RouteDeclBuilder, permission, plugin_manifest,
-    route,
+    PermissionRequestBuilder, PluginManifestBuilder, RouteDeclBuilder, perm, plugin_manifest, route,
 };
 pub use permissions::{
     CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile, PermissionRequest,
@@ -52,7 +51,7 @@ pub mod prelude {
     };
     pub use crate::manifest::{
         PermissionRequestBuilder, PluginManifestBuilder, RouteDeclBuilder, RouteGroupDeclBuilder,
-        permission, plugin_manifest, route, route_group,
+        perm, plugin_manifest, route, route_group,
     };
     pub use crate::permissions::{
         CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile,

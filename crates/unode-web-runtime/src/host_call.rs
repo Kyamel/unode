@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use serde_json::Value as JsonValue;
 use thiserror::Error;
-use unode_sdk::abi::AbiError;
-use unode_sdk::{
+use unode_plugin_sdk::abi::AbiError;
+use unode_plugin_sdk::{
     HostCallEnvelope, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN, decode_json_bytes,
     encode_json_bytes,
 };
@@ -114,7 +114,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     use serde_json::json;
-    use unode_sdk::{HostCallEnvelope, decode_json_bytes};
+    use unode_plugin_sdk::{HostCallEnvelope, decode_json_bytes};
 
     use super::{WebHostCallDispatcher, WebHostCallError};
     use crate::memory::write_bytes;
@@ -148,7 +148,7 @@ mod tests {
 
         let request = serde_json::to_vec(&HostCallEnvelope {
             operation: "navigation.navigate".to_string(),
-            params: BTreeMap::from([(String::from("to"), json!("/app/mangas/hot"))]),
+            params: BTreeMap::from([(String::from("to"), json!("/app/samples/hot"))]),
         })
         .expect("request");
 
@@ -159,7 +159,7 @@ mod tests {
             .expect("dispatch from memory");
 
         let value = decode_json_bytes::<serde_json::Value>(response).expect("decode");
-        assert_eq!(value["ok"], "/app/mangas/hot");
+        assert_eq!(value["ok"], "/app/samples/hot");
     }
 
     #[test]

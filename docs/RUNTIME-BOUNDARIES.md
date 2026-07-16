@@ -13,7 +13,7 @@ Owns renderer-agnostic protocol and semantics:
 - permission data structures
 - navigation chrome contracts (manifest route groups and the derived `RouteTabsView`)
 
-## `unode-sdk`
+## `unode-plugin-sdk`
 
 Owns plugin authoring ergonomics:
 

@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "paths": {
-      "unode-renderer": ["../unode-renderer/src"]
+      "unode-web-renderer": ["../unode-web-renderer/src"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte"]

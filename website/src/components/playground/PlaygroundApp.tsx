@@ -16,7 +16,7 @@ import {
 	routeTabsView,
 	type ResolvedRoute,
 	type RouteTabsView,
-} from 'unode-core';
+} from 'unode-web-core';
 import { playgroundPluginAssets, type PluginManifest, type PluginManifestEnvelope, type PlaygroundPluginAsset } from '../../playground/registry';
 import * as webHostModule from '../../playground/pkg/unode_web_host.js';
 import webHostWasmUrl from '../../playground/pkg/unode_web_host_bg.wasm?url';

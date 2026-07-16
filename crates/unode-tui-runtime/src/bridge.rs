@@ -1,7 +1,7 @@
 use serde::{Serialize, de::DeserializeOwned};
 use thiserror::Error;
-use unode_sdk::abi::AbiError;
-use unode_sdk::{PluginManifestEnvelope, WasmPtrLen, decode_json_bytes, encode_json_bytes};
+use unode_plugin_sdk::abi::AbiError;
+use unode_plugin_sdk::{PluginManifestEnvelope, WasmPtrLen, decode_json_bytes, encode_json_bytes};
 
 use crate::host_call::{TuiHostCallDispatcher, TuiHostCallError};
 use crate::memory::TuiMemoryError;
@@ -131,7 +131,7 @@ impl<G: TuiGuestInstance> TuiPluginBridge<G> {
 
     pub fn call_plugin_render_slot<Resp>(
         &mut self,
-        request: &unode_sdk::PluginRenderSlotRequest,
+        request: &unode_plugin_sdk::PluginRenderSlotRequest,
     ) -> Result<Resp, TuiAbiBridgeError>
     where
         Resp: DeserializeOwned,
@@ -157,7 +157,7 @@ impl<G: TuiGuestInstance> TuiPluginBridge<G> {
 
     pub fn call_plugin_dispatch<Resp>(
         &mut self,
-        request: &unode_sdk::PluginDispatchRequest,
+        request: &unode_plugin_sdk::PluginDispatchRequest,
     ) -> Result<Resp, TuiAbiBridgeError>
     where
         Resp: DeserializeOwned,
@@ -214,7 +214,7 @@ mod tests {
     use serde_json::{Value as JsonValue, json};
     use unode::core::dsl::IntoNode;
     use unode::core::runtime::ResolvedRoute;
-    use unode_sdk::{
+    use unode_plugin_sdk::{
         HostCallEnvelope, PluginDispatchOutcome, PluginDispatchResponse, PluginManifestEnvelope,
         PluginRenderRequest, PluginRenderSlotResponse, UNODE_PLUGIN_ABI_VERSION, plugin_manifest,
     };
@@ -290,9 +290,12 @@ mod tests {
             request_ptr: u32,
             request_len: u32,
         ) -> Result<u32, TuiAbiBridgeError> {
-            let request =
-                read_json::<unode_sdk::PluginLoadRequest>(&self.memory, request_ptr, request_len)
-                    .expect("load request");
+            let request = read_json::<unode_plugin_sdk::PluginLoadRequest>(
+                &self.memory,
+                request_ptr,
+                request_len,
+            )
+            .expect("load request");
             let response = json!({
                 "route": request.route.pattern,
                 "locale": request.locale
@@ -332,7 +335,7 @@ mod tests {
             request_ptr: u32,
             request_len: u32,
         ) -> Result<u32, TuiAbiBridgeError> {
-            let request = read_json::<unode_sdk::PluginRenderSlotRequest>(
+            let request = read_json::<unode_plugin_sdk::PluginRenderSlotRequest>(
                 &self.memory,
                 request_ptr,
                 request_len,
@@ -361,7 +364,7 @@ mod tests {
             request_ptr: u32,
             request_len: u32,
         ) -> Result<u32, TuiAbiBridgeError> {
-            let request = read_json::<unode_sdk::PluginDispatchRequest>(
+            let request = read_json::<unode_plugin_sdk::PluginDispatchRequest>(
                 &self.memory,
                 request_ptr,
                 request_len,
@@ -409,7 +412,7 @@ mod tests {
         let mut bridge = bridge();
         let request = PluginRenderRequest {
             route: ResolvedRoute {
-                pattern: "/app/mangas/hot".to_string(),
+                pattern: "/app/samples/hot".to_string(),
                 params: BTreeMap::new(),
                 query: BTreeMap::new(),
             },
@@ -422,7 +425,7 @@ mod tests {
             .call_plugin_render::<_, JsonValue>(&request)
             .expect("render response");
 
-        assert_eq!(response["screenKind"], "/app/mangas/hot");
+        assert_eq!(response["screenKind"], "/app/samples/hot");
         assert_eq!(response["title"], "Hot");
         assert_eq!(response["locale"], "pt-BR");
     }
@@ -430,7 +433,7 @@ mod tests {
     #[test]
     fn calls_plugin_load_through_guest_exports() {
         let mut bridge = bridge();
-        let request = unode_sdk::PluginLoadRequest {
+        let request = unode_plugin_sdk::PluginLoadRequest {
             route: ResolvedRoute {
                 pattern: "/plugins/sanity-check".to_string(),
                 params: BTreeMap::new(),
@@ -452,20 +455,22 @@ mod tests {
     fn calls_plugin_dispatch_through_guest_exports() {
         let mut bridge = bridge();
         let response = bridge
-            .call_plugin_dispatch::<PluginDispatchResponse>(&unode_sdk::PluginDispatchRequest {
-                route: ResolvedRoute {
-                    pattern: "/plugins/demo".to_string(),
-                    params: BTreeMap::new(),
-                    query: BTreeMap::new(),
+            .call_plugin_dispatch::<PluginDispatchResponse>(
+                &unode_plugin_sdk::PluginDispatchRequest {
+                    route: ResolvedRoute {
+                        pattern: "/plugins/demo".to_string(),
+                        params: BTreeMap::new(),
+                        query: BTreeMap::new(),
+                    },
+                    action: unode::core::ast::ActionRef {
+                        r#type: unode::core::ast::ActionType::Custom("demo.refresh".to_string()),
+                        params: None,
+                        confirm: None,
+                    },
+                    state_snapshot: BTreeMap::new(),
+                    locale: Some("en".to_string()),
                 },
-                action: unode::core::ast::ActionRef {
-                    r#type: unode::core::ast::ActionType::Custom("demo.refresh".to_string()),
-                    params: None,
-                    confirm: None,
-                },
-                state_snapshot: BTreeMap::new(),
-                locale: Some("en".to_string()),
-            })
+            )
             .expect("dispatch");
 
         assert!(response.handled);
@@ -487,7 +492,7 @@ mod tests {
         let mut bridge = bridge();
         let response = bridge
             .call_plugin_render_slot::<PluginRenderSlotResponse>(
-                &unode_sdk::PluginRenderSlotRequest {
+                &unode_plugin_sdk::PluginRenderSlotRequest {
                     contribution_id: "reviews-summary".to_string(),
                     slot_name: "catalog.work-detail:footer".to_string(),
                     route: ResolvedRoute::default(),
@@ -505,7 +510,7 @@ mod tests {
         let mut bridge = bridge();
         let request = serde_json::to_vec(&HostCallEnvelope {
             operation: "navigation.navigate".to_string(),
-            params: BTreeMap::from([(String::from("to"), json!("/app/mangas/hot"))]),
+            params: BTreeMap::from([(String::from("to"), json!("/app/samples/hot"))]),
         })
         .expect("host call request");
 
@@ -529,7 +534,7 @@ mod tests {
         let response_json =
             serde_json::from_slice::<JsonValue>(&response_bytes).expect("response json");
         assert_eq!(response_json["ok"], true);
-        assert_eq!(response_json["to"], "/app/mangas/hot");
+        assert_eq!(response_json["to"], "/app/samples/hot");
         assert_eq!(bridge.imports().host_call_result_len(), response.len);
     }
 }

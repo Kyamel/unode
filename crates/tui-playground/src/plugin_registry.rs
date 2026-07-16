@@ -5,12 +5,12 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result};
 use serde_json::{Value as JsonValue, json};
-use unode_runtime::{
-    CommandResult, DeferredText, RegisteredCommand, RegisteredNavigationItem, RegisteredRoute,
-};
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     ActionNode, BoolOrExpr, CollectionContinuation, OneOrExpr, PluginManifest, PrimitiveOrExpr,
     ScreenNode, StringOrExpr, UiExpr, UiNode,
+};
+use unode_runtime::{
+    CommandResult, DeferredText, RegisteredCommand, RegisteredNavigationItem, RegisteredRoute,
 };
 use unode_tui_runtime::{CachedTuiPlugin, TuiHostCallDispatcher, TuiRuntime};
 
@@ -44,6 +44,8 @@ impl PluginState {
 
 pub struct LoadedPlugin {
     pub runtime_plugin: CachedTuiPlugin,
+    /// Primary (navigation) route; exercised by the integration tests.
+    #[allow(dead_code)]
     pub route: String,
     pub display_source: String,
     pub source_newer_than_wasm: bool,

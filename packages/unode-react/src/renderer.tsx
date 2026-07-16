@@ -1,6 +1,6 @@
 // React adapter: a thin mount target for the universal Unode renderer.
 //
-// The renderer itself (recipes, reactivity, patching) lives in `unode-renderer`
+// The renderer itself (recipes, reactivity, patching) lives in `unode-web-renderer`
 // and produces DOM. React's only jobs here are (1) hosting that DOM in a ref and
 // (2) fulfilling `hostSlot(name)` holes with the host app's own React components
 // through React portals. There is no React-specific renderer to maintain.
@@ -15,7 +15,7 @@ import {
   type HostSlotRequest,
   type OnAction,
 
-} from "unode-renderer";
+} from "unode-web-renderer";
 
 export type { OnAction };
 

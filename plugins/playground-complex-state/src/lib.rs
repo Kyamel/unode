@@ -1,29 +1,26 @@
 use std::collections::BTreeMap;
 
 use serde_json::{Value as JsonValue, json};
-use unode_sdk::prelude::{
-    self as ui, ActionIntent, ActionRef, ActionType, PluginDispatchOutcome,
-    PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
-    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, permission,
+use unode_plugin_sdk::prelude::{
+    self as ui, ActionIntent, ActionRef, ActionType, PluginDispatchOutcome, PluginDispatchRequest,
+    PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
+    ScreenNode, TextRole, Tone, expr, perm,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.complex-state";
 const PLUGIN_NAME: &str = "Complex State";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Structured host state demo with derived labels and item-level actions.")
-            .author("unode")
-            .permission(
-                permission("state.write:tasks")
-                    .required(true)
-                    .reason("Cycle task state in the playground board."),
-            )
-            .build(),
-    }
+    ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Structured host state demo with derived labels and item-level actions.")
+        .author("unode")
+        .permission(
+            perm("state.write:tasks")
+                .required(true)
+                .reason("Cycle task state in the playground board."),
+        )
+        .envelope()
 }
 
 fn custom(action: &str) -> ActionRef {
@@ -36,9 +33,18 @@ fn custom(action: &str) -> ActionRef {
 
 fn labels(done: i64, doing: i64, todo: i64) -> BTreeMap<String, JsonValue> {
     BTreeMap::from([
-        ("board.doneLabel".to_string(), json!(format!("Done: {done}"))),
-        ("board.doingLabel".to_string(), json!(format!("Doing: {doing}"))),
-        ("board.todoLabel".to_string(), json!(format!("Todo: {todo}"))),
+        (
+            "board.doneLabel".to_string(),
+            json!(format!("Done: {done}")),
+        ),
+        (
+            "board.doingLabel".to_string(),
+            json!(format!("Doing: {doing}")),
+        ),
+        (
+            "board.todoLabel".to_string(),
+            json!(format!("Todo: {todo}")),
+        ),
     ])
 }
 
@@ -148,7 +154,9 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
             PluginDispatchResponse {
                 handled: true,
                 outcome: PluginDispatchOutcome::RefreshCurrentScreen,
-                message: Some(format!("board step -> {step}; added Generated task #{step}")),
+                message: Some(format!(
+                    "board step -> {step}; added Generated task #{step}"
+                )),
                 data: None,
             }
         }
@@ -172,7 +180,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,

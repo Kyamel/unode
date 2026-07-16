@@ -12,10 +12,10 @@ and the TUI renderer.
 unode/                          ← workspace root
   crates/
     unode/                 ← AST, normalize, state, resolver, transport
-    unode-sdk/           ← DSL builders, plugin manifest, host function wrappers
+    unode-plugin-sdk/           ← DSL builders, plugin manifest, host function wrappers
     unode-web-runtime/          ← JS-facing WASM entry points for web renderer
     unode-web-host/             ← wasm-bindgen host session for normalize/track/patch
-    mugens-sdk/                ← Mugen-specific domain API and host functions
+    app-sdk/                ← app-specific domain API and host functions
     renderer/           ← TUI renderer (Ratatui + Wasmtime)
 ```
 
@@ -286,7 +286,7 @@ pub fn screen_from_json(json: &str) -> Result<ScreenEnvelope, TransportError> {
 
 ---
 
-## Phase 2 — unode-sdk
+## Phase 2 — unode-plugin-sdk
 
 The SDK crate is compiled to `.wasm` alongside the plugin. It provides:
 
@@ -337,7 +337,7 @@ extern "C" {
 
 ---
 
-## Phase 3 — mugens-sdk
+## Phase 3 — app-sdk
 
 The bridge implements:
 

@@ -47,7 +47,7 @@ the demos consume in sync: workspace crates, plugin WASM (debug + release),
 nix-shell --run ./build.sh
 ```
 
-This produces artifacts for the MGN TUI app and both web examples
+This produces artifacts for the TUI playground TUI app and both web examples
 (`examples/web-react` and `examples/web-svelte`).
 
 ## Build pieces individually

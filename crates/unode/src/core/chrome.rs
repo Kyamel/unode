@@ -128,13 +128,13 @@ mod tests {
             ],
             routes: vec![
                 RouteDecl {
-                    pattern: "/mangas/hot".to_string(),
+                    pattern: "/samples/hot".to_string(),
                     label: Some(OneOrExpr::Value("Hot".to_string())),
                     group: Some("main".to_string()),
                     ..RouteDecl::default()
                 },
                 RouteDecl {
-                    pattern: "/mangas/recent".to_string(),
+                    pattern: "/samples/recent".to_string(),
                     label: Some(OneOrExpr::Value("Recent".to_string())),
                     badge: Some(OneOrExpr::Expr(binding("mangas.recentCount"))),
                     group: Some("main".to_string()),
@@ -157,20 +157,20 @@ mod tests {
     #[test]
     fn derives_tabs_with_active_from_matched_route() {
         let state = BTreeMap::from([("mangas.recentCount".to_string(), json!(2))]);
-        let view = route_tabs_view(&manifest(), "/mangas/recent", &state).expect("tabs");
+        let view = route_tabs_view(&manifest(), "/samples/recent", &state).expect("tabs");
 
         assert_eq!(view.group, "main");
-        assert_eq!(view.active, "/mangas/recent");
+        assert_eq!(view.active, "/samples/recent");
         assert_eq!(view.tabs.len(), 2);
         assert_eq!(view.tabs[0].label, "Hot");
-        assert_eq!(view.tabs[0].to, "/mangas/hot");
+        assert_eq!(view.tabs[0].to, "/samples/hot");
         assert_eq!(view.tabs[0].badge, None);
         assert_eq!(view.tabs[1].badge.as_deref(), Some("2"));
     }
 
     #[test]
     fn unresolved_badge_binding_is_omitted() {
-        let view = route_tabs_view(&manifest(), "/mangas/hot", &BTreeMap::new()).expect("tabs");
+        let view = route_tabs_view(&manifest(), "/samples/hot", &BTreeMap::new()).expect("tabs");
         assert_eq!(view.tabs[1].badge, None);
     }
 
@@ -178,8 +178,8 @@ mod tests {
     fn missing_label_falls_back_to_pattern() {
         let mut manifest = manifest();
         manifest.routes[0].label = None;
-        let view = route_tabs_view(&manifest, "/mangas/hot", &BTreeMap::new()).expect("tabs");
-        assert_eq!(view.tabs[0].label, "/mangas/hot");
+        let view = route_tabs_view(&manifest, "/samples/hot", &BTreeMap::new()).expect("tabs");
+        assert_eq!(view.tabs[0].label, "/samples/hot");
     }
 
     #[test]

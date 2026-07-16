@@ -4,7 +4,7 @@
 # Recommended:
 #   nix-shell --run ./build.sh
 #
-# This keeps the artifacts consumed by MGN, the web demos, and the website
+# This keeps the artifacts consumed by TUI playground, the web demos, and the website
 # playground in sync with the Rust sources: workspace crates, plugin WASM
 # builds, wasm-bindgen web-host bindings, and copied browser plugin binaries.
 set -euo pipefail
@@ -29,7 +29,7 @@ build_plugin_wasm() {
   local manifest="$1"
   local name="$2"
 
-  step "Building $name plugin WASM (debug, for MGN artifact discovery)"
+  step "Building $name plugin WASM (debug, for TUI playground artifact discovery)"
   cargo build \
     --manifest-path "$manifest" \
     --target wasm32-unknown-unknown
@@ -120,4 +120,4 @@ copy_web_counter_demo_wasm "$ROOT/examples/web-react" "React"
 copy_web_counter_demo_wasm "$ROOT/examples/web-svelte" "Svelte"
 
 step "Done"
-echo "Artifacts are in sync for MGN, web-react, web-svelte, and the website playground."
+echo "Artifacts are in sync for TUI playground, web-react, web-svelte, and the website playground."

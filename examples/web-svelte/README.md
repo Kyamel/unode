@@ -4,7 +4,7 @@ Private Svelte demo app for the Unode web runtime.
 
 This example wires:
 
-- `unode-core` for plugin loading, host sessions, state writes, and dispatch.
+- `unode-web-core` for plugin loading, host sessions, state writes, and dispatch.
 - `unode-svelte` for `<UnodeScreen />` and Svelte host-slot portals.
 - `plugins/web-counter` as the bundled plugin WASM.
 

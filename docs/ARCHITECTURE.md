@@ -110,7 +110,7 @@ Two implementations, one contract:
 ### 4. Plugins (Rust → .wasm)
 
 Plugins import:
-- `unode-sdk` — DSL builders, `PluginManifest`, `ActionRef`
+- `unode-plugin-sdk` — DSL builders, `PluginManifest`, `ActionRef`
 - The app bridge crate — `MugenHostApi` type, domain sugar
 
 Plugins must not import:

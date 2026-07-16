@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "unode-core": new URL("../../packages/unode-core/src", import.meta.url).pathname,
+      "unode-web-core": new URL("../../packages/unode-web-core/src", import.meta.url).pathname,
       "unode-react": new URL("../../packages/unode-react/src", import.meta.url).pathname,
-      "unode-renderer": new URL("../../packages/unode-renderer/src", import.meta.url).pathname,
+      "unode-web-renderer": new URL("../../packages/unode-web-renderer/src", import.meta.url).pathname,
     },
   },
   // wasm assets are imported with `?url` and fetched at runtime.

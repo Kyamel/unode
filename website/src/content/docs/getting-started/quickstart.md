@@ -11,7 +11,7 @@ writes.
 
 ## 1. Create the crate
 
-A plugin is a `cdylib` that depends on `unode-sdk`:
+A plugin is a `cdylib` that depends on `unode-plugin-sdk`:
 
 ```toml title="Cargo.toml"
 [package]
@@ -25,7 +25,7 @@ crate-type = ["cdylib"]
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-unode-sdk = { path = "../../crates/unode-sdk" }
+unode-plugin-sdk = { path = "../../crates/unode-plugin-sdk" }
 ```
 
 ## 2. Declare the manifest
@@ -34,7 +34,7 @@ The manifest identifies the plugin and its ABI version. `plugin_manifest` is a
 builder from the SDK:
 
 ```rust title="src/lib.rs"
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     self as ui, expr, ActionIntent, ActionRef, ActionType, IntoNode,
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse,
     PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest, ScreenNode,
@@ -47,14 +47,11 @@ const COUNT_PATH: &str = "ui.count";
 const LABEL_PATH: &str = "ui.countLabel";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: unode_sdk::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+    unode_plugin_sdk::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
             .version("0.1.0")
             .description("Reactive counter proving the unode web runtime slice.")
             .author("unode")
-            .build(),
-    }
+            .envelope()
 }
 ```
 
@@ -190,7 +187,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
 write those by hand.
 
 ```rust
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,

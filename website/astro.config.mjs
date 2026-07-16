@@ -11,10 +11,10 @@ export default defineConfig({
 	vite: {
 		resolve: {
 			alias: {
-				'unode-core': fileURLToPath(new URL('../packages/unode-core/src/index.ts', import.meta.url)),
+				'unode-web-core': fileURLToPath(new URL('../packages/unode-web-core/src/index.ts', import.meta.url)),
 				'unode-react': fileURLToPath(new URL('../packages/unode-react/src/index.ts', import.meta.url)),
-				'unode-renderer': fileURLToPath(
-					new URL('../packages/unode-renderer/src/index.ts', import.meta.url),
+				'unode-web-renderer': fileURLToPath(
+					new URL('../packages/unode-web-renderer/src/index.ts', import.meta.url),
 				),
 			},
 		},

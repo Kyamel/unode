@@ -1,5 +1,5 @@
 [package]
-name = "unode-sdk"
+name = "unode-plugin-sdk"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

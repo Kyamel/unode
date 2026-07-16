@@ -3,12 +3,12 @@ members = [
   "crates/unode",
   "crates/unode-renderer",
   "crates/unode-runtime",
-  "crates/unode-sdk",
+  "crates/unode-plugin-sdk",
   "crates/unode-web-runtime",
   "crates/unode-web-host",
   "crates/unode-tui-runtime",
-  "crates/tui-renderer",
-  "crates/mgn",
+  "crates/unode-ratatui-renderer",
+  "crates/tui-playground",
   "crates/unode-devtools",
 ]
 resolver = "2"

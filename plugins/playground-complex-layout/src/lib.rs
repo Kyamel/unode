@@ -1,27 +1,24 @@
 use serde_json::{Value as JsonValue, json};
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     self as ui, IntoNode, ListDensity, PluginDispatchOutcome, PluginDispatchRequest,
     PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
-    ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, ValueFormat, permission,
+    ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, ValueFormat, perm,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.complex-layout";
 const PLUGIN_NAME: &str = "Complex Layout";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Dense semantic layout demo with metrics, sections, badges, and lists.")
-            .author("unode")
-            .permission(
-                permission("layout.read")
-                    .required(true)
-                    .reason("Read static demo layout data."),
-            )
-            .build(),
-    }
+    ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Dense semantic layout demo with metrics, sections, badges, and lists.")
+        .author("unode")
+        .permission(
+            perm("layout.read")
+                .required(true)
+                .reason("Read static demo layout data."),
+        )
+        .envelope()
 }
 
 fn load_response(request: &PluginLoadRequest) -> JsonValue {
@@ -109,7 +106,7 @@ fn dispatch_response(_request: &PluginDispatchRequest) -> PluginDispatchResponse
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,

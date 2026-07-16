@@ -13,7 +13,7 @@
     "lint": "eslint demo scripts vite.config.ts svelte.config.js"
   },
   "dependencies": {
-    "unode-core": "workspace:*",
+    "unode-web-core": "workspace:*",
     "unode-svelte": "workspace:*",
     "svelte": "^5.7.0"
   },

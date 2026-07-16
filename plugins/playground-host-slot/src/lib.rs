@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
 use serde_json::{Value as JsonValue, json};
-use unode_sdk::prelude::{
+use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
     PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
-    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, permission,
+    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, perm,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.host-slot";
@@ -13,19 +13,16 @@ const COUNT_PATH: &str = "hostSlot.count";
 const LABEL_PATH: &str = "hostSlot.label";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Demonstrates host-rendered Button slots driven by plugin action nodes.")
-            .author("unode")
-            .permission(
-                permission("playground.host-slot.button")
-                    .required(true)
-                    .reason("Render native playground buttons for action nodes."),
-            )
-            .build(),
-    }
+    ui::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Demonstrates host-rendered Button slots driven by plugin action nodes.")
+        .author("unode")
+        .permission(
+            perm("playground.host-slot.button")
+                .required(true)
+                .reason("Render native playground buttons for action nodes."),
+        )
+        .envelope()
 }
 
 fn custom(action: &str) -> ActionRef {
@@ -118,7 +115,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,
@@ -133,6 +130,9 @@ mod tests {
     fn manifest_requests_host_slot_permission() {
         let manifest = manifest_envelope().manifest;
         assert_eq!(manifest.id, PLUGIN_ID);
-        assert_eq!(manifest.permissions[0].permission, "playground.host-slot.button");
+        assert_eq!(
+            manifest.permissions[0].permission,
+            "playground.host-slot.button"
+        );
     }
 }

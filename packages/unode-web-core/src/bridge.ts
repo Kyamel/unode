@@ -5,7 +5,7 @@
 //          -> session.applyWrites(writes) -> IrPatchOp[]
 //          -> store.applyPatches(ops) -> only affected node keys wake
 
-import { ScreenStore, type OnAction } from "unode-renderer";
+import { ScreenStore, type OnAction } from "unode-web-renderer";
 import type { HostCallHandler } from "./pluginHost";
 import { PluginInstance } from "./pluginHost";
 import { HostSession, type ResolvedRoute } from "./session";

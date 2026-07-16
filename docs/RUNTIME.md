@@ -12,7 +12,7 @@ plugin_render_slot(request_json) → PluginRenderSlotResponse JSON string
 plugin_dispatch(request_json) → PluginDispatchResponse JSON string
 ```
 
-In Rust, plugin authors use `unode-sdk` which hides the WASM export
+In Rust, plugin authors use `unode-plugin-sdk` which hides the WASM export
 boilerplate:
 
 ```rust
@@ -21,7 +21,7 @@ use unode_plugin_sdk::prelude::*;
 #[unode::plugin]
 fn manifest() -> PluginManifest {
     plugin_manifest("com.mugenx.catalog", "Catalog")
-        .permission(permission("catalog.read").required(true).reason("Load works"))
+        .permission(perm("catalog.read").required(true).reason("Load works"))
         // One plugin can declare multiple screens. The host registers each
         // declared route and dispatches matching navigations back through
         // `plugin_render`, which branches on the resolved `route.pattern`.
@@ -33,10 +33,10 @@ fn manifest() -> PluginManifest {
         // and badges accept state bindings for dynamic values.
         .route_group(route_group("browse").tabs())
         .routes([
-            route("/app/mangas/hot")
+            route("/app/samples/hot")
                 .group("browse")
                 .label("Hot"),
-            route("/app/mangas/recent")
+            route("/app/samples/recent")
                 .group("browse")
                 .label("Recent")
                 .badge(expr::binding::<String>("mangas.recentCount")),

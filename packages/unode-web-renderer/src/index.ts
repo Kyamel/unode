@@ -4,7 +4,7 @@
 // and are framework-free. Frameworks (React, Svelte, ...) are only mount targets
 // and portal providers — they do not own renderer semantics.
 //
-//   import { defineRenderer, h, hostSlot } from "unode-renderer";
+//   import { defineRenderer, h, hostSlot } from "unode-web-renderer";
 //
 //   const renderer = defineRenderer()
 //     .recipe("action", ({ label, intent, run }) =>

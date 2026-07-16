@@ -5,11 +5,11 @@
 //! per-node-kind functions that measure (rows needed at a width) and render
 //! (paint into a region of a surface). The machinery here is stack-agnostic —
 //! the surface type is chosen by a [`Backend`] implementation, so the same
-//! recipe model drives ratatui (see the `tui-renderer` crate), a hand-rolled
+//! recipe model drives ratatui (see the `unode-ratatui-renderer` crate), a hand-rolled
 //! ANSI writer, or anything else cell-grid shaped.
 //!
 //! ```ignore
-//! let renderer = tui_renderer::ratatui_renderer()   // defaults included
+//! let renderer = unode_ratatui_renderer::ratatui_renderer()   // defaults included
 //!     .recipe(NodeKind::Text, my_text_recipe)       // override one node kind
 //!     .fallback(my_fallback)
 //!     .build();
@@ -338,7 +338,7 @@ pub struct RendererBuilder<B: Backend> {
 }
 
 /// Entry point: start from an empty recipe set. Backends typically wrap this
-/// with a seeded variant (e.g. `tui_renderer::ratatui_renderer()`).
+/// with a seeded variant (e.g. `unode_ratatui_renderer::ratatui_renderer()`).
 pub fn define_renderer<B: Backend>() -> RendererBuilder<B> {
     RendererBuilder {
         recipes: HashMap::new(),

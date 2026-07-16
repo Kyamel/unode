@@ -4,9 +4,9 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "paths": {
-      "unode-core": ["../packages/unode-core/src/index.ts"],
+      "unode-web-core": ["../packages/unode-web-core/src/index.ts"],
       "unode-react": ["../packages/unode-react/src/index.ts"],
-      "unode-renderer": ["../packages/unode-renderer/src/index.ts"]
+      "unode-web-renderer": ["../packages/unode-web-renderer/src/index.ts"]
     }
   },
   "include": [".astro/types.d.ts", "**/*"],

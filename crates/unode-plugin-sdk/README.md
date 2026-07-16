@@ -1,6 +1,6 @@
-# unode-sdk
+# unode-plugin-sdk
 
-`unode-sdk` is the Rust authoring surface for plugin developers.
+`unode-plugin-sdk` is the Rust authoring surface for plugin developers.
 
 It reexports the core DSL, wraps manifest and permission construction, defines
 plugin ABI request/response envelopes, provides allocator exports, and includes
@@ -29,7 +29,7 @@ fn load(request: &PluginLoadRequest) -> serde_json::Value { /* ... */ }
 fn render(request: &PluginRenderRequest) -> ScreenNode { /* ... */ }
 fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { /* ... */ }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest,
     load: load,
     render: render,
@@ -46,7 +46,7 @@ Plugins should request host-owned state writes through the SDK:
 
 ```rust
 use serde_json::json;
-use unode_sdk::prelude as ui;
+use unode_plugin_sdk::prelude as ui;
 
 ui::host::state_set("ui.count", json!(1));
 ```

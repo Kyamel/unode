@@ -6,7 +6,7 @@ description: The raw plugin exports, the SDK macro that generates them, and how 
 The plugin contract is split into three layers: the SDK that authors use, the
 raw ABI it generates, and the host packages that validate and drive it.
 
-## `unode-sdk` — what you write
+## `unode-plugin-sdk` — what you write
 
 The SDK owns the ABI names and request envelopes: `UNODE_PLUGIN_ABI_VERSION`,
 the required exports, the load/render/dispatch request payloads, the host-call
@@ -20,7 +20,7 @@ fn load(request: &PluginLoadRequest) -> serde_json::Value { /* ... */ }
 fn render(request: &PluginRenderRequest) -> ScreenNode { /* ... */ }
 fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { /* ... */ }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest,
     load: load,
     render: render,

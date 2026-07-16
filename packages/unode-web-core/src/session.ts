@@ -3,7 +3,7 @@
 // The wasm-bindgen `WebSession` exposes JSON-in/JSON-out methods; this wrapper
 // parses them into the typed IR the renderer consumes.
 
-import type { IrPatchOp, IrScreen } from "unode-renderer";
+import type { IrPatchOp, IrScreen } from "unode-web-renderer";
 
 /** Shape of the generated wasm-bindgen module (subset we use). */
 export interface WebHostModule {

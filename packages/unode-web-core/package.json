@@ -1,5 +1,5 @@
 {
-  "name": "unode-core",
+  "name": "unode-web-core",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "unode-renderer": "workspace:*"
+    "unode-web-renderer": "workspace:*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

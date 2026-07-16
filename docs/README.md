@@ -20,7 +20,7 @@ A renderer-agnostic semantic UI protocol for plugin-based applications.
 
 ```
 Plugin (Rust → .wasm)
-  └── uses unode-sdk (Rust crate)
+  └── uses unode-plugin-sdk (Rust crate)
         ├── DSL builders  → produces CanonicalScreen JSON
         └── host functions ← ctx.api.*, ctx.state.*, ctx.http
 

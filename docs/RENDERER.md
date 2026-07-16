@@ -17,11 +17,11 @@ capability is unavailable.
 Rust hosts declare their renderer with the `unode-renderer` crate — the same
 recipe model as the web `defineRenderer()`. The core crate is presentation-
 stack agnostic (a `Backend` picks the surface type), so the recipe machinery
-also serves hand-rolled terminal writers. `tui-renderer` ships the ratatui
+also serves hand-rolled terminal writers. `unode-ratatui-renderer` ships the ratatui
 backend with default recipes:
 
 ```rust
-use tui_renderer::{NodeKind, Recipe, ratatui_renderer};
+use unode_ratatui_renderer::{NodeKind, Recipe, ratatui_renderer};
 
 let renderer = ratatui_renderer()          // ratatui defaults for every node
     .recipe(NodeKind::Text, my_text_recipe()) // override one node kind
@@ -62,11 +62,11 @@ override only the semantic recipes that need to match their design system.
 
 The target split is now starting to exist in `packages/`:
 
-- **Web runtime core:** `packages/unode-core`, a shared TypeScript package
+- **Web runtime core:** `packages/unode-web-core`, a shared TypeScript package
   for plugin WASM instantiation, host-session loading, plugin registries,
   state-write buffering, and action dispatch. This is runtime glue, not
   renderer customization.
-- **Renderer core SDK:** `packages/unode-renderer` is *the* renderer. It is a
+- **Renderer core SDK:** `packages/unode-web-renderer` is *the* renderer. It is a
   single, framework-free TypeScript package: `IrScreen`/`IrNode`/`IrPatchOp`,
   the keyed `ScreenStore`, prop normalization, the ergonomic recipe context, the
   `defineRenderer()` recipe/builder/override API, the `h()`/`hostSlot()` virtual
@@ -81,7 +81,7 @@ The target split is now starting to exist in `packages/`:
   components. There is no per-framework renderer to keep in sync; a Vue package
   would only add its own portal wrapper.
 - **Examples are apps.** `examples/web-react` and `examples/web-svelte` wire the
-  importable packages to `unode-core`, generated WASM artifacts, and the
+  importable packages to `unode-web-core`, generated WASM artifacts, and the
   `web-counter` plugin.
 - **Application renderer spec:** app-owned mapping from semantic node types to
   design-system components. This is where the host decides how plugin-provided
@@ -94,7 +94,7 @@ They return neutral VNodes via `h()`, or defer to a host-native component via
 `hostSlot()`:
 
 ```ts
-import { defineRenderer, h, hostSlot } from "unode-renderer";
+import { defineRenderer, h, hostSlot } from "unode-web-renderer";
 
 export const renderer = defineRenderer()
   .recipe("text", ({ content, role }) =>

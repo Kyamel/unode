@@ -52,7 +52,7 @@ drives Ratatui + `ratatui-image` for rendering.
 
 ### 4. Plugins
 
-Rust compiled to `.wasm`. Plugins import `unode-sdk` (DSL builders, manifest,
+Rust compiled to `.wasm`. Plugins import `unode-plugin-sdk` (DSL builders, manifest,
 `ActionRef`) and the app bridge crate. They must **not** import renderer
 internals, DOM APIs, terminal APIs, or direct networking — all network access
 goes through `ctx.http`.

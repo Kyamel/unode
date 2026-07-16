@@ -51,7 +51,7 @@ knowledge lives entirely in the app bridge.
 
 ```text
 Plugin (Rust → .wasm)
-  └── uses unode-sdk (DSL builders → CanonicalScreen JSON, host calls)
+  └── uses unode-plugin-sdk (DSL builders → CanonicalScreen JSON, host calls)
 
 unode core (Rust → .wasm / native)
   ├── AST types + normalization

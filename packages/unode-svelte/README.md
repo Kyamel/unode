@@ -3,7 +3,7 @@
 Svelte mount target for Unode's framework-free web renderer.
 
 `unode-svelte` does not own plugin loading, WASM sessions, patch planning, or the
-renderer recipe language. Those live in `unode-core` and `unode-renderer`.
+renderer recipe language. Those live in `unode-web-core` and `unode-web-renderer`.
 This package contributes only:
 
 - `<UnodeScreen />`, which mounts a `Renderer` into a Svelte app.

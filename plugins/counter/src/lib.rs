@@ -12,12 +12,12 @@
 
 use std::collections::BTreeMap;
 
-use serde_json::{json, Value as JsonValue};
+use serde_json::{Value as JsonValue, json};
 
-use unode_sdk::prelude::{
-    self as ui, expr, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
+use unode_plugin_sdk::prelude::{
+    self as ui, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
     PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
-    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION,
+    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr,
 };
 
 const PLUGIN_ID: &str = "dev.unode.counter";
@@ -28,14 +28,11 @@ const COUNT_PATH: &str = "ui.count";
 const LABEL_PATH: &str = "ui.countLabel";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
-    PluginManifestEnvelope {
-        abi_version: UNODE_PLUGIN_ABI_VERSION.to_string(),
-        manifest: unode_sdk::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
-            .version("0.1.0")
-            .description("Reactive counter proving the unode web runtime slice.")
-            .author("unode")
-            .build(),
-    }
+    unode_plugin_sdk::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
+        .version("0.1.0")
+        .description("Reactive counter proving the unode web runtime slice.")
+        .author("unode")
+        .envelope()
 }
 
 fn load_response(request: &PluginLoadRequest) -> JsonValue {
@@ -139,7 +136,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
-unode_sdk::export_plugin! {
+unode_plugin_sdk::export_plugin! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,
@@ -149,7 +146,7 @@ unode_sdk::export_plugin! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use unode_sdk::prelude::ResolvedRoute;
+    use unode_plugin_sdk::prelude::ResolvedRoute;
 
     fn dispatch_req(action: &str, count: i64) -> PluginDispatchRequest {
         PluginDispatchRequest {
@@ -194,8 +191,14 @@ mod tests {
         assert!(resp.data.is_none(), "no UI state returned in the response");
 
         let sets = recorded_state_sets();
-        assert!(sets.contains(&(COUNT_PATH.to_string(), json!(5))), "sets: {sets:?}");
-        assert!(sets.contains(&(LABEL_PATH.to_string(), json!("Count: 5"))), "sets: {sets:?}");
+        assert!(
+            sets.contains(&(COUNT_PATH.to_string(), json!(5))),
+            "sets: {sets:?}"
+        );
+        assert!(
+            sets.contains(&(LABEL_PATH.to_string(), json!("Count: 5"))),
+            "sets: {sets:?}"
+        );
     }
 
     #[test]
@@ -203,7 +206,10 @@ mod tests {
         clear_recorded();
         dispatch_response(&dispatch_req("counter.reset", 99));
         let sets = recorded_state_sets();
-        assert!(sets.contains(&(COUNT_PATH.to_string(), json!(0))), "sets: {sets:?}");
+        assert!(
+            sets.contains(&(COUNT_PATH.to_string(), json!(0))),
+            "sets: {sets:?}"
+        );
     }
 
     #[test]

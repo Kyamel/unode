@@ -11,7 +11,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "unode-renderer": "workspace:*"
+    "unode-web-renderer": "workspace:*"
   },
   "peerDependencies": {
     "svelte": "^5.7.0"

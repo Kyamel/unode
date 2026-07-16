@@ -2,7 +2,7 @@
 
 Unode should support two official plugin authoring paths over time:
 
-- Rust plugins through the current `unode-sdk`;
+- Rust plugins through the current `unode-plugin-sdk`;
 - TypeScript-family plugins through a future SDK.
 
 The WebAssembly Component Model and WIT are the best long-term contract shape for
@@ -61,7 +61,7 @@ Keep today's ABI as the production path:
 - `unode_dealloc`
 - `host_call`
 
-Rust plugins keep using `unode-sdk::export_plugin!()`.
+Rust plugins keep using `unode-plugin-sdk::export_plugin!()`.
 
 ### Phase 1: JSON-preserving WIT
 

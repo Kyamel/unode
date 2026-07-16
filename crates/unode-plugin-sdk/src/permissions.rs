@@ -5,7 +5,7 @@ pub use unode::core::permissions::{
 };
 
 pub fn core_permission(permission: CoreBuiltinPermission) -> PermissionRequestBuilder {
-    crate::manifest::permission(permission.as_str())
+    crate::manifest::perm(permission.as_str())
 }
 
 pub mod core {

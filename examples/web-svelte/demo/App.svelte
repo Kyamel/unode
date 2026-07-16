@@ -14,7 +14,7 @@
     StateWriteSink,
     WebPluginRegistry,
     WebRuntime,
-  } from "unode-core";
+  } from "unode-web-core";
   import Button from "./Button.svelte";
   import pluginWasmUrl from "./web_counter_plugin.wasm?url";
 

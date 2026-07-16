@@ -10,20 +10,20 @@ use crossterm::terminal::{
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
 use serde_json::{Value as JsonValue, json};
-use tui_renderer::{
+use unode_plugin_sdk::prelude::{
+    ActionRef, ActionType, CoreActionType, PermissionProfile, ResolvedRoute, ScreenNode,
+    route_tabs_view,
+};
+use unode_plugin_sdk::{
+    PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
+    PluginRenderRequest,
+};
+use unode_ratatui_renderer::{
     TuiCommandBar, TuiFocusedPane, TuiInteractiveElement, TuiInteractiveKind, TuiMainContent,
     TuiMainPanel, TuiNavItem, TuiRenderer, TuiScreenView, TuiShellView,
     collect_screen_interactions, ratatui_renderer, render_tui_shell,
 };
 use unode_runtime::{CommandResult, ShellContext};
-use unode_sdk::prelude::{
-    ActionRef, ActionType, CoreActionType, PermissionProfile, ResolvedRoute, ScreenNode,
-    route_tabs_view,
-};
-use unode_sdk::{
-    PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
-    PluginRenderRequest,
-};
 use unode_tui_runtime::{PluginSession, TuiRuntime};
 
 mod plugin_registry;
@@ -67,7 +67,7 @@ struct App {
 impl App {
     fn new() -> Result<Self> {
         let profile = PermissionProfile {
-            plugin_id: "mgn.shell".to_string(),
+            plugin_id: "tui-playground.shell".to_string(),
             grants: vec![],
         };
         let mut runtime = TuiRuntime::new(profile);
@@ -86,7 +86,7 @@ impl App {
         // The renderer is declared through the Rust renderer SDK — the same
         // recipe model as the web `defineRenderer()`. Override any node kind
         // here (e.g. `.recipe(NodeKind::Text, custom_text_recipe())`) to
-        // restyle how mgn paints that node.
+        // restyle how tui-playground paints that node.
         let renderer = ratatui_renderer().build();
 
         let mut app = Self {
@@ -516,7 +516,7 @@ impl App {
         };
 
         TuiShellView {
-            title: "MGN Test Shell".to_string(),
+            title: "Unode TUI Playground".to_string(),
             status: self.status.clone(),
             nav_items: self.nav_items(),
             selected_nav: self.selected_nav,

@@ -20,7 +20,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
- "unode-sdk",
+ "unode-plugin-sdk",
 ]
 
 [[package]]
@@ -131,7 +131,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "unode-sdk"
+name = "unode-plugin-sdk"
 version = "0.1.0"
 dependencies = [
  "serde",

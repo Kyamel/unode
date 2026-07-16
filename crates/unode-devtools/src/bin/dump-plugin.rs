@@ -7,8 +7,8 @@ use serde::Serialize;
 use serde_json::{Value as JsonValue, json};
 use unode::core::ir::lower_screen;
 use unode::core::normalize::normalize_screen;
-use unode_sdk::prelude::{ResolvedRoute, ScreenNode};
-use unode_sdk::{PluginLoadRequest, PluginRenderRequest};
+use unode_plugin_sdk::prelude::{ResolvedRoute, ScreenNode};
+use unode_plugin_sdk::{PluginLoadRequest, PluginRenderRequest};
 use unode_tui_runtime::{TuiHostCallDispatcher, WasmtimeGuest};
 
 struct PluginSpec {

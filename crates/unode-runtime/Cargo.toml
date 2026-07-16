@@ -9,3 +9,6 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 unode = { path = "../unode" }
+
+[dev-dependencies]
+unode-plugin-sdk = { path = "../unode-plugin-sdk" }
