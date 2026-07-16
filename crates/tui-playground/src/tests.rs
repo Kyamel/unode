@@ -360,12 +360,13 @@ fn discovers_all_example_plugins_and_ships_from_route_tabs() {
     for id in [
         "dev.unode.counter",
         "dev.unode.sanity-check",
-        "dev.unode.playground.route-tabs",
-        "dev.unode.playground.host-slot",
-        "dev.unode.playground.split-host",
-        "dev.unode.playground.split-contributor",
-        "dev.unode.playground.complex-layout",
-        "dev.unode.playground.complex-state",
+        "dev.unode.actions",
+        "dev.unode.route-tabs",
+        "dev.unode.host-components",
+        "dev.unode.slot-host",
+        "dev.unode.slot-contributor",
+        "dev.unode.layout",
+        "dev.unode.state-collections",
     ] {
         assert!(
             loaded.iter().any(|value| value == id),
@@ -375,7 +376,7 @@ fn discovers_all_example_plugins_and_ships_from_route_tabs() {
 
     // Route-tabs plugin: activate "Ship one more" and watch the manifest
     // badge binding pick up the state write.
-    app.navigate_to("/playground/route-tabs".to_string());
+    app.navigate_to("/plugins/route-tabs".to_string());
     app.focused_pane = TuiFocusedPane::Main;
 
     let ship_index = app

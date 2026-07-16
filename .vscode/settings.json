@@ -5,14 +5,18 @@
     ],
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
+
+        "plugins/actions/Cargo.toml",
         "plugins/counter/Cargo.toml",
-        "plugins/playground-complex-layout/Cargo.toml",
-        "plugins/playground-complex-state/Cargo.toml",
-        "plugins/playground-host-slot/Cargo.toml",
-        "plugins/playground-route-tabs/Cargo.toml",
-        "plugins/playground-split-contributor/Cargo.toml",
-        "plugins/playground-split-host/Cargo.toml",
+        "plugins/host-components/Cargo.toml",
+        "plugins/layout/Cargo.toml",
+        "plugins/route_tabs/Cargo.toml",
         "plugins/sanity-check/Cargo.toml",
+        "plugins/slot-host/Cargo.toml",
+        "plugins/sanity-check/Cargo.toml",
+        "plugins/slot-contributor/Cargo.toml",
+        "plugins/state-collections/Cargo.toml",
+
         "examples/tui-ratatui/Cargo.toml"
     ]
 }

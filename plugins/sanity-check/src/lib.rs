@@ -1,3 +1,12 @@
+//! `sanity-check` — the contract plugin.
+//!
+//! One job: exercise **every** ABI export (`plugin_manifest`, `plugin_load`,
+//! `plugin_render`, `plugin_render_slot`, `plugin_dispatch`) so hosts and the
+//! loader always have a plugin that proves the full contract end to end. It
+//! deliberately touches several features at once (two manifest routes in a
+//! tabs group, custom + core actions, dispatch outcomes) — for a focused
+//! lesson on any single capability, read the other example plugins.
+
 use serde_json::{Value as JsonValue, json};
 use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode,

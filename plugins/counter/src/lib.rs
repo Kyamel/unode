@@ -9,6 +9,10 @@
 //! State never lives inside the plugin's linear memory — it is owned by the
 //! host store and handed back each dispatch. That is the sandbox boundary: the
 //! plugin only declares intent and returns data.
+//!
+//! This example uses the raw mechanism (`expr::binding` + `host::state_set`)
+//! on purpose; see `route-tabs` for `StateKey`, the typed sugar over the
+//! same paths.
 
 use std::collections::BTreeMap;
 
