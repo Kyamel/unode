@@ -36,11 +36,19 @@ export class StateWriteSink {
 }
 
 export interface WebRuntimeOptions {
+  pluginId?: string;
   plugin: PluginInstance;
   session: HostSession;
   sink: StateWriteSink;
   route: ResolvedRoute;
   locale: string;
+  actionTargetForPlugin?: (pluginId: string) => WebRuntimeActionTarget | undefined;
+}
+
+export interface WebRuntimeActionTarget {
+  plugin: PluginInstance;
+  sink: StateWriteSink;
+  route: ResolvedRoute;
 }
 
 interface DispatchResponse {
@@ -70,9 +78,24 @@ export class WebRuntime {
 
   /** The action handler handed to adapter renderers. */
   onAction: OnAction = (action) => {
-    const { plugin, session, sink, route, locale } = this.opts;
+    const { session, locale } = this.opts;
     if (!this.store) return;
 
+    const currentPluginId = this.opts.pluginId;
+    const target =
+      action.originPluginId && action.originPluginId !== currentPluginId
+        ? this.opts.actionTargetForPlugin?.(action.originPluginId)
+        : undefined;
+
+    if (action.originPluginId && action.originPluginId !== currentPluginId && !target) {
+      console.warn(
+        "[unode] refused to dispatch contributed action without plugin target",
+        action.originPluginId,
+      );
+      return;
+    }
+
+    const { plugin, sink, route } = target ?? this.opts;
     const snapshot = session.stateSnapshot();
     const response = plugin.dispatch<DispatchResponse>({
       route,

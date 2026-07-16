@@ -71,13 +71,14 @@ export function App() {
         // `navigation.navigate`, domain APIs, etc.
         const sink = new StateWriteSink();
         const pluginTarget = routeTargetForCurrentLocation();
-        const { plugin, route } = await pluginRegistry.instantiateForPath(
+        const { registration, plugin, route } = await pluginRegistry.instantiateForPath(
           pluginTarget.pathname,
           pluginTarget.query,
           sink.handler,
         );
 
         const runtime = new WebRuntime({
+          pluginId: registration.id,
           plugin,
           session,
           sink,

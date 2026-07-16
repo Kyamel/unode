@@ -5,6 +5,7 @@
 // the happy-path recipe stays a one-liner.
 
 import {
+  actionWithOrigin,
   actionRefOf,
   booleanProp,
   propOf,
@@ -62,7 +63,7 @@ export function createRendererRecipeContext<TChildren>({
   dispatch,
   renderChildren,
 }: RendererRecipeContextOptions<TChildren>): RendererRecipeContext<TChildren> {
-  const action = actionRefOf(props.action);
+  const action = actionWithOrigin(actionRefOf(props.action), props);
   const prop = <T = unknown>(name: string, fallback?: T): T | undefined =>
     propOf(props, name, fallback);
   const text = (fallback = ""): string =>

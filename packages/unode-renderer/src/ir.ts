@@ -4,7 +4,12 @@
 // prop normalization applied before recipes see a node. Nothing here knows about
 // the DOM, React, Svelte, or any concrete UI toolkit.
 
-export type ActionRef = { t: string; p?: Record<string, unknown> };
+export type ActionRef = {
+  t: string;
+  p?: Record<string, unknown>;
+  originPluginId?: string;
+  originContributionId?: string;
+};
 
 /** An action dispatch callback: receives the lowered action ref `{ t, p? }`. */
 export type OnAction = (action: ActionRef) => void;
@@ -78,6 +83,27 @@ export function actionRefOf(value: unknown): ActionRef | undefined {
     return value as ActionRef;
   }
   return undefined;
+}
+
+export function actionWithOrigin(
+  action: ActionRef | undefined,
+  props: Record<string, unknown>,
+): ActionRef | undefined {
+  if (!action) return undefined;
+
+  const originPluginId = props["_originPluginId"];
+  if (typeof originPluginId !== "string" || originPluginId.length === 0) {
+    return action;
+  }
+
+  const originContributionId = props["_originContributionId"];
+  return {
+    ...action,
+    originPluginId,
+    ...(typeof originContributionId === "string" && originContributionId.length > 0
+      ? { originContributionId }
+      : {}),
+  };
 }
 
 /** Reads a renderer prop with a fallback while keeping call sites compact. */

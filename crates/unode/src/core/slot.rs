@@ -972,10 +972,11 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::core::ast::{ActionRef, ActionType, UiExpr};
+    use crate::core::ast::{ActionRef, ActionType, StatusSeverity, UiExpr};
     use crate::core::dsl::{self as ui, IntoNode};
     use crate::core::ir::lower_screen;
     use crate::core::normalize::normalize_screen;
+    use crate::core::permissions::{PermissionGrant, PermissionGuard, PermissionProfile};
     use crate::core::runtime::{PluginManifest, SlotContributionDecl};
 
     #[derive(Debug, Default)]
@@ -1128,10 +1129,117 @@ mod tests {
         assert_eq!(origin.plugin_id, "reviews.plugin");
         assert_eq!(origin.contribution_id.as_deref(), Some("reviews-summary"));
         assert!(resolved.children[0].meta().key.contains("reviews.plugin"));
+        assert_eq!(renderer.calls.len(), 1);
+        assert_eq!(renderer.calls[0].0, "reviews.plugin");
+        assert_eq!(renderer.calls[0].1.contribution_id, "reviews-summary");
 
         let ir = lower_screen(&resolved);
         assert_eq!(ir.c[0].p[SLOT_ORIGIN_PLUGIN_ID], "reviews.plugin");
         assert_eq!(ir.c[0].p[SLOT_ORIGIN_CONTRIBUTION_ID], "reviews-summary");
+    }
+
+    #[test]
+    fn nested_contributed_actions_carry_contributor_origin() {
+        let mut registry = SlotRegistry::new();
+        registry
+            .register_plugin(&manifest(
+                "reviews.plugin",
+                vec![contribution("actions", "slot.target", 0)],
+            ))
+            .expect("registered");
+        let action = || ActionRef {
+            r#type: ActionType::Custom("reviews.open".to_string()),
+            params: None,
+            confirm: None,
+        };
+        let screen = screen_with(ui::slot("slot.target").id("slot.target.node"));
+        let mut renderer = FakeRenderer::default().respond(
+            "reviews.plugin",
+            "actions",
+            vec![
+                ui::actions()
+                    .id("group")
+                    .child(ui::action("Grouped", action()).id("grouped"))
+                    .into_node(),
+                ui::status(StatusSeverity::Info, "Status")
+                    .id("status")
+                    .action(ui::action("Status action", action()).id("status.action"))
+                    .into_node(),
+                ui::empty("Empty")
+                    .id("empty")
+                    .action(ui::action("Empty action", action()).id("empty.action"))
+                    .into_node(),
+            ],
+        );
+
+        let resolved = resolve_slots(
+            screen,
+            &registry,
+            &SlotResolutionContext::default(),
+            &mut renderer,
+        )
+        .expect("resolved");
+
+        let ir = lower_screen(&resolved);
+        let mut action_origins = Vec::new();
+        collect_ir_action_origins(&ir.c, &mut action_origins);
+
+        assert_eq!(action_origins.len(), 3);
+        assert!(
+            action_origins
+                .iter()
+                .all(|origin| origin == "reviews.plugin")
+        );
+    }
+
+    #[test]
+    fn contributed_action_permissions_are_selected_from_origin_plugin() {
+        let mut registry = SlotRegistry::new();
+        registry
+            .register_plugin(&manifest(
+                "reviews.plugin",
+                vec![contribution("reviews-summary", "slot.target", 0)],
+            ))
+            .expect("registered");
+        let screen = screen_with(ui::slot("slot.target").id("slot.target.node"));
+        let mut renderer = FakeRenderer::default().respond(
+            "reviews.plugin",
+            "reviews-summary",
+            vec![
+                ui::action(
+                    "Moderate reviews",
+                    ActionRef {
+                        r#type: ActionType::Custom("reviews.moderate".to_string()),
+                        params: None,
+                        confirm: None,
+                    },
+                )
+                .id("moderate")
+                .into_node(),
+            ],
+        );
+        let resolved = resolve_slots(
+            screen,
+            &registry,
+            &SlotResolutionContext::default(),
+            &mut renderer,
+        )
+        .expect("resolved");
+        let action_origin = node_origin(&resolved.children[0]).expect("origin");
+        let guards = BTreeMap::from([
+            ("screen.plugin".to_string(), guard("screen.plugin", vec![])),
+            (
+                "reviews.plugin".to_string(),
+                guard("reviews.plugin", vec!["reviews.write"]),
+            ),
+        ]);
+
+        assert!(guards["screen.plugin"].assert("reviews.write").is_err());
+        assert!(
+            guards[&action_origin.plugin_id]
+                .assert("reviews.write")
+                .is_ok()
+        );
     }
 
     #[test]
@@ -1305,5 +1413,35 @@ mod tests {
         let decoded: PluginRenderSlotRequest = serde_json::from_str(&encoded).expect("decoded");
 
         assert_eq!(decoded, request);
+    }
+
+    fn guard(plugin_id: &str, permissions: Vec<&str>) -> PermissionGuard {
+        PermissionGuard::new(PermissionProfile {
+            plugin_id: plugin_id.to_string(),
+            grants: permissions
+                .into_iter()
+                .map(|permission| PermissionGrant {
+                    permission: permission.to_string(),
+                    granted: true,
+                    granted_at: "2026-07-16T00:00:00Z".to_string(),
+                    allowed_origins: vec![],
+                })
+                .collect(),
+        })
+    }
+
+    fn collect_ir_action_origins(nodes: &[crate::core::ir::IrNode], out: &mut Vec<String>) {
+        for node in nodes {
+            if node.t == "action" {
+                out.push(
+                    node.p
+                        .get(SLOT_ORIGIN_PLUGIN_ID)
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or_default()
+                        .to_string(),
+                );
+            }
+            collect_ir_action_origins(&node.c, out);
+        }
     }
 }
