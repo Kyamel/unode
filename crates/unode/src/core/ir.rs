@@ -41,9 +41,10 @@ pub struct IrPatchOp {
 
 /// Lowers a canonical screen into compact renderer IR.
 ///
-/// IR keeps the semantic node tree but shortens common field names and embeds
-/// metadata in the `p` property map. Framework adapters and TUI renderers should
-/// consume this shape rather than duplicating canonical normalization logic.
+/// IR keeps the structural keys compact (`t`/`p`/`c`/`_k`) but uses explicit,
+/// self-describing prop names (`description`, `disabled`, `action`, ...) and
+/// embeds metadata in the `p` property map. Framework adapters and TUI renderers
+/// should consume this shape rather than duplicating canonical normalization.
 pub fn lower_screen(screen: &CanonicalScreen) -> IrScreen {
     let mut p = BTreeMap::new();
 
@@ -74,7 +75,7 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
                 p.insert("title".into(), lower_string_or_expr(title));
             }
             if let Some(desc) = &n.description {
-                p.insert("desc".into(), lower_string_or_expr(desc));
+                p.insert("description".into(), lower_string_or_expr(desc));
             }
             inject_meta(&mut p, &n.meta);
             IrNode {
@@ -112,7 +113,7 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
                 p.insert("cols".into(), lower_responsive_cols(cols));
             }
             if let Some(continuation) = &n.continuation {
-                p.insert("cont".into(), lower_continuation(continuation));
+                p.insert("continuation".into(), lower_continuation(continuation));
             }
             inject_meta(&mut p, &n.meta);
             IrNode {
@@ -135,8 +136,8 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             p.insert("content".into(), lower_string_or_expr(&n.content));
             opt_enum(&mut p, "role", &n.role);
             opt_enum(&mut p, "tone", &n.tone);
-            opt_enum(&mut p, "em", &n.emphasis);
-            opt_bool(&mut p, "tr", n.truncate);
+            opt_enum(&mut p, "emphasis", &n.emphasis);
+            opt_bool(&mut p, "truncate", n.truncate);
             inject_meta(&mut p, &n.meta);
             IrNode {
                 t: "text".into(),
@@ -147,9 +148,9 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
         CanonicalUiNode::Value(n) => {
             let mut p = BTreeMap::new();
             p.insert("value".into(), lower_primitive_or_expr(&n.value));
-            p.insert("fmt".into(), json!(enum_name(&n.format)));
+            p.insert("format".into(), json!(enum_name(&n.format)));
             if let Some(code) = &n.currency_code {
-                p.insert("cur".into(), json!(code));
+                p.insert("currencyCode".into(), json!(code));
             }
             opt_enum(&mut p, "role", &n.role);
             opt_enum(&mut p, "tone", &n.tone);
@@ -199,9 +200,9 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             p.insert("kind".into(), json!(enum_name(&n.media_kind)));
             p.insert("alt".into(), json!(n.alt));
             if let Some(aspect_ratio) = &n.aspect_ratio {
-                p.insert("ar".into(), json!(enum_name(aspect_ratio)));
+                p.insert("aspectRatio".into(), json!(enum_name(aspect_ratio)));
             }
-            opt_bool(&mut p, "exp", n.expandable);
+            opt_bool(&mut p, "expandable", n.expandable);
             inject_meta(&mut p, &n.meta);
             IrNode {
                 t: "media".into(),
@@ -211,7 +212,7 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
         }
         CanonicalUiNode::Pressable(n) => {
             let mut p = BTreeMap::new();
-            p.insert("act".into(), lower_action_ref(&n.action));
+            p.insert("action".into(), lower_action_ref(&n.action));
             opt_string_or_expr(&mut p, "label", &n.label);
             inject_meta(&mut p, &n.meta);
             IrNode {
@@ -225,7 +226,7 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             let mut p = BTreeMap::new();
             opt_enum(&mut p, "density", &n.density);
             if let Some(continuation) = &n.continuation {
-                p.insert("cont".into(), lower_continuation(continuation));
+                p.insert("continuation".into(), lower_continuation(continuation));
             }
             inject_meta(&mut p, &n.meta);
             IrNode {
@@ -247,9 +248,9 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
         }
         CanonicalUiNode::Disclosure(n) => {
             let mut p = BTreeMap::new();
-            p.insert("bind".into(), json!(n.binding));
+            p.insert("binding".into(), json!(n.binding));
             p.insert("label".into(), lower_string_or_expr(&n.label));
-            opt_string_or_expr(&mut p, "labelExp", &n.label_expanded);
+            opt_string_or_expr(&mut p, "labelExpanded", &n.label_expanded);
             inject_meta(&mut p, &n.meta);
             IrNode {
                 t: "disclosure".into(),
@@ -272,12 +273,12 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
                         p_item.insert("id".into(), json!(id));
                     }
                     p_item.insert("label".into(), lower_string_or_expr(&item.label));
-                    p_item.insert("do".into(), lower_action_ref(&item.action));
+                    p_item.insert("action".into(), lower_action_ref(&item.action));
                     if let Some(selected) = item.selected {
-                        p_item.insert("sel".into(), json!(selected));
+                        p_item.insert("selected".into(), json!(selected));
                     }
                     if let Some(disabled) = &item.disabled {
-                        p_item.insert("dis".into(), lower_bool_or_expr(disabled));
+                        p_item.insert("disabled".into(), lower_bool_or_expr(disabled));
                     }
                     IrNode {
                         t: "menu-item".into(),
@@ -298,10 +299,10 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             p.insert("label".into(), lower_string_or_expr(&n.label));
             p.insert("kind".into(), json!(enum_name(&n.input_kind)));
             opt_primitive_or_expr(&mut p, "value", &n.value);
-            opt_string_or_expr(&mut p, "ph", &n.placeholder);
+            opt_string_or_expr(&mut p, "placeholder", &n.placeholder);
             opt_string_or_expr(&mut p, "help", &n.help_text);
-            opt_bool(&mut p, "req", n.required);
-            opt_bool_or_expr(&mut p, "dis", &n.disabled);
+            opt_bool(&mut p, "required", n.required);
+            opt_bool_or_expr(&mut p, "disabled", &n.disabled);
             inject_meta(&mut p, &n.meta);
             IrNode {
                 t: "input".into(),
@@ -326,7 +327,7 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
             let mut p = BTreeMap::new();
             p.insert("severity".into(), json!(enum_name(&n.severity)));
             opt_string_or_expr(&mut p, "title", &n.title);
-            p.insert("msg".into(), lower_string_or_expr(&n.message));
+            p.insert("message".into(), lower_string_or_expr(&n.message));
             inject_meta(&mut p, &n.meta);
             IrNode {
                 t: "status".into(),
@@ -340,7 +341,7 @@ pub fn lower_node(node: &CanonicalUiNode) -> IrNode {
                 p.insert("icon".into(), json!(icon));
             }
             p.insert("title".into(), lower_string_or_expr(&n.title));
-            opt_string_or_expr(&mut p, "msg", &n.message);
+            opt_string_or_expr(&mut p, "message", &n.message);
             inject_meta(&mut p, &n.meta);
             IrNode {
                 t: "empty".into(),
@@ -395,7 +396,7 @@ pub fn lower_patch_op(op: &PatchOp) -> IrPatchOp {
         PatchOp::SetProp { key, field, value } => IrPatchOp {
             o: "sp".into(),
             k: key.clone(),
-            f: Some(reactive_field_code(*field).to_string()),
+            f: Some(reactive_field_prop(*field).to_string()),
             v: Some(lower_patch_value(value)),
             n: None,
             c: None,
@@ -448,13 +449,13 @@ fn lower_item(n: &CanonicalItemNode) -> IrNode {
 fn lower_action(n: &CanonicalActionNode) -> IrNode {
     let mut p = BTreeMap::new();
     p.insert("label".into(), lower_string_or_expr(&n.label));
-    p.insert("do".into(), lower_action_ref(&n.action));
+    p.insert("action".into(), lower_action_ref(&n.action));
     opt_enum(&mut p, "intent", &n.intent);
     opt_enum(&mut p, "variant", &n.variant);
     if let Some(icon) = &n.leading_icon {
         p.insert("icon".into(), json!(icon));
     }
-    opt_bool_or_expr(&mut p, "dis", &n.disabled);
+    opt_bool_or_expr(&mut p, "disabled", &n.disabled);
     inject_meta(&mut p, &n.meta);
     IrNode {
         t: "action".into(),
@@ -622,24 +623,27 @@ fn action_type_name(action_type: &ActionType) -> String {
     }
 }
 
-fn reactive_field_code(value: ReactiveField) -> &'static str {
+/// Maps a reactive field to the IR prop key it overlays. The `SetProp` patch
+/// carries this name directly, so the renderer applies `props[field] = value`
+/// with no lookup table on the adapter side.
+fn reactive_field_prop(value: ReactiveField) -> &'static str {
     match value {
-        ReactiveField::Title => "ti",
-        ReactiveField::Subtitle => "su",
-        ReactiveField::Description => "de",
-        ReactiveField::Content => "ct",
-        ReactiveField::Value => "va",
-        ReactiveField::Label => "lb",
-        ReactiveField::LabelExpanded => "lx",
-        ReactiveField::Disabled => "di",
-        ReactiveField::Placeholder => "ph",
-        ReactiveField::HelpText => "ht",
-        ReactiveField::Message => "ms",
-        ReactiveField::Progress => "pg",
+        ReactiveField::Title => "title",
+        ReactiveField::Subtitle => "subtitle",
+        ReactiveField::Description => "description",
+        ReactiveField::Content => "content",
+        ReactiveField::Value => "value",
+        ReactiveField::Label => "label",
+        ReactiveField::LabelExpanded => "labelExpanded",
+        ReactiveField::Disabled => "disabled",
+        ReactiveField::Placeholder => "placeholder",
+        ReactiveField::HelpText => "help",
+        ReactiveField::Message => "message",
+        ReactiveField::Progress => "progress",
         ReactiveField::Condition => "if",
-        ReactiveField::BindingState => "bs",
-        ReactiveField::Continuation => "co",
-        ReactiveField::MenuItems => "mi",
+        ReactiveField::BindingState => "state",
+        ReactiveField::Continuation => "continuation",
+        ReactiveField::MenuItems => "items",
     }
 }
 
@@ -1157,7 +1161,7 @@ mod tests {
             IrPatchOp {
                 o: "sp".into(),
                 k: "hero-text".into(),
-                f: Some("ct".into()),
+                f: Some("content".into()),
                 v: Some(json!({ "b": "hero.subtitle" })),
                 n: None,
                 c: None,
@@ -1170,7 +1174,7 @@ mod tests {
                 {
                     "o": "sp",
                     "k": "hero-text",
-                    "f": "ct",
+                    "f": "content",
                     "v": { "b": "hero.subtitle" }
                 },
                 {
@@ -1181,7 +1185,7 @@ mod tests {
                         "p": {
                             "_k": "patched-node",
                             "content": { "b": "work.name" },
-                            "em": "normal",
+                            "emphasis": "normal",
                             "role": "body"
                         }
                     }
@@ -1195,7 +1199,7 @@ mod tests {
                             "p": {
                                 "_k": "child-a",
                                 "content": { "v": "Alpha" },
-                                "em": "normal",
+                                "emphasis": "normal",
                                 "role": "body"
                             }
                         },
@@ -1204,7 +1208,7 @@ mod tests {
                             "p": {
                                 "_k": "child-b",
                                 "content": { "b": "beta.title" },
-                                "em": "normal",
+                                "emphasis": "normal",
                                 "role": "body"
                             }
                         }

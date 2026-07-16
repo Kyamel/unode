@@ -19,7 +19,6 @@
 export {
   actionRefOf,
   booleanProp,
-  FIELD_CODE_TO_PROP,
   literalOf,
   nodeKey,
   propOf,

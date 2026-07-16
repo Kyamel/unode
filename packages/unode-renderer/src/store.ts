@@ -1,7 +1,7 @@
 // Keyed screen store: holds structure props + applied patch overlays and wakes
 // only the subscribers of the node keys a patch touched.
 
-import { nodeKey, rendererPropsOf, type IrNode, type IrPatchOp, type IrScreen, FIELD_CODE_TO_PROP } from "./ir";
+import { nodeKey, rendererPropsOf, type IrNode, type IrPatchOp, type IrScreen } from "./ir";
 
 export interface RendererNodeSnapshot {
   key: string;
@@ -91,7 +91,7 @@ export class ScreenStore {
   private applyPatch(op: IrPatchOp): void {
     switch (op.o) {
       case "sp": {
-        const prop = op.f ? FIELD_CODE_TO_PROP[op.f] ?? op.f : undefined;
+        const prop = op.f;
         if (!prop) return;
         const current = this.props.get(op.k) ?? {};
         this.props.set(op.k, { ...current, [prop]: op.v });

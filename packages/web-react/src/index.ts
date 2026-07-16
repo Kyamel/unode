@@ -17,9 +17,13 @@ export { HostSession, type WebHostModule } from "unode-core";
 export { WebRuntime, StateWriteSink, type ResolvedRoute, type WebRuntimeOptions } from "unode-core";
 
 export {
-  UnodeScreen,
+
   type HostComponentProps,
   type HostComponents,
   type OnAction,
-  type UnodeScreenProps,
 } from "./renderer";
+
+export {
+    UnodeScreen,
+    UnodeScreenProps,
+} from "./UnodeScreen";

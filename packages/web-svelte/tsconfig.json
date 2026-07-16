@@ -12,7 +12,6 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["vite/client"],
-    "baseUrl": ".",
     "paths": {
       "unode-core": ["../unode-core/src"],
       "unode-renderer": ["../unode-renderer/src"]

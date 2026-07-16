@@ -64,7 +64,7 @@ fn state_write_patches_only_the_bound_node() {
     let op = &ops[0];
     assert_eq!(op.o, "sp", "set-prop patch");
     assert_eq!(op.k, "count-label", "targets only the bound node");
-    assert_eq!(op.f.as_deref(), Some("ct"), "content field");
+    assert_eq!(op.f.as_deref(), Some("content"), "content field");
     // The patched value carries the resolved literal, not the binding.
     assert_eq!(op.v, Some(json!({ "v": "5" })));
 }

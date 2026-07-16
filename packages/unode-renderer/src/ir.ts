@@ -36,7 +36,7 @@ export interface IrPatchOp {
   o: "sp" | "rn" | "rc";
   /** Target node key. */
   k: string;
-  /** Field code for "sp" (see FIELD_CODE_TO_PROP). */
+  /** Prop key for "sp" — the explicit name to overlay in `IrNode.p`. */
   f?: string;
   /** New value for "sp". */
   v?: unknown;
@@ -45,42 +45,6 @@ export interface IrPatchOp {
   /** New children for "rc". */
   c?: IrNode[];
 }
-
-/**
- * Reactive field code (from `reactive_field_code` in ir.rs) to the prop key it
- * writes in `IrNode.p`. A `SetProp{f}` patch mutates `p[FIELD_CODE_TO_PROP[f]]`.
- */
-export const FIELD_CODE_TO_PROP: Record<string, string> = {
-  ti: "title",
-  su: "subtitle",
-  de: "desc",
-  ct: "content",
-  va: "value",
-  lb: "label",
-  lx: "labelExpanded",
-  di: "dis",
-  ph: "placeholder",
-  ht: "help",
-  ms: "message",
-  pg: "progress",
-  if: "if",
-  bs: "state",
-  co: "cont",
-  mi: "items",
-};
-
-const PROP_ALIASES: Record<string, string> = {
-  desc: "description",
-  dis: "disabled",
-  do: "action",
-  fmt: "format",
-  cur: "currencyCode",
-  tr: "truncate",
-  em: "emphasis",
-  ar: "aspectRatio",
-  exp: "expandable",
-  cont: "continuation",
-};
 
 /** The `_k` prop is the node key. */
 export function nodeKey(node: IrNode): string {
@@ -96,24 +60,15 @@ export function literalOf(value: unknown): unknown {
 }
 
 /**
- * Turns raw IR props into app-renderer props.
- *
- * The original IR keys remain available, but common compact keys are mirrored to
- * more ergonomic names such as `disabled` and `action`.
+ * Turns raw IR props into app-renderer props by unwrapping lowered literals
+ * (`{ v: ... }`). Prop keys are already explicit and self-describing in the IR,
+ * so no aliasing is needed.
  */
 export function rendererPropsOf(props: Record<string, unknown>): Record<string, unknown> {
   const next: Record<string, unknown> = {};
-
   for (const [key, value] of Object.entries(props)) {
-    const resolved = literalOf(value);
-    next[key] = resolved;
-
-    const alias = PROP_ALIASES[key];
-    if (alias && next[alias] === undefined) {
-      next[alias] = resolved;
-    }
+    next[key] = literalOf(value);
   }
-
   return next;
 }
 

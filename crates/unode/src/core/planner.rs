@@ -685,7 +685,7 @@ mod tests {
                 {
                     "o": "sp",
                     "k": "hero-title",
-                    "f": "ct",
+                    "f": "content",
                     "v": { "v": "Blue Box" }
                 }
             ])
@@ -770,7 +770,7 @@ mod tests {
                                 "p": {
                                     "_k": "upsell-on",
                                     "content": { "v": "On" },
-                                    "em": "normal",
+                                    "emphasis": "normal",
                                     "role": "body"
                                 }
                             },
@@ -779,7 +779,7 @@ mod tests {
                                 "p": {
                                     "_k": "upsell-off",
                                     "content": { "v": "Off" },
-                                    "em": "normal",
+                                    "emphasis": "normal",
                                     "role": "body"
                                 }
                             }

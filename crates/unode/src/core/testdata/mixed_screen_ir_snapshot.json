@@ -15,7 +15,7 @@
       "t": "section",
       "p": {
         "_k": "hero",
-        "desc": {
+        "description": {
           "v": "Featured today"
         },
         "title": {
@@ -30,17 +30,17 @@
             "content": {
               "b": "hero.subtitle"
             },
-            "em": "strong",
+            "emphasis": "strong",
             "role": "subtitle",
             "tone": "info",
-            "tr": true
+            "truncate": true
           }
         },
         {
           "t": "pressable",
           "p": {
             "_k": "hero-open",
-            "act": {
+            "action": {
               "p": {
                 "to": "details"
               },
@@ -58,7 +58,7 @@
                 "content": {
                   "v": "Open details"
                 },
-                "em": "normal",
+                "emphasis": "normal",
                 "role": "body"
               }
             }
@@ -74,7 +74,7 @@
           "b": 2,
           "m": 4
         },
-        "cont": {
+        "continuation": {
           "k": "remote",
           "label": {
             "v": "More"
@@ -105,8 +105,8 @@
           "p": {
             "_k": "cover",
             "alt": "Cover image",
-            "ar": "poster",
-            "exp": true,
+            "aspectRatio": "poster",
+            "expandable": true,
             "kind": "cover",
             "ref": {
               "name": "cover-art",
@@ -120,7 +120,7 @@
       "t": "list",
       "p": {
         "_k": "chapters",
-        "cont": {
+        "continuation": {
           "bind": "chapters.visible",
           "init": 10,
           "k": "inc",
@@ -163,7 +163,7 @@
                     "content": {
                       "b": "chapter.title"
                     },
-                    "em": "normal",
+                    "emphasis": "normal",
                     "role": "body"
                   }
                 }
@@ -176,7 +176,7 @@
                   "t": "value",
                   "p": {
                     "_k": "chapter-pages",
-                    "fmt": "number",
+                    "format": "number",
                     "role": "caption",
                     "tone": "muted",
                     "value": {
@@ -194,11 +194,11 @@
       "t": "disclosure",
       "p": {
         "_k": "filters",
-        "bind": "ui.filters_open",
+        "binding": "ui.filters_open",
         "label": {
           "v": "Filters"
         },
-        "labelExp": {
+        "labelExpanded": {
           "b": "ui.filters_expanded_label"
         }
       },
@@ -217,7 +217,7 @@
               "t": "input",
               "p": {
                 "_k": "query",
-                "dis": {
+                "disabled": {
                   "b": "filters.disabled"
                 },
                 "help": {
@@ -228,10 +228,10 @@
                   "v": "Query"
                 },
                 "name": "query",
-                "ph": {
+                "placeholder": {
                   "v": "Type to search"
                 },
-                "req": false,
+                "required": false,
                 "value": {
                   "b": "filters.query"
                 }
@@ -255,7 +255,7 @@
         {
           "t": "menu-item",
           "p": {
-            "do": {
+            "action": {
               "p": {
                 "sort": "recent"
               },
@@ -265,26 +265,26 @@
             "label": {
               "v": "Recent"
             },
-            "sel": true
+            "selected": true
           }
         },
         {
           "t": "menu-item",
           "p": {
-            "dis": {
-              "b": "menu.popular_disabled"
-            },
-            "do": {
+            "action": {
               "p": {
                 "sort": "popular"
               },
               "t": "navigate"
             },
+            "disabled": {
+              "b": "menu.popular_disabled"
+            },
             "id": "popular",
             "label": {
               "b": "menu.popular_label"
             },
-            "sel": false
+            "selected": false
           }
         }
       ]
@@ -302,7 +302,7 @@
           "t": "status",
           "p": {
             "_k": "promo-status",
-            "msg": {
+            "message": {
               "b": "promo.message"
             },
             "severity": "info",
@@ -315,11 +315,11 @@
               "t": "action",
               "p": {
                 "_k": "promo-cta",
-                "dis": {
-                  "b": "promo.disabled"
-                },
-                "do": {
+                "action": {
                   "t": "navigate"
+                },
+                "disabled": {
+                  "b": "promo.disabled"
                 },
                 "icon": "sparkles",
                 "intent": "primary",
@@ -336,7 +336,7 @@
           "p": {
             "_k": "promo-empty",
             "icon": "sparkles",
-            "msg": {
+            "message": {
               "v": "Come back soon"
             },
             "title": {
