@@ -5,8 +5,14 @@
     ],
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
-        "plugins/web-counter/Cargo.toml",
+        "plugins/counter/Cargo.toml",
+        "plugins/playground-complex-layout/Cargo.toml",
+        "plugins/playground-complex-state/Cargo.toml",
+        "plugins/playground-host-slot/Cargo.toml",
+        "plugins/playground-route-tabs/Cargo.toml",
+        "plugins/playground-split-contributor/Cargo.toml",
+        "plugins/playground-split-host/Cargo.toml",
         "plugins/sanity-check/Cargo.toml",
-        "plugins/playground-complex-state/Cargo.toml"
+        "examples/tui-ratatui/Cargo.toml"
     ]
 }

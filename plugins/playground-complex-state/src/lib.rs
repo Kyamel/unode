@@ -2,10 +2,14 @@ use std::collections::BTreeMap;
 
 use serde_json::{Value as JsonValue, json};
 use unode_plugin_sdk::prelude::{
-    self as ui, ActionIntent, ActionRef, ActionType, PluginDispatchOutcome, PluginDispatchRequest,
-    PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
-    ScreenNode, TextRole, Tone, expr, perm,
+    self as ui, ActionIntent, ActionRef, ActionType, Permission, PluginDispatchOutcome,
+    PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
+    PluginRenderRequest, ScreenNode, TextRole, Tone, expr, perm,
 };
+
+// App-defined typed permission: the core never enumerates these — hosts and
+// apps declare their own with `Permission::new`.
+const STATE_WRITE: Permission = Permission::new("state.write");
 
 const PLUGIN_ID: &str = "dev.unode.playground.complex-state";
 const PLUGIN_NAME: &str = "Complex State";
@@ -16,7 +20,7 @@ fn manifest_envelope() -> PluginManifestEnvelope {
         .description("Structured host state demo with derived labels and item-level actions.")
         .author("unode")
         .permission(
-            perm("state.write:tasks")
+            perm(STATE_WRITE.scoped("tasks"))
                 .required(true)
                 .reason("Cycle task state in the playground board."),
         )

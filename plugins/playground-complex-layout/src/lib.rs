@@ -2,7 +2,7 @@ use serde_json::{Value as JsonValue, json};
 use unode_plugin_sdk::prelude::{
     self as ui, IntoNode, ListDensity, PluginDispatchOutcome, PluginDispatchRequest,
     PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
-    ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, ValueFormat, perm,
+    ScreenNode, TextRole, Tone, ValueFormat, perm,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.complex-layout";

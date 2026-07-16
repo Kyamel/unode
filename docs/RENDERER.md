@@ -21,16 +21,28 @@ also serves hand-rolled terminal writers. `unode-ratatui-renderer` ships the rat
 backend with default recipes:
 
 ```rust
-use unode_ratatui_renderer::{NodeKind, Recipe, ratatui_renderer};
+use unode_ratatui_renderer::{NodeKind, TuiRecipe, ratatui_renderer, rect};
 
-let renderer = ratatui_renderer()          // ratatui defaults for every node
-    .recipe(NodeKind::Text, my_text_recipe()) // override one node kind
+let renderer = ratatui_renderer()              // ratatui defaults for every node
+    // full replacement (typed: closures receive &TextNode, no annotations)
+    .recipes([TuiRecipe::text(
+        |_, node, width| measure_my_text(node, width),
+        |ctx, node, area| paint_my_text(ctx.surface, rect(area), node),
+    )])
+    // restyle only the painting; the registered measure is kept
+    .override_render(NodeKind::Badge, |ctx, node, area| { /* ... */ })
+    // decorate the default instead of replacing it
+    .wrap(NodeKind::Action, |inner, ctx, node, area| {
+        // adornments before/after, then delegate:
+        inner(ctx, node, area);
+    })
     .build();
 ```
 
 Each recipe pairs `measure` (rows needed at a width) with `render` (paint into
 a `Region` of the backend surface); `RenderCtx` provides recursion into child
-nodes and the focus cursor for interactive elements.
+nodes and the focus cursor for interactive elements. Prefer `wrap` /
+`override_render` for styling tweaks and full recipes for structural changes.
 
 ---
 

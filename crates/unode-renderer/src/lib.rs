@@ -359,6 +359,58 @@ impl<B: Backend> RendererBuilder<B> {
         self
     }
 
+    /// Replaces only the render half of a node kind's recipe, keeping the
+    /// measure already registered for it (falling back to the fallback's
+    /// measure when the kind has no recipe yet). The common case: restyle
+    /// how a node paints without re-deriving its layout size.
+    pub fn override_render(
+        mut self,
+        kind: NodeKind,
+        render: impl for<'a, 'f> Fn(&mut RenderCtx<'a, 'f, B>, &UiNode, Region) + Send + Sync + 'static,
+    ) -> Self {
+        let measure = self
+            .recipes
+            .get(&kind)
+            .unwrap_or(&self.fallback)
+            .measure
+            .clone();
+        self.recipes.insert(
+            kind,
+            Recipe {
+                measure,
+                render: Arc::new(render),
+            },
+        );
+        self
+    }
+
+    /// Decorates a node kind's current render: the wrapper receives the
+    /// previous render function and decides when (or whether) to call it.
+    /// Measure is kept. Use this to add adornments around the default
+    /// painting instead of reimplementing it.
+    pub fn wrap(
+        mut self,
+        kind: NodeKind,
+        wrapper: impl for<'a, 'f> Fn(&RenderFn<B>, &mut RenderCtx<'a, 'f, B>, &UiNode, Region)
+        + Send
+        + Sync
+        + 'static,
+    ) -> Self
+    where
+        B: 'static,
+    {
+        let current = self.recipes.get(&kind).unwrap_or(&self.fallback).clone();
+        let inner = current.render;
+        self.recipes.insert(
+            kind,
+            Recipe {
+                measure: current.measure,
+                render: Arc::new(move |ctx, node, region| wrapper(&inner, ctx, node, region)),
+            },
+        );
+        self
+    }
+
     /// Recipe used for node kinds without a dedicated recipe.
     pub fn fallback(mut self, recipe: Recipe<B>) -> Self {
         self.fallback = recipe;

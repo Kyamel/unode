@@ -4,7 +4,7 @@ use serde_json::{Value as JsonValue, json};
 use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
     PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
-    PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, perm,
+    PluginRenderRequest, ScreenNode, TextRole, Tone, expr, perm,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.host-slot";

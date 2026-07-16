@@ -1,6 +1,76 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+/// A permission identifier: typed at the authoring edges, a plain string on
+/// the wire. The set is open by construction — the core ships its builtins in
+/// [`builtin`], and hosts/apps declare their own domain permissions with
+/// [`Permission::new`]; the unode core never enumerates or limits them.
+///
+/// ```
+/// use unode::core::permissions::{Permission, builtin};
+///
+/// // App-defined domain permission (lives in the app's SDK crate):
+/// pub const CATALOG_READ: Permission = Permission::new("catalog.read");
+///
+/// assert_eq!(builtin::HTTP_FETCH.as_str(), "http.fetch");
+/// assert_eq!(builtin::STORAGE_SESSION_WRITE.scoped("drafts"), "storage.session.write:drafts");
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Permission(&'static str);
+
+impl Permission {
+    pub const fn new(name: &'static str) -> Self {
+        Self(name)
+    }
+
+    pub const fn as_str(&self) -> &'static str {
+        self.0
+    }
+
+    /// Applies the `resource:scope` convention, e.g.
+    /// `STATE_WRITE.scoped("tasks")` → `"state.write:tasks"`.
+    pub fn scoped(&self, scope: impl AsRef<str>) -> String {
+        format!("{}:{}", self.0, scope.as_ref())
+    }
+}
+
+impl From<Permission> for String {
+    fn from(value: Permission) -> Self {
+        value.0.to_string()
+    }
+}
+
+impl From<CoreBuiltinPermission> for Permission {
+    fn from(value: CoreBuiltinPermission) -> Self {
+        Permission::new(value.as_str())
+    }
+}
+
+impl std::fmt::Display for Permission {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
+/// The core's built-in permissions as typed constants.
+pub mod builtin {
+    use super::Permission;
+
+    pub const HTTP_FETCH: Permission = Permission::new("http.fetch");
+    pub const HTTP_FETCH_ANY: Permission = Permission::new("http.fetch.any");
+    pub const STORAGE_SESSION_READ: Permission = Permission::new("storage.session.read");
+    pub const STORAGE_SESSION_WRITE: Permission = Permission::new("storage.session.write");
+    pub const STORAGE_PERSISTENT_READ: Permission = Permission::new("storage.persistent.read");
+    pub const STORAGE_PERSISTENT_WRITE: Permission = Permission::new("storage.persistent.write");
+    pub const EVENTS_READ: Permission = Permission::new("events.read");
+    pub const EVENTS_WRITE: Permission = Permission::new("events.write");
+    pub const NAVIGATION_READ: Permission = Permission::new("navigation.read");
+    pub const NAVIGATION_WRITE: Permission = Permission::new("navigation.write");
+    pub const COMMANDS_WRITE: Permission = Permission::new("commands.write");
+    pub const FEEDBACK_WRITE: Permission = Permission::new("feedback.write");
+    pub const SYSTEM_READ: Permission = Permission::new("system.read");
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CoreBuiltinPermission {
     HttpFetch,

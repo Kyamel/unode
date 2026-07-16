@@ -80,16 +80,16 @@ fn is_disabled(node: &ActionNode) -> bool {
 }
 
 fn text_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::text(
+    TuiRecipe::text(
         |_, node, width| text::measure(node, width),
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             text::render(ctx.surface, rect(area), node);
         },
     )
 }
 
 fn stack_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::stack(
+    TuiRecipe::stack(
         |ctx, node, width| {
             let children = node
                 .children
@@ -98,7 +98,7 @@ fn stack_recipe() -> (NodeKind, TuiRecipe) {
                 .sum::<u16>();
             children + stack::gap_lines(node) * node.children.len().saturating_sub(1) as u16
         },
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             if node.children.is_empty() {
                 return;
             }
@@ -128,7 +128,7 @@ fn stack_recipe() -> (NodeKind, TuiRecipe) {
 }
 
 fn section_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::section(
+    TuiRecipe::section(
         |ctx, node, width| {
             let child_total = node
                 .children
@@ -137,7 +137,7 @@ fn section_recipe() -> (NodeKind, TuiRecipe) {
                 .sum::<u16>();
             2 + section::measure_header(node) + child_total
         },
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             let inner = section::render_block(ctx.surface, rect(area), node);
 
             let mut constraints = Vec::new();
@@ -176,9 +176,9 @@ fn section_recipe() -> (NodeKind, TuiRecipe) {
 }
 
 fn action_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::action(
+    TuiRecipe::action(
         |_, _, _| 3,
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             let active = !is_disabled(node) && ctx.focus_next(true);
             actions::render_action(ctx.surface, rect(area), node, active);
         },
@@ -186,9 +186,9 @@ fn action_recipe() -> (NodeKind, TuiRecipe) {
 }
 
 fn actions_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::actions(
+    TuiRecipe::actions(
         |_, node, _| actions::measure_actions(node),
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             let area = rect(area);
             if node.children.is_empty() || area.height == 0 || area.width == 0 {
                 return;
@@ -214,9 +214,9 @@ fn actions_recipe() -> (NodeKind, TuiRecipe) {
 }
 
 fn status_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::status(
+    TuiRecipe::status(
         |_, node, _| status::measure(node),
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             let focus = if node.actions.is_empty() {
                 None
             } else {
@@ -239,9 +239,9 @@ fn status_recipe() -> (NodeKind, TuiRecipe) {
 }
 
 fn list_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::list(
+    TuiRecipe::list(
         |_, node, _| list::measure(node),
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             let mut selected = None;
             let mut interactive_index = 0usize;
             for item in &node.items {
@@ -259,7 +259,7 @@ fn list_recipe() -> (NodeKind, TuiRecipe) {
 }
 
 fn scroll_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::scroll(
+    TuiRecipe::scroll(
         |ctx, node, width| {
             node.children
                 .iter()
@@ -267,25 +267,25 @@ fn scroll_recipe() -> (NodeKind, TuiRecipe) {
                 .sum::<u16>()
                 .max(3)
         },
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             render_vertical_children(ctx, &node.children, rect(area));
         },
     )
 }
 
 fn inline_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::inline(
+    TuiRecipe::inline(
         |_, node, _| node.children.len().max(1) as u16,
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             render_inline_children(ctx, &node.children, rect(area));
         },
     )
 }
 
 fn grid_recipe() -> (NodeKind, TuiRecipe) {
-    Recipe::grid(
+    TuiRecipe::grid(
         |_, node, _| node.children.len().max(1) as u16,
-        |ctx: &mut TuiRenderCtx<'_, '_>, node, area| {
+        |ctx, node, area| {
             render_inline_children(ctx, &node.children, rect(area));
         },
     )
@@ -361,13 +361,66 @@ mod tests {
     }
 
     #[test]
+    fn override_render_keeps_measure_and_restyles() {
+        let renderer = ratatui_renderer()
+            .override_render(NodeKind::Text, |ctx, _, area| {
+                ctx.surface
+                    .render_widget(Paragraph::new("RESTYLED"), rect(area));
+            })
+            .build();
+
+        // Measure still comes from the default text recipe.
+        let node = ui::text("wraps to two lines when narrow enough").into_node();
+        assert!(renderer.measure(&node, 10) > 1);
+
+        let mut terminal = Terminal::new(TestBackend::new(20, 3)).expect("terminal");
+        terminal
+            .draw(|frame| {
+                renderer
+                    .pass(frame, None)
+                    .render(&ui::text("x").into_node(), Region::new(0, 0, 20, 1));
+            })
+            .expect("draw");
+        assert!(row_text(&terminal, 0, 20).contains("RESTYLED"));
+    }
+
+    #[test]
+    fn wrap_decorates_the_default_render() {
+        let renderer = ratatui_renderer()
+            .wrap(NodeKind::Text, |inner, ctx, node, area| {
+                // Adorn: paint the default one row lower, marker on row 0.
+                ctx.surface.render_widget(
+                    Paragraph::new(">>"),
+                    rect(Region::new(area.x, area.y, area.width, 1)),
+                );
+                inner(
+                    ctx,
+                    node,
+                    Region::new(area.x, area.y + 1, area.width, area.height - 1),
+                );
+            })
+            .build();
+
+        let mut terminal = Terminal::new(TestBackend::new(20, 3)).expect("terminal");
+        terminal
+            .draw(|frame| {
+                renderer
+                    .pass(frame, None)
+                    .render(&ui::text("hello").into_node(), Region::new(0, 0, 20, 2));
+            })
+            .expect("draw");
+        assert!(row_text(&terminal, 0, 20).contains(">>"));
+        assert!(row_text(&terminal, 1, 20).contains("hello"));
+    }
+
+    #[test]
     fn overriding_a_recipe_changes_painted_cells() {
         // Typed constructor: the closure receives `&TextNode` directly, so
         // the node kind is stated once and never restated inside the body.
         let renderer = ratatui_renderer()
-            .recipes([Recipe::text(
+            .recipes([TuiRecipe::text(
                 |_, _, _| 1,
-                |ctx: &mut TuiRenderCtx<'_, '_>, _, area| {
+                |ctx, _, area| {
                     ctx.surface
                         .render_widget(Paragraph::new("OVERRIDDEN"), rect(area));
                 },

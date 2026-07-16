@@ -3,7 +3,7 @@ use unode_plugin_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode,
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
     PluginManifestEnvelope, PluginRenderRequest, ScreenNode, StateKey, TextRole, Tone,
-    UNODE_PLUGIN_ABI_VERSION, perm, route_group,
+    builtin, perm, route_group,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.route-tabs";
@@ -22,7 +22,7 @@ fn manifest_envelope() -> PluginManifestEnvelope {
         .description("Demonstrates manifest route groups with a tabs intent.")
         .author("unode")
         .permission(
-            perm("route.navigate")
+            perm(builtin::NAVIGATION_WRITE)
                 .required(true)
                 .reason("Switch playground route tabs."),
         )
