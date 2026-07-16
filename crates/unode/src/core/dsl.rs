@@ -641,7 +641,6 @@ impl ScreenBuilder {
             },
             title: self.title,
             subtitle: self.subtitle,
-            route_tabs: None,
             initial_focus: self.initial_focus,
             initial_state: self.initial_state,
             children: self.children,

@@ -2,8 +2,8 @@ use serde_json::{Value as JsonValue, json};
 use unode_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode,
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
-    PluginManifestEnvelope, PluginRenderRequest, ScreenNode, ScreenRouteTab, TextRole, Tone,
-    UNODE_PLUGIN_ABI_VERSION, create_route_tabs_meta, with_route_tabs,
+    PluginManifestEnvelope, PluginRenderRequest, ScreenNode, TextRole, Tone,
+    UNODE_PLUGIN_ABI_VERSION, route_group,
 };
 
 #[cfg(test)]
@@ -23,29 +23,22 @@ fn manifest_envelope() -> PluginManifestEnvelope {
             .author("Unode")
             // One plugin, two screens: the host registers both routes and
             // dispatches matching navigations back through `plugin_render`.
+            // The group asks for tabs; the renderer decides whether to honor
+            // it (tab bar) or present the routes as separate screens.
+            .route_group(route_group("main").tabs())
             .routes([
-                unode_sdk::route(ROUTE_PATH).screen_kind(format!("{PLUGIN_ID}.overview")),
-                unode_sdk::route(INSPECT_ROUTE_PATH).screen_kind(format!("{PLUGIN_ID}.inspect")),
+                unode_sdk::route(ROUTE_PATH)
+                    .screen_kind(format!("{PLUGIN_ID}.overview"))
+                    .group("main")
+                    .label("Overview")
+                    .badge("wasm"),
+                unode_sdk::route(INSPECT_ROUTE_PATH)
+                    .screen_kind(format!("{PLUGIN_ID}.inspect"))
+                    .group("main")
+                    .label("Inspect"),
             ])
             .build(),
     }
-}
-
-fn route_tabs() -> Vec<ScreenRouteTab> {
-    vec![
-        ScreenRouteTab {
-            id: "overview".to_string(),
-            label: "Overview".to_string(),
-            to: ROUTE_PATH.to_string(),
-            badge: Some("wasm".to_string()),
-        },
-        ScreenRouteTab {
-            id: "inspect".to_string(),
-            label: "Inspect".to_string(),
-            to: INSPECT_ROUTE_PATH.to_string(),
-            badge: None,
-        },
-    ]
 }
 
 fn load_response(request: &PluginLoadRequest) -> JsonValue {
@@ -89,7 +82,7 @@ fn render_inspect_screen(request: &PluginRenderRequest) -> ScreenNode {
             .join(", ")
     };
 
-    let screen = ui::screen()
+    ui::screen()
         .id("sanity-check.inspect-screen")
         .title(format!("{PLUGIN_NAME} - Inspect"))
         .subtitle(format!("route={} locale={locale}", request.route.pattern))
@@ -124,14 +117,7 @@ fn render_inspect_screen(request: &PluginRenderRequest) -> ScreenNode {
                 .into_node(),
         ])
         .initial_focus("sanity-check.inspect.back")
-        .build();
-
-    with_route_tabs(
-        screen,
-        create_route_tabs_meta("inspect", route_tabs())
-            .swipe_enabled(true)
-            .swipe_threshold(48.0),
-    )
+        .build()
 }
 
 fn render_overview_screen(request: &PluginRenderRequest) -> ScreenNode {
@@ -159,7 +145,7 @@ fn render_overview_screen(request: &PluginRenderRequest) -> ScreenNode {
             .join(", ")
     };
 
-    let screen = ui::screen()
+    ui::screen()
         .id("sanity-check.screen")
         .title(format!("{PLUGIN_NAME} - {title}"))
         .subtitle(format!("route={} locale={locale}", request.route.pattern))
@@ -226,14 +212,7 @@ fn render_overview_screen(request: &PluginRenderRequest) -> ScreenNode {
                 .into_node(),
         ])
         .initial_focus("sanity-check.refresh")
-        .build();
-
-    with_route_tabs(
-        screen,
-        create_route_tabs_meta("overview", route_tabs())
-            .swipe_enabled(true)
-            .swipe_threshold(48.0),
-    )
+        .build()
 }
 
 fn encode_action_response(request: &PluginDispatchRequest) -> PluginDispatchResponse {
@@ -342,7 +321,7 @@ mod tests {
     #[test]
     fn manifest_has_expected_plugin_identity() {
         let manifest = manifest_envelope();
-        assert_eq!(manifest.manifest.id, "dev.mugens.sanity-check");
+        assert_eq!(manifest.manifest.id, "dev.unode.sanity-check");
         assert_eq!(manifest.manifest.name, "Sanity Check");
     }
 
@@ -355,8 +334,11 @@ mod tests {
         assert_eq!(manifest.routes[1].pattern, super::INSPECT_ROUTE_PATH);
         assert_eq!(
             manifest.routes[1].screen_kind.as_deref(),
-            Some("dev.mugens.sanity-check.inspect")
+            Some("dev.unode.sanity-check.inspect")
         );
+        assert_eq!(manifest.route_groups.len(), 1);
+        assert_eq!(manifest.routes[0].group.as_deref(), Some("main"));
+        assert_eq!(manifest.routes[1].group.as_deref(), Some("main"));
     }
 
     #[test]
@@ -377,10 +359,6 @@ mod tests {
             lines
                 .iter()
                 .any(|line| line.contains("second screen rendered by the same plugin"))
-        );
-        assert_eq!(
-            inspect.route_tabs.as_ref().map(|tabs| tabs.active.as_str()),
-            Some("inspect")
         );
     }
 

@@ -49,8 +49,8 @@ pub mod prelude {
         MessageValue, MessageValues, PluginI18n, PluginTranslator, msg, msg_with,
     };
     pub use crate::manifest::{
-        PermissionRequestBuilder, PluginManifestBuilder, RouteDeclBuilder, permission,
-        plugin_manifest, route,
+        PermissionRequestBuilder, PluginManifestBuilder, RouteDeclBuilder, RouteGroupDeclBuilder,
+        permission, plugin_manifest, route, route_group,
     };
     pub use crate::permissions::{
         CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile,
@@ -62,7 +62,8 @@ pub mod prelude {
     pub use unode::core::dsl::*;
     pub use unode::core::permissions::*;
     pub use unode::core::runtime::{
-        PluginManifest, ResolvedRoute, RouteDecl, SlotContributionDecl, UNODE_CORE_API_VERSION,
+        NavIntent, PluginManifest, ResolvedRoute, RouteDecl, RouteGroupDecl, SlotContributionDecl,
+        UNODE_CORE_API_VERSION,
     };
     pub use unode::core::slot::*;
     pub use unode::core::state::{MemoryStateStore, StateStore};

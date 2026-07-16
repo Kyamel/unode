@@ -11,7 +11,7 @@ Owns renderer-agnostic protocol and semantics:
 - normalization
 - IR + patch ops
 - permission data structures
-- screen chrome contracts such as `routeTabs`
+- navigation chrome contracts (manifest route groups and the derived `RouteTabsView`)
 
 ## `unode-sdk`
 
@@ -90,7 +90,7 @@ Renderers consume:
 
 - IR screens
 - IR patch ops
-- screen chrome metadata such as `routeTabs`
+- navigation chrome views derived by the host (e.g. `RouteTabsView` from manifest route groups)
 - action dispatch callbacks supplied by the host runtime
 
 Renderers do not own:

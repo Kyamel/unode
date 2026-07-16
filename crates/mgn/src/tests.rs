@@ -171,7 +171,7 @@ fn app_survives_three_full_plugin_navigation_cycles() {
     let plugin_route = app
         .plugins
         .iter()
-        .find(|plugin| plugin.runtime_plugin.manifest().manifest.id == "dev.mugens.sanity-check")
+        .find(|plugin| plugin.runtime_plugin.manifest().manifest.id == "dev.unode.sanity-check")
         .map(|plugin| plugin.route.clone())
         .expect("sanity plugin route");
 
@@ -196,7 +196,16 @@ fn app_survives_three_full_plugin_navigation_cycles() {
             });
         app.selected_main_interaction = Some(inspect_index);
         app.activate_main_interaction().expect("open inspect tab");
-        assert_eq!(app.current_route, format!("{plugin_route}?view=inspect"));
+        assert_eq!(app.current_route, format!("{plugin_route}/inspect"));
+
+        let back_index = app
+            .main_interactions
+            .iter()
+            .position(|interaction| interaction.label.contains("Back to overview"))
+            .unwrap_or_else(|| panic!("back interaction not found: {:?}", app.main_interactions));
+        app.selected_main_interaction = Some(back_index);
+        app.activate_main_interaction().expect("back to overview");
+        assert_eq!(app.current_route, plugin_route);
 
         let go_home_index = app
             .main_interactions
@@ -228,7 +237,7 @@ fn app_survives_three_full_plugin_navigation_cycles() {
     app.selected_main_interaction = Some(inspect_index);
     app.activate_main_interaction()
         .expect("open inspect tab 4th");
-    assert_eq!(app.current_route, format!("{plugin_route}?view=inspect"));
+    assert_eq!(app.current_route, format!("{plugin_route}/inspect"));
 }
 
 #[test]

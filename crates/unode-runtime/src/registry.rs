@@ -460,13 +460,13 @@ mod tests {
             routes: vec![
                 RouteDecl {
                     pattern: "/notes".to_string(),
-                    screen_kind: None,
-                    priority: 0,
+                    ..RouteDecl::default()
                 },
                 RouteDecl {
                     pattern: "/notes/:id".to_string(),
                     screen_kind: Some("demo.plugin.note-detail".to_string()),
                     priority: 10,
+                    ..RouteDecl::default()
                 },
             ],
             ..PluginManifest::default()

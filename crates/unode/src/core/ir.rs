@@ -58,10 +58,6 @@ pub fn lower_screen(screen: &CanonicalScreen) -> IrScreen {
     if let Some(subtitle) = &screen.subtitle {
         p.insert("subtitle".into(), lower_string_or_expr(subtitle));
     }
-    if let Some(route_tabs) = &screen.route_tabs {
-        p.insert("routeTabs".into(), json!(route_tabs));
-    }
-
     inject_meta(&mut p, &screen.meta);
 
     IrScreen {
@@ -799,7 +795,6 @@ mod tests {
             base: base("screen"),
             title: Some(string_binding("screen.title")),
             subtitle: Some(string_value("Library")),
-            route_tabs: None,
             initial_focus: None,
             initial_state: None,
             children: vec![
@@ -1107,7 +1102,6 @@ mod tests {
             base: base("patch-screen"),
             title: None,
             subtitle: None,
-            route_tabs: None,
             initial_focus: None,
             initial_state: None,
             children: vec![UiNode::Text(TextNode {
@@ -1129,7 +1123,6 @@ mod tests {
             base: base("children-screen"),
             title: None,
             subtitle: None,
-            route_tabs: None,
             initial_focus: None,
             initial_state: None,
             children: vec![

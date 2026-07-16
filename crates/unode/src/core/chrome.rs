@@ -1,138 +1,191 @@
+//! Host-side derivation of navigation chrome from manifest route groups.
+//!
+//! Plugins declare routes and group them with a [`NavIntent`] in the
+//! manifest; they never describe presentation. Hosts that support tabs call
+//! [`route_tabs_view`] with the matched route pattern and the current state
+//! snapshot to obtain a ready-to-render tab set — the active tab is derived
+//! from the route, so it can never drift, and labels/badges may be state
+//! bindings for dynamic values.
+
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 
-use crate::core::ast::ScreenNode;
+use crate::core::ast::{OneOrExpr, StringOrExpr, UiExpr};
+use crate::core::runtime::{NavIntent, PluginManifest};
 
+/// One resolved tab: plain strings, ready to render.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct ScreenRouteTab {
-    pub id: String,
-    pub label: String,
+pub struct RouteTabView {
+    /// The route pattern, doubling as the tab id and navigation target.
     pub to: String,
+    pub label: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub badge: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+/// A resolved route-tab group for the screen currently on display.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct ScreenRouteTabsMeta {
-    pub kind: String,
+pub struct RouteTabsView {
+    pub group: String,
+    /// Pattern of the tab that matches the current route.
     pub active: String,
-    pub tabs: Vec<ScreenRouteTab>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub swipe_enabled: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub swipe_threshold: Option<f64>,
+    pub tabs: Vec<RouteTabView>,
 }
 
-impl ScreenRouteTabsMeta {
-    pub fn new(active: impl Into<String>, tabs: Vec<ScreenRouteTab>) -> Self {
-        Self {
-            kind: "route-tabs".to_string(),
-            active: active.into(),
-            tabs,
-            swipe_enabled: None,
-            swipe_threshold: None,
-        }
+/// Derives the tab set for `active_pattern`, if the matched route belongs to
+/// a group declared with [`NavIntent::Tabs`]. Returns `None` otherwise — the
+/// host then presents the route as a standalone screen.
+pub fn route_tabs_view(
+    manifest: &PluginManifest,
+    active_pattern: &str,
+    state: &BTreeMap<String, JsonValue>,
+) -> Option<RouteTabsView> {
+    let active_route = manifest
+        .routes
+        .iter()
+        .find(|route| route.pattern == active_pattern)?;
+    let group_id = active_route.group.as_deref()?;
+    let group = manifest
+        .route_groups
+        .iter()
+        .find(|group| group.id == group_id)?;
+    if group.intent != NavIntent::Tabs {
+        return None;
     }
 
-    pub fn swipe_enabled(mut self, enabled: bool) -> Self {
-        self.swipe_enabled = Some(enabled);
-        self
+    let tabs = manifest
+        .routes
+        .iter()
+        .filter(|route| route.group.as_deref() == Some(group_id))
+        .map(|route| RouteTabView {
+            to: route.pattern.clone(),
+            label: route
+                .label
+                .as_ref()
+                .and_then(|label| resolve_text(label, state))
+                .unwrap_or_else(|| route.pattern.clone()),
+            badge: route
+                .badge
+                .as_ref()
+                .and_then(|badge| resolve_text(badge, state)),
+        })
+        .collect();
+
+    Some(RouteTabsView {
+        group: group_id.to_string(),
+        active: active_pattern.to_string(),
+        tabs,
+    })
+}
+
+/// Resolves a manifest text value against the current state snapshot.
+/// Bindings that miss (or non-literal params) resolve to `None` so callers
+/// can fall back or omit the value.
+fn resolve_text(value: &StringOrExpr, state: &BTreeMap<String, JsonValue>) -> Option<String> {
+    match value {
+        OneOrExpr::Value(text) => Some(text.clone()),
+        OneOrExpr::Expr(UiExpr::Literal { value }) => Some(value.clone()),
+        OneOrExpr::Expr(UiExpr::Binding { path }) => state.get(path).map(json_to_string),
+        OneOrExpr::Expr(UiExpr::Param { .. }) => None,
     }
-
-    pub fn swipe_threshold(mut self, threshold: f64) -> Self {
-        self.swipe_threshold = Some(threshold);
-        self
-    }
 }
 
-pub fn create_route_tabs_meta(
-    active: impl Into<String>,
-    tabs: Vec<ScreenRouteTab>,
-) -> ScreenRouteTabsMeta {
-    ScreenRouteTabsMeta::new(active, tabs)
-}
-
-pub fn with_route_tabs(mut screen: ScreenNode, route_tabs: ScreenRouteTabsMeta) -> ScreenNode {
-    screen.route_tabs = Some(route_tabs);
-    screen
-}
-
-pub fn read_route_tabs_meta(screen: &ScreenNode) -> Option<&ScreenRouteTabsMeta> {
-    screen
-        .route_tabs
-        .as_ref()
-        .filter(|route_tabs| route_tabs.kind == "route-tabs")
+fn json_to_string(value: &JsonValue) -> String {
+    value
+        .as_str()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| value.to_string())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ScreenRouteTab, create_route_tabs_meta, read_route_tabs_meta, with_route_tabs};
-    use crate::core::ast::{NodeBase, ScreenNode};
+    use std::collections::BTreeMap;
 
-    #[test]
-    fn writes_and_reads_route_tabs_from_screen_meta() {
-        let screen = ScreenNode {
-            base: NodeBase {
-                id: Some("screen".to_string()),
-                meta: None,
-            },
-            title: None,
-            subtitle: None,
-            route_tabs: None,
-            initial_focus: None,
-            initial_state: None,
-            children: vec![],
-        };
+    use serde_json::json;
 
-        let screen = with_route_tabs(
-            screen,
-            create_route_tabs_meta(
-                "hot",
-                vec![
-                    ScreenRouteTab {
-                        id: "hot".to_string(),
-                        label: "Hot".to_string(),
-                        to: "/mangas/hot".to_string(),
-                        badge: None,
-                    },
-                    ScreenRouteTab {
-                        id: "recent".to_string(),
-                        label: "Recent".to_string(),
-                        to: "/mangas/recent".to_string(),
-                        badge: Some("2".to_string()),
-                    },
-                ],
-            )
-            .swipe_enabled(true)
-            .swipe_threshold(60.0),
-        );
+    use super::route_tabs_view;
+    use crate::core::ast::OneOrExpr;
+    use crate::core::dsl::expr::binding;
+    use crate::core::runtime::{NavIntent, PluginManifest, RouteDecl, RouteGroupDecl};
 
-        let route_tabs = read_route_tabs_meta(&screen).expect("route tabs");
-        assert_eq!(route_tabs.active, "hot");
-        assert_eq!(route_tabs.tabs.len(), 2);
-        assert_eq!(route_tabs.tabs[1].badge.as_deref(), Some("2"));
-        assert_eq!(route_tabs.swipe_threshold, Some(60.0));
+    fn manifest() -> PluginManifest {
+        PluginManifest {
+            id: "demo.plugin".to_string(),
+            name: "Demo".to_string(),
+            route_groups: vec![
+                RouteGroupDecl {
+                    id: "main".to_string(),
+                    intent: NavIntent::Tabs,
+                },
+                RouteGroupDecl {
+                    id: "flat".to_string(),
+                    intent: NavIntent::Pages,
+                },
+            ],
+            routes: vec![
+                RouteDecl {
+                    pattern: "/mangas/hot".to_string(),
+                    label: Some(OneOrExpr::Value("Hot".to_string())),
+                    group: Some("main".to_string()),
+                    ..RouteDecl::default()
+                },
+                RouteDecl {
+                    pattern: "/mangas/recent".to_string(),
+                    label: Some(OneOrExpr::Value("Recent".to_string())),
+                    badge: Some(OneOrExpr::Expr(binding("mangas.recentCount"))),
+                    group: Some("main".to_string()),
+                    ..RouteDecl::default()
+                },
+                RouteDecl {
+                    pattern: "/settings".to_string(),
+                    group: Some("flat".to_string()),
+                    ..RouteDecl::default()
+                },
+                RouteDecl {
+                    pattern: "/about".to_string(),
+                    ..RouteDecl::default()
+                },
+            ],
+            ..PluginManifest::default()
+        }
     }
 
     #[test]
-    fn ignores_invalid_route_tabs_payload() {
-        let screen = ScreenNode {
-            base: NodeBase::default(),
-            title: None,
-            subtitle: None,
-            route_tabs: Some(super::ScreenRouteTabsMeta {
-                kind: "something-else".to_string(),
-                active: "hot".to_string(),
-                tabs: vec![],
-                swipe_enabled: None,
-                swipe_threshold: None,
-            }),
-            initial_focus: None,
-            initial_state: None,
-            children: vec![],
-        };
+    fn derives_tabs_with_active_from_matched_route() {
+        let state = BTreeMap::from([("mangas.recentCount".to_string(), json!(2))]);
+        let view = route_tabs_view(&manifest(), "/mangas/recent", &state).expect("tabs");
 
-        assert!(read_route_tabs_meta(&screen).is_none());
+        assert_eq!(view.group, "main");
+        assert_eq!(view.active, "/mangas/recent");
+        assert_eq!(view.tabs.len(), 2);
+        assert_eq!(view.tabs[0].label, "Hot");
+        assert_eq!(view.tabs[0].to, "/mangas/hot");
+        assert_eq!(view.tabs[0].badge, None);
+        assert_eq!(view.tabs[1].badge.as_deref(), Some("2"));
+    }
+
+    #[test]
+    fn unresolved_badge_binding_is_omitted() {
+        let view = route_tabs_view(&manifest(), "/mangas/hot", &BTreeMap::new()).expect("tabs");
+        assert_eq!(view.tabs[1].badge, None);
+    }
+
+    #[test]
+    fn missing_label_falls_back_to_pattern() {
+        let mut manifest = manifest();
+        manifest.routes[0].label = None;
+        let view = route_tabs_view(&manifest, "/mangas/hot", &BTreeMap::new()).expect("tabs");
+        assert_eq!(view.tabs[0].label, "/mangas/hot");
+    }
+
+    #[test]
+    fn pages_intent_and_ungrouped_routes_yield_no_tabs() {
+        assert!(route_tabs_view(&manifest(), "/settings", &BTreeMap::new()).is_none());
+        assert!(route_tabs_view(&manifest(), "/about", &BTreeMap::new()).is_none());
+        assert!(route_tabs_view(&manifest(), "/unknown", &BTreeMap::new()).is_none());
     }
 }

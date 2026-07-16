@@ -25,8 +25,21 @@ fn manifest() -> PluginManifest {
         // One plugin can declare multiple screens. The host registers each
         // declared route and dispatches matching navigations back through
         // `plugin_render`, which branches on the resolved `route.pattern`.
+        //
+        // Grouped routes share a navigation intent. `tabs()` is a hint, not a
+        // command: hosts that support tabs derive the tab bar (and the active
+        // tab) from the group + matched route via `route_tabs_view`; hosts
+        // that don't simply present the members as separate routes. Labels
+        // and badges accept state bindings for dynamic values.
+        .route_group(route_group("browse").tabs())
         .routes([
-            route("/app/mangas/browse"),
+            route("/app/mangas/hot")
+                .group("browse")
+                .label("Hot"),
+            route("/app/mangas/recent")
+                .group("browse")
+                .label("Recent")
+                .badge(expr::binding::<String>("mangas.recentCount")),
             route("/app/mangas/:work_id/meta").screen_kind("com.mugenx.catalog.work-meta"),
         ])
         .build()
@@ -56,11 +69,20 @@ fn render_browse(data: &BrowseData, ctx: &PluginContext) -> ScreenNode {
 The plugin runtime maintains registries that plugins populate at activation:
 
 - **Routes** — pattern → (load fn, render fn). Declared in the manifest as
-  `routes: [RouteDecl]` (`pattern`, optional `screenKind`, `priority`). Hosts
-  register them at load time (`RouteRegistry::register_manifest_routes`) so a
-  single plugin can own multiple screens; the matched pattern and params come
-  back to the plugin in `PluginRenderRequest.route`. Plugins without declared
-  routes keep whatever route the host assigns them.
+  `routes: [RouteDecl]` (`pattern`, optional `screenKind`, `priority`, plus
+  navigation metadata: `label`, `badge`, `group`). Hosts register them at load
+  time (`RouteRegistry::register_manifest_routes`) so a single plugin can own
+  multiple screens; the matched pattern and params come back to the plugin in
+  `PluginRenderRequest.route`. Plugins without declared routes keep whatever
+  route the host assigns them.
+- **Route groups** — `routeGroups: [{ id, intent }]` name a set of declared
+  routes and hint at their presentation (`tabs` | `pages`). The renderer
+  decides: hosts with tab support call `route_tabs_view(manifest, pattern,
+  state)` (Rust) / `routeTabsView(...)` (TS) to derive a ready-to-render tab
+  set — active tab comes from the matched route, and labels/badges may be
+  state bindings for dynamic values. Hosts without tabs treat the group as
+  separate routes. Screens carry no tab metadata; navigation chrome is
+  host-derived.
 - **Actions** — type string → handler fn
 - **Commands** — id → (title, category, handler)
 - **Navigation** — id → (label, path, priority)

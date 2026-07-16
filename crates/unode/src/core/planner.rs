@@ -644,7 +644,6 @@ mod tests {
             },
             title: None,
             subtitle: None,
-            route_tabs: None,
             initial_focus: None,
             initial_state: None,
             children: vec![UiNode::Text(TextNode {
@@ -701,7 +700,6 @@ mod tests {
             },
             title: None,
             subtitle: None,
-            route_tabs: None,
             initial_focus: None,
             initial_state: None,
             children: vec![UiNode::Conditional(ConditionalNode {

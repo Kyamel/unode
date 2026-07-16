@@ -13,7 +13,9 @@ import {
 	PluginInstance,
 	StateWriteSink,
 	resolveRoutePattern,
+	routeTabsView,
 	type ResolvedRoute,
+	type RouteTabsView,
 } from 'unode-core';
 import { playgroundPluginAssets, type PluginManifest, type PluginManifestEnvelope, type PlaygroundPluginAsset } from '../../playground/registry';
 import * as webHostModule from '../../playground/pkg/unode_web_host.js';
@@ -134,11 +136,8 @@ function PluginButton({ children, intent = 'secondary', action, dispatch }: Host
 }
 
 const renderer = defineRenderer()
-	.screen(({ props, children, dispatch }) => {
-		const routeTabs = props.routeTabs as
-			| { active?: string; tabs?: Array<{ id: string; label: string; to: string; badge?: string }> }
-			| undefined;
-		return h(
+	.screen(({ props, children }) =>
+		h(
 			'section',
 			{ class: 'pg-screen' },
 			h(
@@ -146,26 +145,9 @@ const renderer = defineRenderer()
 				{ class: 'pg-screen-heading' },
 				h('div', {}, h('h1', {}, text(props.title)), props.subtitle ? h('p', {}, text(props.subtitle)) : null),
 			),
-			routeTabs?.tabs?.length
-				? h(
-						'div',
-						{ class: 'pg-tabs' },
-						routeTabs.tabs.map((tab) =>
-							h(
-								'button',
-								{
-									class: tab.id === routeTabs.active ? 'is-active' : '',
-									onClick: () => dispatch({ t: 'navigate', p: { to: tab.to } }),
-								},
-								h('span', {}, tab.label),
-								tab.badge ? h('small', {}, tab.badge) : null,
-							),
-						),
-					)
-				: null,
 			h('div', { class: 'pg-node-stack' }, children),
-		);
-	})
+		),
+	)
 	.node('action', ({ label, intent, action }) =>
 		hostSlot('Button', { children: label, intent, action }),
 	)
@@ -221,6 +203,7 @@ export default function PlaygroundApp() {
 	const [plugins, setPlugins] = useState<LoadedPlugin[]>([]);
 	const [selectedPluginId, setSelectedPluginId] = useState(playgroundPluginAssets[0]?.id ?? '');
 	const [routeTo, setRouteTo] = useState<string | null>(null);
+	const [tabsView, setTabsView] = useState<RouteTabsView | null>(null);
 	const [store, setStore] = useState<ScreenStore | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [events, setEvents] = useState<EventLogEntry[]>([]);
@@ -319,6 +302,10 @@ export default function PlaygroundApp() {
 			...((screen as { initialState?: Record<string, unknown> }).initialState ?? {}),
 			...seedState,
 		};
+
+		// Route tabs are host chrome derived from the manifest's route groups;
+		// dynamic labels/badges resolve against the state snapshot.
+		setTabsView(routeTabsView(active.envelope.manifest, route.pattern, stateSnapshot) ?? null);
 
 		const slotResponses: SlotResponseEnvelope[] = [];
 		for (const contributor of loaded) {
@@ -485,6 +472,23 @@ export default function PlaygroundApp() {
 			</aside>
 
 			<main className="pg-main">
+				{tabsView && (
+					<div className="pg-tabs" role="tablist">
+						{tabsView.tabs.map((tab) => (
+							<button
+								key={tab.to}
+								type="button"
+								role="tab"
+								aria-selected={tab.to === tabsView.active}
+								className={tab.to === tabsView.active ? 'is-active' : ''}
+								onClick={() => navigateTo(tab.to)}
+							>
+								<span>{tab.label}</span>
+								{tab.badge && <small>{tab.badge}</small>}
+							</button>
+						))}
+					</div>
+				)}
 				{store ? (
 					<UnodeScreen
 						store={store}

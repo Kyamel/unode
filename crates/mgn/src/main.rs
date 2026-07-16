@@ -18,6 +18,7 @@ use tui_renderer::{
 use unode_runtime::{CommandResult, ShellContext};
 use unode_sdk::prelude::{
     ActionRef, ActionType, CoreActionType, PermissionProfile, ResolvedRoute, ScreenNode,
+    route_tabs_view,
 };
 use unode_sdk::{
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
@@ -299,7 +300,9 @@ impl App {
             None => TuiMainContent::Panel(self.render_shell_panel()),
         };
         self.main_interactions = match &self.main_panel {
-            TuiMainContent::Screen(view) => collect_screen_interactions(&view.screen),
+            TuiMainContent::Screen(view) => {
+                collect_screen_interactions(&view.screen, view.route_tabs.as_ref())
+            }
             TuiMainContent::Panel(_) => vec![],
         };
         self.selected_main_interaction = self.resolve_main_focus();
@@ -362,10 +365,18 @@ impl App {
         Some(match session.render::<ScreenNode>(&request) {
             Ok(mut screen) => {
                 resolve_screen_state(&mut screen, &self.plugins[plugin_index].state);
+                // Chrome is host-derived: tabs come from the manifest's route
+                // groups, resolved against the freshest state snapshot.
+                let route_tabs = route_tabs_view(
+                    &manifest.manifest,
+                    &request.route.pattern,
+                    &self.plugins[plugin_index].state.snapshot(),
+                );
                 TuiMainContent::Screen(TuiScreenView {
                     plugin_id: manifest.manifest.id.clone(),
                     source: display_source,
                     screen,
+                    route_tabs,
                     focused_interaction: None,
                 })
             }
@@ -507,7 +518,7 @@ impl App {
                 prompt: ":".to_string(),
                 input: self.command_input.clone(),
                 active: self.command_mode,
-                hint: Some("type a command id like `open.dev.mugens.sanity-check`".to_string()),
+                hint: Some("type a command id like `open.dev.unode.sanity-check`".to_string()),
             },
         }
     }

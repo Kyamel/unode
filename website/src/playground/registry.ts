@@ -12,11 +12,10 @@ export type PluginManifestEnvelope = {
 	manifest: PluginManifest;
 };
 
-export type PluginRouteDecl = {
-	pattern: string;
-	screenKind?: string;
-	priority?: number;
-};
+import type { ManifestRouteDecl, ManifestRouteGroupDecl } from 'unode-core';
+
+export type PluginRouteDecl = ManifestRouteDecl;
+export type PluginRouteGroupDecl = ManifestRouteGroupDecl;
 
 export type PluginManifest = {
 	id: string;
@@ -32,6 +31,8 @@ export type PluginManifest = {
 	}>;
 	/** Screens the plugin declares; the playground routes navigations against these. */
 	routes?: PluginRouteDecl[];
+	/** Named route sets with a navigation intent (e.g. tabs). */
+	routeGroups?: PluginRouteGroupDecl[];
 };
 
 export type PlaygroundPluginAsset = {
@@ -53,7 +54,7 @@ export const playgroundPluginAssets: PlaygroundPluginAsset[] = [
 		tags: ['real plugin', 'state', 'reactivity'],
 	},
 	{
-		id: 'dev.mugens.sanity-check',
+		id: 'dev.unode.sanity-check',
 		name: 'Sanity Check',
 		routePattern: '/plugins/sanity-check',
 		sourcePath: 'plugins/sanity-check',

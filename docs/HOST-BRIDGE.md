@@ -149,7 +149,7 @@ These are clearly app-specific and must stay in the bridge:
 - `workBanner`, `chapterList`, `workMetadata` — domain sugar
 - `WorkSummary`, `ChapterSummary` — domain models
 - `catalog.read`, `library.write` — domain permission strings
-- Route tabs chrome (`screen.meta.routeTabs`) — app navigation pattern
+- Route tab groupings for app routes (manifest `routeGroups`) — app navigation pattern
 - Any reference to manga, anime, chapters, or works
 
 If another app wanted to use unode, it would write its own bridge with its own

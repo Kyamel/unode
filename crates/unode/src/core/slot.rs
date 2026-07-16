@@ -598,7 +598,6 @@ fn normalize_contribution_nodes(
         },
         title: None,
         subtitle: None,
-        route_tabs: None,
         initial_focus: None,
         initial_state: None,
         children: nodes,

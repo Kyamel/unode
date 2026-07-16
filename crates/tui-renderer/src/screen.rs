@@ -7,7 +7,7 @@ use unode::core::ast::{
     ActionNode, ActionRef, BoolOrExpr, ItemNode, ListNode, NodeBase, ScreenNode, StatusNode,
     StringOrExpr, UiNode,
 };
-use unode::core::chrome::{ScreenRouteTab, ScreenRouteTabsMeta, read_route_tabs_meta};
+use unode::core::chrome::{RouteTabView, RouteTabsView};
 
 use crate::nodes::{actions, list, section, stack, status, text};
 use crate::util::render_string_or_expr;
@@ -17,6 +17,10 @@ pub struct TuiScreenView {
     pub plugin_id: String,
     pub source: String,
     pub screen: ScreenNode,
+    /// Route tabs derived by the host from the plugin manifest's route
+    /// groups (`unode::core::chrome::route_tabs_view`). `None` renders the
+    /// screen standalone.
+    pub route_tabs: Option<RouteTabsView>,
     pub focused_interaction: Option<usize>,
 }
 
@@ -59,17 +63,20 @@ impl ScreenRenderContext {
     }
 }
 
-pub fn collect_screen_interactions(screen: &ScreenNode) -> Vec<TuiInteractiveElement> {
+pub fn collect_screen_interactions(
+    screen: &ScreenNode,
+    route_tabs: Option<&RouteTabsView>,
+) -> Vec<TuiInteractiveElement> {
     let mut interactions = Vec::new();
 
-    if let Some(route_tabs) = read_route_tabs_meta(screen) {
+    if let Some(route_tabs) = route_tabs {
         interactions.extend(
             route_tabs
                 .tabs
                 .iter()
                 .cloned()
                 .map(|tab| TuiInteractiveElement {
-                    node_id: Some(format!("route-tab:{}", tab.id)),
+                    node_id: Some(format!("route-tab:{}", tab.to)),
                     label: tab.label,
                     kind: TuiInteractiveKind::RouteTab { to: tab.to },
                 }),
@@ -88,7 +95,7 @@ pub fn render_tui_screen(frame: &mut Frame, area: Rect, view: &TuiScreenView) {
         return;
     }
 
-    let route_tabs = read_route_tabs_meta(&view.screen);
+    let route_tabs = view.route_tabs.as_ref();
     let top_constraints = if route_tabs.is_some() {
         vec![
             Constraint::Length(2),
@@ -233,13 +240,13 @@ fn push_action_interaction(
 fn render_route_tabs(
     frame: &mut Frame,
     area: Rect,
-    route_tabs: &ScreenRouteTabsMeta,
+    route_tabs: &RouteTabsView,
     ctx: &mut ScreenRenderContext,
 ) {
     let tabs = route_tabs
         .tabs
         .iter()
-        .map(|tab| render_route_tab_span(tab, route_tabs.active == tab.id, ctx.consume(true)))
+        .map(|tab| render_route_tab_span(tab, route_tabs.active == tab.to, ctx.consume(true)))
         .collect::<Vec<_>>();
     let widget = Paragraph::new(Line::from(tabs))
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
@@ -247,7 +254,7 @@ fn render_route_tabs(
     frame.render_widget(widget, area);
 }
 
-fn render_route_tab_span(tab: &ScreenRouteTab, active: bool, focused: bool) -> Span<'static> {
+fn render_route_tab_span(tab: &RouteTabView, active: bool, focused: bool) -> Span<'static> {
     let badge = tab
         .badge
         .as_ref()
@@ -552,62 +559,61 @@ fn list_item_label(item: &ItemNode) -> String {
 mod tests {
     use serde_json::json;
     use unode::core::ast::{ActionType, CoreActionType, NodeBase};
-    use unode::core::chrome::{ScreenRouteTab, create_route_tabs_meta, with_route_tabs};
+    use unode::core::chrome::{RouteTabView, RouteTabsView};
     use unode::core::dsl::{self as ui, IntoNode};
 
     use super::{TuiInteractiveKind, collect_screen_interactions};
 
     #[test]
     fn collects_route_tabs_and_actions_in_render_order() {
-        let screen = with_route_tabs(
-            ui::screen()
-                .id("screen")
-                .children([
-                    ui::action(
-                        "Refresh".to_string(),
-                        unode::core::ast::ActionRef {
-                            r#type: ActionType::Core(CoreActionType::Refresh),
-                            params: None,
+        let screen = ui::screen()
+            .id("screen")
+            .children([
+                ui::action(
+                    "Refresh".to_string(),
+                    unode::core::ast::ActionRef {
+                        r#type: ActionType::Core(CoreActionType::Refresh),
+                        params: None,
+                        confirm: None,
+                    },
+                )
+                .id("refresh")
+                .into_node(),
+                unode::core::ast::UiNode::List(unode::core::ast::ListNode {
+                    base: NodeBase::default(),
+                    items: vec![unode::core::ast::ItemNode {
+                        id: "row-1".to_string(),
+                        meta: None,
+                        leading: vec![],
+                        primary: vec![ui::text("Open row".to_string()).into_node()],
+                        secondary: vec![],
+                        trailing: vec![],
+                        action: Some(unode::core::ast::ActionRef {
+                            r#type: ActionType::Custom("row.open".to_string()),
+                            params: Some(std::collections::BTreeMap::from([(
+                                "id".to_string(),
+                                json!("row-1"),
+                            )])),
                             confirm: None,
-                        },
-                    )
-                    .id("refresh")
-                    .into_node(),
-                    unode::core::ast::UiNode::List(unode::core::ast::ListNode {
-                        base: NodeBase::default(),
-                        items: vec![unode::core::ast::ItemNode {
-                            id: "row-1".to_string(),
-                            meta: None,
-                            leading: vec![],
-                            primary: vec![ui::text("Open row".to_string()).into_node()],
-                            secondary: vec![],
-                            trailing: vec![],
-                            action: Some(unode::core::ast::ActionRef {
-                                r#type: ActionType::Custom("row.open".to_string()),
-                                params: Some(std::collections::BTreeMap::from([(
-                                    "id".to_string(),
-                                    json!("row-1"),
-                                )])),
-                                confirm: None,
-                            }),
-                        }],
-                        density: None,
-                        continuation: None,
-                    }),
-                ])
-                .build(),
-            create_route_tabs_meta(
-                "overview",
-                vec![ScreenRouteTab {
-                    id: "overview".to_string(),
-                    label: "Overview".to_string(),
-                    to: "/plugins/demo".to_string(),
-                    badge: None,
-                }],
-            ),
-        );
+                        }),
+                    }],
+                    density: None,
+                    continuation: None,
+                }),
+            ])
+            .build();
 
-        let interactions = collect_screen_interactions(&screen);
+        let route_tabs = RouteTabsView {
+            group: "main".to_string(),
+            active: "/plugins/demo".to_string(),
+            tabs: vec![RouteTabView {
+                to: "/plugins/demo".to_string(),
+                label: "Overview".to_string(),
+                badge: None,
+            }],
+        };
+
+        let interactions = collect_screen_interactions(&screen, Some(&route_tabs));
         assert_eq!(interactions.len(), 3);
         assert!(matches!(
             interactions[0].kind,
@@ -615,5 +621,8 @@ mod tests {
         ));
         assert_eq!(interactions[1].node_id.as_deref(), Some("refresh"));
         assert_eq!(interactions[2].node_id.as_deref(), Some("row-1"));
+
+        let without_tabs = collect_screen_interactions(&screen, None);
+        assert_eq!(without_tabs.len(), 2);
     }
 }

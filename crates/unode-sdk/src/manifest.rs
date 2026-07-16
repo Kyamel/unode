@@ -1,6 +1,8 @@
+use unode::core::ast::StringOrExpr;
 use unode::core::permissions::PermissionRequest;
 use unode::core::runtime::{
-    PluginManifest, RouteDecl, SlotContributionDecl, UNODE_CORE_API_VERSION,
+    NavIntent, PluginManifest, RouteDecl, RouteGroupDecl, SlotContributionDecl,
+    UNODE_CORE_API_VERSION,
 };
 
 /// Starts a plugin permission request builder.
@@ -85,8 +87,7 @@ pub fn route(pattern: impl Into<String>) -> RouteDeclBuilder {
     RouteDeclBuilder {
         route: RouteDecl {
             pattern: pattern.into(),
-            screen_kind: None,
-            priority: 0,
+            ..RouteDecl::default()
         },
     }
 }
@@ -107,6 +108,27 @@ impl RouteDeclBuilder {
         self
     }
 
+    /// Display label for navigation entries and route tabs. Accepts a plain
+    /// string or an expression (e.g. `expr::binding("path")`) for dynamic
+    /// labels.
+    pub fn label(mut self, label: impl Into<StringOrExpr>) -> Self {
+        self.route.label = Some(label.into());
+        self
+    }
+
+    /// Optional badge next to the label. Accepts a plain string or an
+    /// expression for dynamic badges (e.g. an unread count bound to state).
+    pub fn badge(mut self, badge: impl Into<StringOrExpr>) -> Self {
+        self.route.badge = Some(badge.into());
+        self
+    }
+
+    /// Joins a route group declared with `route_group(...)`.
+    pub fn group(mut self, group: impl Into<String>) -> Self {
+        self.route.group = Some(group.into());
+        self
+    }
+
     pub fn build(self) -> RouteDecl {
         self.route
     }
@@ -114,6 +136,52 @@ impl RouteDeclBuilder {
 
 impl From<RouteDeclBuilder> for RouteDecl {
     fn from(value: RouteDeclBuilder) -> Self {
+        value.build()
+    }
+}
+
+/// Starts a route group declaration builder.
+///
+/// Grouped routes form one navigation set; the intent hints at presentation
+/// (`tabs()` or `pages()`), but the renderer decides — hosts without tab
+/// support treat the members as separate routes.
+pub fn route_group(id: impl Into<String>) -> RouteGroupDeclBuilder {
+    RouteGroupDeclBuilder {
+        group: RouteGroupDecl {
+            id: id.into(),
+            intent: NavIntent::default(),
+        },
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RouteGroupDeclBuilder {
+    group: RouteGroupDecl,
+}
+
+impl RouteGroupDeclBuilder {
+    pub fn intent(mut self, intent: NavIntent) -> Self {
+        self.group.intent = intent;
+        self
+    }
+
+    /// Sugar for `.intent(NavIntent::Tabs)`.
+    pub fn tabs(self) -> Self {
+        self.intent(NavIntent::Tabs)
+    }
+
+    /// Sugar for `.intent(NavIntent::Pages)`.
+    pub fn pages(self) -> Self {
+        self.intent(NavIntent::Pages)
+    }
+
+    pub fn build(self) -> RouteGroupDecl {
+        self.group
+    }
+}
+
+impl From<RouteGroupDeclBuilder> for RouteGroupDecl {
+    fn from(value: RouteGroupDeclBuilder) -> Self {
         value.build()
     }
 }
@@ -172,6 +240,22 @@ impl PluginManifestBuilder {
 
     pub fn route(mut self, route: impl Into<RouteDecl>) -> Self {
         self.manifest.routes.push(route.into());
+        self
+    }
+
+    pub fn route_group(mut self, group: impl Into<RouteGroupDecl>) -> Self {
+        self.manifest.route_groups.push(group.into());
+        self
+    }
+
+    pub fn route_groups<I, G>(mut self, groups: I) -> Self
+    where
+        I: IntoIterator<Item = G>,
+        G: Into<RouteGroupDecl>,
+    {
+        self.manifest
+            .route_groups
+            .extend(groups.into_iter().map(Into::into));
         self
     }
 
@@ -265,5 +349,32 @@ mod tests {
             Some("demo.plugin.note-detail")
         );
         assert_eq!(manifest.routes[2].priority, 10);
+    }
+
+    #[test]
+    fn builds_manifest_with_tab_route_group() {
+        use unode::core::ast::OneOrExpr;
+        use unode::core::dsl::expr::binding;
+        use unode::core::runtime::NavIntent;
+
+        let manifest = plugin_manifest("demo.plugin", "Demo")
+            .route_group(super::route_group("main").tabs())
+            .routes([
+                route("/notes").group("main").label("Notes"),
+                route("/archive")
+                    .group("main")
+                    .label("Archive")
+                    .badge(binding::<String>("archive.count")),
+            ])
+            .build();
+
+        assert!(manifest.validate().is_ok());
+        assert_eq!(manifest.route_groups.len(), 1);
+        assert_eq!(manifest.route_groups[0].intent, NavIntent::Tabs);
+        assert_eq!(
+            manifest.routes[0].label,
+            Some(OneOrExpr::Value("Notes".to_string()))
+        );
+        assert!(matches!(manifest.routes[1].badge, Some(OneOrExpr::Expr(_))));
     }
 }
