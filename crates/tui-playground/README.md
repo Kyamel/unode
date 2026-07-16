@@ -14,7 +14,7 @@ a native terminal host.
 
 The app registers built-in shell routes plus runtime-loaded WASM plugins from
 `plugins/`. Today it knows how to register both `sanity-check` and
-`web-counter` when their `.wasm` artifacts have been built. Plugin registration,
+`counter` when their `.wasm` artifacts have been built. Plugin registration,
 artifact discovery, host-call dispatch, and the small host-owned state map used
 for `state.set` live in `src/plugin_registry.rs`.
 

@@ -37,7 +37,7 @@ Unode should provide:
   vertical slices. They instantiate both `plugin.wasm` and
   `unode_web_host.wasm`, wire host calls, store keyed IR, and render through
   framework adapters.
-- `plugins/web-counter` is the end-to-end proof plugin for web reactivity.
+- `plugins/counter` is the end-to-end proof plugin for web reactivity.
 - `crates/unode-web-runtime` and `crates/unode-tui-runtime` contain runtime
   boundary helpers for loading, memory, host calls, ABI bridges, and TUI plugin
   sessions.
@@ -68,8 +68,8 @@ The current tree has working React and Svelte web runtime slices:
   - thin mount packages that connect the shared renderer to framework-native
     host-slot portals.
 - `examples/web-react` and `examples/web-svelte`
-  - validate that the same `plugins/web-counter` artifact is framework-neutral.
-- `plugins/web-counter`
+  - validate that the same `plugins/counter` artifact is framework-neutral.
+- `plugins/counter`
   - Rust WASM plugin that renders a reactive counter;
   - dispatch crosses the sandbox via `host_call("state.set", ...)`;
   - the host applies writes and patches only the bound node.
@@ -130,7 +130,7 @@ Useful checks for the current slice:
 
 ```sh
 cargo test -p unode-web-host
-cargo test --manifest-path plugins/web-counter/Cargo.toml
+cargo test --manifest-path plugins/counter/Cargo.toml
 nix-shell --run 'node examples/web-react/scripts/smoke.mjs'
 nix-shell --run 'cd examples/web-react && pnpm run typecheck'
 nix-shell --run 'node examples/web-svelte/scripts/smoke.mjs'

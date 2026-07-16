@@ -1,9 +1,9 @@
 ---
 title: "Quickstart: a plugin"
-description: Build the reactive web-counter plugin from scratch and understand the sandbox boundary.
+description: Build the reactive counter plugin from scratch and understand the sandbox boundary.
 ---
 
-This walkthrough builds `web-counter`, the reactive plugin behind the web
+This walkthrough builds the counter plugin (`plugins/counter`), the reactive plugin behind the web
 vertical slice. It renders one line bound to host state plus three buttons. The
 key idea: **state never lives in the plugin's memory** — the host owns it and
 hands it back on every dispatch. The plugin only declares intent and requests
@@ -41,8 +41,8 @@ use unode_plugin_sdk::prelude::{
     TextRole, Tone, UNODE_PLUGIN_ABI_VERSION,
 };
 
-const PLUGIN_ID: &str = "dev.unode.web-counter";
-const PLUGIN_NAME: &str = "Web Counter";
+const PLUGIN_ID: &str = "dev.unode.counter";
+const PLUGIN_NAME: &str = "Counter";
 const COUNT_PATH: &str = "ui.count";
 const LABEL_PATH: &str = "ui.countLabel";
 
@@ -94,7 +94,7 @@ fn custom(action: &str) -> ActionRef {
 
 fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
     ui::screen()
-        .id("web-counter.screen")
+        .id("counter.screen")
         .title(PLUGIN_NAME)
         .subtitle("Rendered from a Rust plugin compiled to WebAssembly.")
         .initial_state(std::collections::BTreeMap::from([
@@ -105,29 +105,29 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
             // The one reactive node. Its content is a binding, so the host
             // patches only this line when `ui.countLabel` changes.
             ui::text(expr::binding::<String>(LABEL_PATH))
-                .id("web-counter.value")
+                .id("counter.value")
                 .role(TextRole::Title)
                 .tone(Tone::Info),
             ui::text("The number above is host state; the buttons dispatch intents.")
-                .id("web-counter.hint")
+                .id("counter.hint")
                 .role(TextRole::Caption)
                 .tone(Tone::Muted),
             ui::actions()
-                .id("web-counter.actions")
+                .id("counter.actions")
                 .children([
                     ui::action("Increment", custom("counter.inc"))
-                        .id("web-counter.inc")
+                        .id("counter.inc")
                         .intent(ActionIntent::Primary),
                     ui::action("Decrement", custom("counter.dec"))
-                        .id("web-counter.dec")
+                        .id("counter.dec")
                         .intent(ActionIntent::Secondary),
                     ui::action("Reset", custom("counter.reset"))
-                        .id("web-counter.reset")
+                        .id("counter.reset")
                         .intent(ActionIntent::Ghost),
                 ])
                 .into_node(),
         ])
-        .initial_focus("web-counter.inc")
+        .initial_focus("counter.inc")
         .build()
 }
 ```
@@ -173,7 +173,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
         None => PluginDispatchResponse {
             handled: false,
             outcome: PluginDispatchOutcome::None,
-            message: Some("web-counter ignored action".to_string()),
+            message: Some("counter ignored action".to_string()),
             data: None,
         },
     }
@@ -198,7 +198,7 @@ unode_plugin_sdk::export_plugin! {
 ## 7. Build it
 
 ```sh
-cargo build --manifest-path plugins/web-counter/Cargo.toml \
+cargo build --manifest-path plugins/counter/Cargo.toml \
   --target wasm32-unknown-unknown --release
 ```
 

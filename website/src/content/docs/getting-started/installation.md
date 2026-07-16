@@ -57,7 +57,7 @@ packages consume:
 
 ```sh
 cargo build \
-  --manifest-path plugins/web-counter/Cargo.toml \
+  --manifest-path plugins/counter/Cargo.toml \
   --target wasm32-unknown-unknown --release
 ```
 
@@ -78,7 +78,7 @@ wasm-bindgen --target web \
 ```sh
 cargo test --workspace
 cargo test -p unode-web-host
-cargo test --manifest-path plugins/web-counter/Cargo.toml
+cargo test --manifest-path plugins/counter/Cargo.toml
 ```
 
 ## Run the web demos

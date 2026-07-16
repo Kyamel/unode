@@ -94,7 +94,7 @@ The target split is now starting to exist in `packages/`:
   would only add its own portal wrapper.
 - **Examples are apps.** `examples/web-react` and `examples/web-svelte` wire the
   importable packages to `unode-web-core`, generated WASM artifacts, and the
-  `web-counter` plugin.
+  counter plugin (`plugins/counter`).
 - **Application renderer spec:** app-owned mapping from semantic node types to
   design-system components. This is where the host decides how plugin-provided
   `text`, `section`, `action`, `list`, `input`, `status`, and other nodes appear.
@@ -241,7 +241,7 @@ activation as host state, not component-local state.
 
 ```sh
 cargo test -p unode-web-host
-cargo test --manifest-path plugins/web-counter/Cargo.toml
+cargo test --manifest-path plugins/counter/Cargo.toml
 nix-shell --run 'node examples/web-react/scripts/smoke.mjs'
 nix-shell --run 'node examples/web-svelte/scripts/smoke.mjs'
 ```

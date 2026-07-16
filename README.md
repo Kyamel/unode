@@ -20,15 +20,22 @@ embedded in applications written with React, Svelte, Vue, or another framework.
 | `crates/unode-web-host` | Rust core pipeline compiled to WASM for browser hosts; normalizes screens, tracks reactivity, and emits IR patches. |
 | `crates/unode-web-runtime` | Web runtime boundary helpers for plugin loading, host calls, memory, and bridge validation. |
 | `crates/unode-tui-runtime` | TUI runtime boundary helpers using Wasmtime-oriented plugin sessions and host calls. |
-| `crates/renderer` | TUI rendering work using Ratatui concepts. |
-| `crates/tui-playground` | Example native Rust TUI application that wires the runtime, renderer, and Mugens bridge together. |
-| `plugins/` | Rust WASM example plugins, including `web-counter`. |
+| `crates/unode-renderer` | Backend-agnostic renderer SDK: recipes keyed by node kind, measure/render passes, focus cursor, and the builder hosts start from. |
+| `crates/unode-ratatui-renderer` | Ratatui specialization of the renderer SDK: default recipes, screen/shell painting, and interaction collection. |
+| `crates/tui-playground` | TUI playground shell: loads the example WASM plugins, registers manifest routes, and renders them with the ratatui renderer. |
+| `plugins/` | Rust WASM example plugins, including `counter`. |
 | `packages/unode-web-core` | Shared TypeScript browser runtime library: plugin loading, web host session, registries, state-write sink, and dispatch loop. |
 | `packages/unode-web-renderer` | Shared TypeScript renderer library: IR types, keyed `ScreenStore`, patch application, and renderer prop helpers. |
 | `packages/unode-react` | React mount package for the shared renderer, including host-slot portal glue. |
 | `packages/unode-svelte` | Svelte mount package for the shared renderer, including host-slot portal glue. |
-| `examples/web-react` | Private React demo app that wires `unode-web-core`, `unode-react`, and the `web-counter` plugin. |
-| `examples/web-svelte` | Private Svelte demo app that wires `unode-web-core`, `unode-svelte`, and the `web-counter` plugin. |
+| `packages/unode-vue` | Vue 3 mount package for the shared renderer, including host-slot portal glue. |
+| `packages/unode-solid` | SolidJS mount package for the shared renderer, including host-slot portal glue. |
+| `examples/web-react` | Private React demo app that wires `unode-web-core`, `unode-react`, and the counter plugin (`plugins/counter`). |
+| `examples/web-svelte` | Private Svelte demo app that wires `unode-web-core`, `unode-svelte`, and the counter plugin (`plugins/counter`). |
+| `examples/web-vue` | Vue 3 demo app over the same runtime and counter plugin. |
+| `examples/web-solid` | SolidJS demo app over the same runtime and counter plugin. |
+| `examples/web-vanilla` | Framework-free demo: the DOM renderer and Unode's own keyed reactivity, no adapter package. |
+| `examples/tui-ratatui` | Minimal ratatui host demo (main/App/Button) mirroring the web examples. |
 | `ts-implementation/` | Deprecated legacy TypeScript prototype kept only as migration reference. |
 | `docs/` | Architecture, runtime, ABI, reactivity, permissions, and migration documentation. |
 
@@ -61,14 +68,14 @@ session lifecycle.
 
 `crates/tui-playground` is in `crates/` because it is a Rust workspace package/binary that
 integrates Unode for one app. It is not the reusable TUI runtime itself; that
-role belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
+role belongs to `crates/unode-tui-runtime` plus `crates/unode-ratatui-renderer`.
 
 ## Useful Commands
 
 ```sh
 cargo test --workspace
 cargo test -p unode-web-host
-cargo test --manifest-path plugins/web-counter/Cargo.toml
+cargo test --manifest-path plugins/counter/Cargo.toml
 nix-shell --run ./examples/web-react/build.sh
 nix-shell --run ./examples/web-svelte/build.sh
 ```

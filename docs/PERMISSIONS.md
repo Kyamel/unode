@@ -39,26 +39,29 @@ Enforced by: the host bridge before delegating to the real implementation.
 
 ## Declaration in plugin manifest
 
+Permissions are typed at the authoring edges and plain strings on the wire.
+The core ships its builtins as constants (`permissions::builtin::*`); apps
+declare their own domain permissions with `Permission::new` — the core never
+enumerates or limits them. `Permission::scoped` applies the `resource:scope`
+convention.
+
 ```rust
-// In plugin source
-let manifest = PluginManifest {
-    id: "com.mugenx.catalog".into(),
-    permissions: vec![
-        PermissionRequest {
-            permission: "http.fetch".into(),
-            reason: "Fetch cover images from CDN".into(),
-            required: false,
-            allowed_origins: vec!["https://cdn.mugenx.com".into()],
-        },
-        PermissionRequest {
-            permission: "catalog.read".into(),
-            reason: "Read works and chapters from the catalog".into(),
-            required: true,
-            allowed_origins: vec![],
-        },
-    ],
-    ..Default::default()
-};
+// In the app's SDK crate (domain permissions are app-defined):
+pub const CATALOG_READ: Permission = Permission::new("catalog.read");
+
+// In plugin source:
+let manifest = plugin_manifest("com.mugenx.catalog", "Catalog")
+    .permission(
+        perm(builtin::HTTP_FETCH)
+            .reason("Fetch cover images from CDN")
+            .allow_origin("https://cdn.mugenx.com"),
+    )
+    .permission(
+        perm(CATALOG_READ)
+            .required(true)
+            .reason("Read works and chapters from the catalog"),
+    )
+    .build();
 ```
 
 ---

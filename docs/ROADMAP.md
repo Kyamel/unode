@@ -44,7 +44,11 @@ team should be able to keep Unode's plugin runtime, WASM isolation, IR patches,
 and reactivity model, while replacing only the visual mapping from semantic
 nodes to that app's design system.
 
-The initial shape now exists for React and should be expanded:
+This now exists on both stacks: `defineRenderer()` on the web
+(React/Svelte/Vue/Solid mount packages plus a framework-free vanilla path) and
+`unode-renderer` + `unode-ratatui-renderer` on the TUI (`ratatui_renderer()`
+with typed recipes, `override_render`, and `wrap`). Remaining work is the
+theme/token layer and typed recipe contexts (see Decided Next Steps):
 
 - `packages/unode-web-core` owns shared browser runtime glue: plugin WASM
   instantiation, host-session loading, plugin registry, state-write buffering,
@@ -52,10 +56,12 @@ The initial shape now exists for React and should be expanded:
 - `packages/unode-web-renderer` owns IR types, `ScreenStore`, patch application,
   node lookup helpers, literal/binding unwrapping, prop normalization,
   unknown-node fallback behavior, and shared renderer diagnostics.
-- `packages/unode-react` and `packages/unode-svelte` are thin mount packages for
-  the shared renderer and framework-native host-slot portals.
-- `examples/web-react` and `examples/web-svelte` are private demos that wire
-  those packages to `unode-web-core`, generated WASM artifacts, and example plugins.
+- `packages/unode-react`, `packages/unode-svelte`, `packages/unode-vue`, and
+  `packages/unode-solid` are thin mount packages for the shared renderer and
+  framework-native host-slot portals.
+- `examples/web-*` (react, svelte, vue, solid, vanilla) are private demos that
+  wire those packages to `unode-web-core`, generated WASM artifacts, and the
+  counter plugin; `examples/tui-ratatui` mirrors them on the terminal.
 - Applications provide a `RendererSpec` or equivalent node map that says how
   `text`, `section`, `action`, `list`, `input`, and other semantic nodes become
   local UI components.
@@ -135,11 +141,72 @@ ergonomics around paths, computed bindings, and keyed collections.
 - Share permission and state behavior with the web host.
 - Verify that the same plugin `.wasm` can drive both environments.
 
+## Decided Next Steps (design sessions, July 2026)
+
+Decisions taken in design discussions but not yet implemented, in rough
+priority order. Each entry records the agreed direction so implementation can
+start without re-litigating the design.
+
+### Renderer
+
+- **Theme layer (tokens)** — the first customization layer, below
+  `wrap`/`override_render`/full recipes: color/border/spacing tokens read by
+  the default recipes on both stacks (`ratatui_renderer().theme(...)`, web
+  `defineRenderer().theme(...)`). Most overrides are styling; today they
+  require a full recipe.
+- **Typed `RecipeContext` per node type (web)** — a `NodeType → props` map so
+  `recipe("text", ...)` gets typed props/autocomplete instead of
+  `prop("tone")` strings. Ideally the `NodeType` union (and the props map) is
+  code-generated from the Rust `UiNode` enum to prevent drift.
+- **Docstring pass** — `#![warn(missing_docs)]` on `unode` and
+  `unode-renderer` once public items are fully documented.
+
+### Protocol / expressions
+
+- **Derived expressions** — `UiExpr` only has `Literal | Binding | Param`;
+  there is no `$derived` equivalent (concat, formatting, arithmetic). Today
+  "derived" means the plugin re-renders (`RefreshCurrentScreen`). A minimal
+  computed-expression form is the most valuable `UiExpr` evolution.
+- **`when` on routes/route groups** — conditional navigation entries and tabs
+  (e.g. permission-gated), mirroring `SlotContributionDecl.when`.
+- **i18n for manifest labels** — route `label`/`badge` are static strings or
+  state bindings; message-key support (host-side `DeferredText`) is the path
+  to localized navigation chrome.
+- **Overlay/Layer node** — the dialog/popover/toast gap is a presentation
+  layer, not content: one `Overlay` node (modal, dismissible, optional
+  anchor) wrapping existing nodes; TUI renders it as a centered box.
+  `ContainerRole::Dialog` exists but carries no overlay semantics.
+  Calibrate by building 3–4 target screens with current nodes first.
+- **Content `Tabs` node** — in-page tabs that do not change the route;
+  deliberately distinct from manifest route groups.
+- The node set stays **closed**: no `UiNode::Custom`. Hosts specialize by
+  overriding recipes, never by inventing node types (portability guarantee).
+
+### Permissions / capabilities
+
+- **Host permission catalogs** — hosts may register known permissions so the
+  loader can warn (not fail) on unknown/typo'd requests, keeping the set open.
+- **Cross-plugin capabilities (deferred until a real 2-plugin use case)** —
+  never direct plugin→plugin; always host-brokered, mirroring how slots broker
+  UI. Shape agreed: provider declares `provides(capability("notes.search"))`
+  in its manifest, consumer declares `requires`, host routes a
+  `cap.invoke` host call to a new `plugin_provide` ABI export with the
+  caller's identity. JSON request/response only, host timeout, no streaming.
+  The manifest `requires` field already reserves the vocabulary.
+
+### Cleanups
+
+- **Examples share 5 copies** of `scripts/smoke.mjs` and `pkg/`; extract an
+  `examples/shared/` if the duplication starts to hurt (kept copy-paste-able
+  on purpose for now).
+- **`unode-react` portal adapter** uses a lazily ref-initialized external
+  store (lint-suppressed); migrate to `useSyncExternalStore`.
+
 ## Legacy TypeScript Role
 
 `ts-implementation/` is deprecated reference and migration material. The current
-web React and Svelte demos live in `examples/web-react` and
-`examples/web-svelte`, backed by reusable packages under `packages/`. The old
+web demos live under `examples/web-*` (React, Svelte, Vue, Solid, and a
+framework-free vanilla demo), backed by reusable packages under `packages/`. The old
 same-process TypeScript plugin runtime should not be treated as the target
 security model because it does not provide the WASM sandbox boundary Unode
 needs.
