@@ -11,9 +11,43 @@
       .unode-title { font-size: 1.5rem; margin: 0 0 1rem; }
       .unode-text--title { font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0; }
       .unode-text--caption { opacity: 0.6; font-size: 0.85rem; }
-      .unode-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
-      .unode-action { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid currentColor; background: transparent; cursor: pointer; font: inherit; }
-      .unode-action--primary { background: SeaGreen; color: white; border-color: SeaGreen; }
+      .unode-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.5rem; }
+      .ds-button {
+        --button-bg: #ffffff;
+        --button-border: #cbd5e1;
+        --button-fg: #1f2937;
+        --button-shadow: rgba(15, 23, 42, 0.12);
+        min-height: 2.5rem;
+        padding: 0.62rem 1rem;
+        border: 1px solid var(--button-border);
+        border-radius: 0.45rem;
+        background: var(--button-bg);
+        color: var(--button-fg);
+        box-shadow: 0 1px 2px var(--button-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        cursor: pointer;
+        font: inherit;
+        font-weight: 650;
+        line-height: 1;
+        transition:
+          transform 120ms ease,
+          box-shadow 120ms ease,
+          background-color 120ms ease,
+          border-color 120ms ease;
+      }
+      .ds-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 7px 18px var(--button-shadow); }
+      .ds-button:active:not(:disabled) { transform: translateY(0); box-shadow: 0 1px 2px var(--button-shadow); }
+      .ds-button:focus-visible { outline: 3px solid rgba(37, 99, 235, 0.28); outline-offset: 2px; }
+      .ds-button:disabled { cursor: not-allowed; opacity: 0.55; }
+      .ds-button--primary { --button-bg: #e20d0d; --button-border: #ec3b18; --button-fg: #ffffff; --button-shadow: rgba(235, 67, 37, 0.28); }
+      .ds-button--secondary { --button-bg: #f8fafc; --button-border: #94a3b8; --button-fg: #0f172a; --button-shadow: rgba(15, 23, 42, 0.13); }
+      .ds-button--ghost { --button-bg: transparent; --button-border: transparent; --button-fg: #475569; --button-shadow: rgba(15, 23, 42, 0.08); box-shadow: none; }
+      .ds-button--ghost:hover:not(:disabled) { background: #f1f5f9; box-shadow: none; }
+      .ds-button--danger { --button-bg: #dc2626; --button-border: #b91c1c; --button-fg: #ffffff; --button-shadow: rgba(220, 38, 38, 0.25); }
+      @media (prefers-color-scheme: dark) {
+        .ds-button--secondary { --button-bg: #1f2937; --button-border: #475569; --button-fg: #f8fafc; }
+        .ds-button--ghost { --button-fg: #cbd5e1; }
+        .ds-button--ghost:hover:not(:disabled) { background: #1e293b; }
+      }
       .unode-error { color: crimson; white-space: pre-wrap; }
     </style>
   </head>
