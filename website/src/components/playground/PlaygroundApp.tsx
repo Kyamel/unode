@@ -132,19 +132,19 @@ const renderer = defineRenderer()
 	.recipe('text', ({ content, role, prop }) =>
 		h('p', { class: `pg-text role-${role} tone-${text(prop('tone')) || 'neutral'}` }, content),
 	)
-	.custom('grid', ({ children, prop }) =>
+	.cnode('grid', ({ children, prop }) =>
 		h('div', { class: `pg-grid pg-grid-${Number(prop('maxColumns', 2)) || 2}` }, children),
 	)
-	.custom('badge', ({ label, prop }) =>
+	.cnode('badge', ({ label, prop }) =>
 		h('span', { class: `pg-badge tone-${text(prop('tone')) || 'neutral'}` }, label),
 	)
-	.custom('value', ({ prop }) =>
+	.cnode('value', ({ prop }) =>
 		h('strong', { class: `pg-value tone-${text(prop('tone')) || 'neutral'}` }, text(prop('value'))),
 	)
-	.custom('list', ({ childNodes, renderChildren }) =>
+	.cnode('list', ({ childNodes, renderChildren }) =>
 		h('div', { class: 'pg-list' }, renderChildren(childNodes)),
 	)
-	.custom('item', ({ childNodes, renderChildren, props, dispatch }) =>
+	.cnode('item', ({ childNodes, renderChildren, props, dispatch }) =>
 		h(
 			'button',
 			{
