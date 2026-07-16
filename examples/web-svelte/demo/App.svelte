@@ -5,14 +5,16 @@
   import {
     defineRenderer,
     h,
-    HostSession,
     hostSlot,
     ScreenStore,
-    StateWriteSink,
     UnodeScreen,
+  } from "unode-svelte";
+  import {
+    HostSession,
+    StateWriteSink,
     WebPluginRegistry,
     WebRuntime,
-  } from "../src";
+  } from "unode-core";
   import Button from "./Button.svelte";
   import pluginWasmUrl from "./web_counter_plugin.wasm?url";
 

@@ -12,11 +12,9 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["vite/client"],
     "paths": {
-      "unode-core": ["../unode-core/src"],
       "unode-renderer": ["../unode-renderer/src"]
     }
   },
-  "include": ["src", "demo"]
+  "include": ["src"]
 }

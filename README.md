@@ -26,8 +26,10 @@ embedded in applications written with React, Svelte, Vue, or another framework.
 | `plugins/` | Rust WASM example plugins, including `web-counter`. |
 | `packages/unode-core` | Shared TypeScript browser runtime library: plugin loading, web host session, registries, state-write sink, and dispatch loop. |
 | `packages/unode-renderer` | Shared TypeScript renderer library: IR types, keyed `ScreenStore`, patch application, and renderer prop helpers. |
-| `packages/web-react` | React adapter package (`unode-react`) with `createReactRenderer()`. |
-| `packages/web-svelte` | Svelte adapter package (`unode-svelte`) using the shared core and renderer packages. |
+| `packages/unode-react` | React mount package for the shared renderer, including host-slot portal glue. |
+| `packages/unode-svelte` | Svelte mount package for the shared renderer, including host-slot portal glue. |
+| `examples/web-react` | Private React demo app that wires `unode-core`, `unode-react`, and the `web-counter` plugin. |
+| `examples/web-svelte` | Private Svelte demo app that wires `unode-core`, `unode-svelte`, and the `web-counter` plugin. |
 | `ts-implementation/` | Deprecated legacy TypeScript prototype kept only as migration reference. |
 | `docs/` | Architecture, runtime, ABI, reactivity, permissions, and migration documentation. |
 
@@ -68,8 +70,8 @@ role belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
 cargo test --workspace
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run ./packages/web-react/build.sh
-nix-shell --run ./packages/web-svelte/build.sh
+nix-shell --run ./examples/web-react/build.sh
+nix-shell --run ./examples/web-svelte/build.sh
 ```
 
 See `docs/README.md` for the document map and `AGENTS.md` for contributor

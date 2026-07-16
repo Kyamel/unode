@@ -52,10 +52,10 @@ The initial shape now exists for React and should be expanded:
 - `packages/unode-renderer` owns IR types, `ScreenStore`, patch application,
   node lookup helpers, literal/binding unwrapping, prop normalization,
   unknown-node fallback behavior, and shared renderer diagnostics.
-- `packages/web-react` exposes `createReactRenderer()` and should become the
-  reference framework adapter shape.
-- `packages/web-svelte` now consumes both shared cores; future adapters should
-  own only framework subscription glue and component mounting.
+- `packages/unode-react` and `packages/unode-svelte` are thin mount packages for
+  the shared renderer and framework-native host-slot portals.
+- `examples/web-react` and `examples/web-svelte` are private demos that wire
+  those packages to `unode-core`, generated WASM artifacts, and example plugins.
 - Applications provide a `RendererSpec` or equivalent node map that says how
   `text`, `section`, `action`, `list`, `input`, and other semantic nodes become
   local UI components.
@@ -138,10 +138,11 @@ ergonomics around paths, computed bindings, and keyed collections.
 ## Legacy TypeScript Role
 
 `ts-implementation/` is deprecated reference and migration material. The current
-web React and Svelte runtime slices live in `packages/web-react` and
-`packages/web-svelte`. The old same-process TypeScript plugin runtime should not
-be treated as the target security model because it does not provide the WASM
-sandbox boundary Unode needs.
+web React and Svelte demos live in `examples/web-react` and
+`examples/web-svelte`, backed by reusable packages under `packages/`. The old
+same-process TypeScript plugin runtime should not be treated as the target
+security model because it does not provide the WASM sandbox boundary Unode
+needs.
 
 ## What Should Not Change
 

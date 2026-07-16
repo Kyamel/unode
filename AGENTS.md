@@ -20,8 +20,9 @@ and render the result through environment-specific packages.
   browser's JS/WASM boundary.
 - `packages/unode-core` contains the shared TypeScript browser runtime library.
 - `packages/unode-renderer` contains the shared TypeScript renderer primitives.
-- `packages/web-react` contains the maintained React adapter package.
-- `packages/web-svelte` contains the maintained Svelte adapter package.
+- `packages/unode-react` contains the maintained React mount package.
+- `packages/unode-svelte` contains the maintained Svelte mount package.
+- `examples/web-react` and `examples/web-svelte` contain the maintained web demos.
 - `crates/mgn` is an example/application binary, not the reusable TUI runtime.
 - `plugins/` contains example WASM plugins.
 - `ts-implementation/` contains deprecated legacy TypeScript code kept only as

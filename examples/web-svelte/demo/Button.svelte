@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { OnAction } from "../src";
+  import type { OnAction } from "unode-svelte";
 
   // A host-owned Svelte component. The plugin only asks for a semantic "Button"
   // via hostSlot; this app decides how it looks.

@@ -424,9 +424,9 @@ const writes = hostCallSink.drainStateWrites();
 store.apply(session.applyWrites(writes));
 ```
 
-The maintained adapters are React (`packages/web-react`) and Svelte
-(`packages/web-svelte`). A Vue or custom adapter should consume the same IR and
-patch ops.
+The maintained mount packages are React (`packages/unode-react`) and Svelte
+(`packages/unode-svelte`), with runnable demos under `examples/`. A Vue or
+custom adapter should consume the same IR and patch ops.
 
 ---
 

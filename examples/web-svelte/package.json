@@ -1,9 +1,9 @@
 {
-  "name": "unode-svelte",
+  "name": "web-svelte",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Svelte adapter package for Unode web renderers.",
+  "description": "Svelte demo app for the Unode web runtime.",
   "scripts": {
     "build:wasm": "./build.sh",
     "dev": "vite",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "unode-core": "workspace:*",
-    "unode-renderer": "workspace:*",
+    "unode-svelte": "workspace:*",
     "svelte": "^5.7.0"
   },
   "devDependencies": {

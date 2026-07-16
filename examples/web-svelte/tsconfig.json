@@ -13,13 +13,12 @@
     "noEmit": true,
     "types": ["vite/client"],
     "paths": {
-      "unode-core": ["../unode-core/src"],
-      "unode-renderer": ["../unode-renderer/src"]
+      "unode-core": ["../../packages/unode-core/src"],
+      "unode-renderer": ["../../packages/unode-renderer/src"],
+      "unode-svelte": ["../../packages/unode-svelte/src"]
     }
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.svelte",
     "demo/**/*.ts",
     "demo/**/*.svelte",
     "vite.config.ts",

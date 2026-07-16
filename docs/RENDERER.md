@@ -52,12 +52,15 @@ The target split is now starting to exist in `packages/`:
   and reconciles recipe output into real DOM. Because recipes return neutral
   VNodes and the backend targets the DOM, the same renderer runs in any web
   context — vanilla, React, Svelte, Vue.
-- **Framework packages are mount targets, not renderers.** `packages/web-react`
-  and `packages/web-svelte` are demo apps plus a thin `<UnodeScreen>` wrapper
-  (~40 lines each). The wrapper mounts the DOM renderer into a host element and
-  provides a **portal** that fulfills `hostSlot(name)` holes with the host app's
-  own native components. There is no per-framework renderer to keep in sync; a
-  Vue package would only add its own portal wrapper.
+- **Framework packages are mount targets, not renderers.** `packages/unode-react`
+  and `packages/unode-svelte` are thin `<UnodeScreen>` wrappers plus portal glue.
+  The wrapper mounts the DOM renderer into a host element and provides a
+  **portal** that fulfills `hostSlot(name)` holes with the host app's own native
+  components. There is no per-framework renderer to keep in sync; a Vue package
+  would only add its own portal wrapper.
+- **Examples are apps.** `examples/web-react` and `examples/web-svelte` wire the
+  importable packages to `unode-core`, generated WASM artifacts, and the
+  `web-counter` plugin.
 - **Application renderer spec:** app-owned mapping from semantic node types to
   design-system components. This is where the host decides how plugin-provided
   `text`, `section`, `action`, `list`, `input`, `status`, and other nodes appear.
@@ -155,8 +158,8 @@ Framework adapter
   └── renderer components subscribe by node key, not by global revision
 ```
 
-The maintained web proofs live in `packages/web-react` and
-`packages/web-svelte`. React and Svelte are adapter choices, not core
+The maintained web proofs live in `examples/web-react` and
+`examples/web-svelte`. React and Svelte are adapter choices, not core
 dependencies. The Rust web host owns normalization, dependency tracking, state
 snapshots, and patch planning.
 
@@ -202,8 +205,8 @@ activation as host state, not component-local state.
 ```sh
 cargo test -p unode-web-host
 cargo test --manifest-path plugins/web-counter/Cargo.toml
-nix-shell --run 'node packages/web-react/scripts/smoke.mjs'
-nix-shell --run 'node packages/web-svelte/scripts/smoke.mjs'
+nix-shell --run 'node examples/web-react/scripts/smoke.mjs'
+nix-shell --run 'node examples/web-svelte/scripts/smoke.mjs'
 ```
 
 ---

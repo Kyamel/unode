@@ -5,11 +5,11 @@ migration reference for the pre-Rust Unode prototype.
 
 Do not add new runtime, renderer, bridge, or plugin work here.
 
-Current web work lives in `packages/web-react`, which uses the intended
+Current web work lives in `packages/` and `examples/`, which use the intended
 architecture:
 
 ```text
-plugin.wasm + unode_web_host.wasm + JavaScript bridge + React adapter
+plugin.wasm + unode_web_host.wasm + JavaScript bridge + framework mount package
 ```
 
 Before deleting this directory entirely, verify that no tests, docs, examples,

@@ -6,8 +6,9 @@ export default defineConfig({
   plugins: [svelte()],
   resolve: {
     alias: {
-      "unode-core": new URL("../unode-core/src", import.meta.url).pathname,
-      "unode-renderer": new URL("../unode-renderer/src", import.meta.url).pathname,
+      "unode-core": new URL("../../packages/unode-core/src", import.meta.url).pathname,
+      "unode-renderer": new URL("../../packages/unode-renderer/src", import.meta.url).pathname,
+      "unode-svelte": new URL("../../packages/unode-svelte/src", import.meta.url).pathname,
     },
   },
   // wasm assets are imported with `?url` and fetched at runtime.

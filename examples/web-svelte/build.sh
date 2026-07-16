@@ -2,7 +2,7 @@
 # Builds the two wasm artifacts the demo needs.
 #
 # Run inside the repo's nix shell (provides wasm-ld + wasm-bindgen):
-#   nix-shell --run ./packages/web-svelte/build.sh
+#   nix-shell --run ./examples/web-svelte/build.sh
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"

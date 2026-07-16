@@ -1,0 +1,24 @@
+{
+  "name": "unode-svelte",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Svelte mount target for Unode web renderers.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "unode-renderer": "workspace:*"
+  },
+  "peerDependencies": {
+    "svelte": "^5.7.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "svelte-check": "^4.0.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0"
+  }
+}

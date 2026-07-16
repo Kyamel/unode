@@ -47,8 +47,8 @@ the demos consume in sync: workspace crates, plugin WASM (debug + release),
 nix-shell --run ./build.sh
 ```
 
-This produces artifacts for the MGN TUI app and both web packages
-(`packages/web-react` and `packages/web-svelte`).
+This produces artifacts for the MGN TUI app and both web examples
+(`examples/web-react` and `examples/web-svelte`).
 
 ## Build pieces individually
 
@@ -68,7 +68,7 @@ bindings:
 cargo build -p unode-web-host --target wasm32-unknown-unknown --release
 
 wasm-bindgen --target web \
-  --out-dir packages/web-react/pkg \
+  --out-dir examples/web-react/pkg \
   --out-name unode_web_host \
   target/wasm32-unknown-unknown/release/unode_web_host.wasm
 ```
@@ -86,8 +86,8 @@ cargo test --manifest-path plugins/web-counter/Cargo.toml
 After `build.sh` has synced the artifacts:
 
 ```sh
-nix-shell --run ./packages/web-react/build.sh
-nix-shell --run ./packages/web-svelte/build.sh
+nix-shell --run ./examples/web-react/build.sh
+nix-shell --run ./examples/web-svelte/build.sh
 ```
 
 Next: build a plugin from scratch in the

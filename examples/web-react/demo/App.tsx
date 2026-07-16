@@ -1,41 +1,22 @@
-// Demo entry: mounts the `web-counter` plugin through the full web slice.
-//
-// The two wasm artifacts are produced by `./build.sh` (see README):
-//   - ../pkg/unode_web_host.js         (wasm-bindgen glue for the Rust core)
-//   - web_counter_plugin.wasm          (the plugin, raw C ABI)
-
-import { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
-
-import {
-  defineRenderer,
-  h,
-  HostSession,
-  hostSlot,
-  type HostComponentProps,
-  ScreenStore,
-  StateWriteSink,
-  UnodeScreen,
-  WebPluginRegistry,
-  WebRuntime,
-} from "../src";
-
-// A host-owned React component. The plugin never imports it — it only asks for a
-// semantic "Button" via `hostSlot`, and this app decides what that looks like.
-function Button({ children, intent, dispatch, action }: HostComponentProps) {
-  return (
-    <button
-      className={`ds-button ds-button--${String(intent ?? "secondary")}`}
-      onClick={() => action && dispatch(action as { t: string })}
-    >
-      {String(children ?? "")}
-    </button>
-  );
-}
-
 // Recipes are written once, in the universal TS language. Here `action` nodes
 // render as the host's native <Button> through a host slot; everything else
 // falls back to the built-in DOM recipes.
+import { useEffect, useState } from "react";
+import {
+  defineRenderer,
+  h,
+  hostSlot,
+  ScreenStore,
+  UnodeScreen,
+} from "unode-react";
+import {
+  HostSession,
+  StateWriteSink,
+  WebPluginRegistry,
+  WebRuntime,
+} from "unode-core";
+import { Button } from "./Button";
+
 const renderer = defineRenderer()
   .recipe("action", ({ label, prop, action }) =>
     hostSlot("Button", { children: label, intent: prop("intent"), action }),
@@ -72,7 +53,8 @@ function routeTargetForCurrentLocation() {
   };
 }
 
-function App() {
+
+export function App() {
   const [state, setState] = useState<{ store: ScreenStore; runtime: WebRuntime } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,5 +104,3 @@ function App() {
     />
   );
 }
-
-createRoot(document.getElementById("root")!).render(<App />);

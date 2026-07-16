@@ -23,8 +23,12 @@ model described in [Architecture](/concepts/architecture/).
 
 | Path                  | Purpose                                                                                         |
 | --------------------- | ----------------------------------------------------------------------------------------------- |
-| `packages/web-react`  | Maintained React web adapter and JS bridge for `plugin.wasm` + `unode_web_host.wasm`.            |
-| `packages/web-svelte` | Maintained Svelte web adapter using the same plugin, host WASM, bridge shape, and keyed patch store. |
+| `packages/unode-core` | Shared browser runtime for plugin WASM loading, host sessions, state writes, and dispatch.       |
+| `packages/unode-renderer` | Shared framework-free renderer, keyed store, recipes, DOM backend, and host-slot contract.   |
+| `packages/unode-react` | React mount target and host-slot portal glue.                                                   |
+| `packages/unode-svelte` | Svelte mount target and host-slot portal glue.                                                 |
+| `examples/web-react`  | Maintained React demo app for `plugin.wasm` + `unode_web_host.wasm`.                            |
+| `examples/web-svelte` | Maintained Svelte demo app using the same plugin, host WASM, bridge shape, and keyed patch store. |
 
 React and Svelte are maintained adapters over the same framework-agnostic
 boundary — neither leaks into core semantics. A Vue or custom adapter consumes
@@ -57,5 +61,5 @@ belongs to `crates/unode-tui-runtime` plus `crates/renderer`.
 ## Do not add work under `ts-implementation/`
 
 `ts-implementation/` is deprecated reference material. Promote current web work
-into `packages/web-react`, `packages/web-svelte`, or a future runtime package —
-never back into the legacy prototype.
+into `packages/` or runnable demos under `examples/` — never back into the
+legacy prototype.

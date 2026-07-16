@@ -1,9 +1,9 @@
 {
-  "name": "unode-react",
+  "name": "web-react",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "React adapter package for Unode web renderers.",
+  "description": "React demo app for the Unode web runtime.",
   "scripts": {
     "build:wasm": "./build.sh",
     "dev": "vite",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "unode-core": "workspace:*",
-    "unode-renderer": "workspace:*",
+    "unode-react": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

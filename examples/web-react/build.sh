@@ -2,7 +2,7 @@
 # Builds the two wasm artifacts the demo needs.
 #
 # Run inside the repo's nix shell (provides wasm-ld + wasm-bindgen):
-#   nix-shell --run ./packages/web-react/build.sh
+#   nix-shell --run ./examples/web-react/build.sh
 #
 # Uses the wasm-bindgen CLI directly rather than wasm-pack: on nix that avoids
 # wasm-pack trying to download its own wasm-bindgen / wasm-opt from the network.

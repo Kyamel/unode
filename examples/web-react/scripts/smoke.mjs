@@ -1,9 +1,9 @@
 // Headless proof that the *compiled wasm artifacts* drive the reactive loop —
 // plugin.wasm + unode_web_host.wasm through the exact ABI pluginHost.ts uses.
-// No DOM here; this validates everything up to the render layer.
+// No React/DOM here; this validates everything up to the render layer.
 //
 // Run inside the nix shell, after build.sh:
-//   node packages/web-svelte/scripts/smoke.mjs
+//   node examples/web-react/scripts/smoke.mjs
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -107,7 +107,7 @@ function dispatchAndApply(type, expectedCount) {
   const patches = JSON.parse(session.applyWrites(JSON.stringify(writes)));
 
   assert(patches.length === 1, `expected 1 patch, got ${patches.length}: ${JSON.stringify(patches)}`);
-  assert(patches[0].o === "sp" && patches[0].k === "web-counter.value" && patches[0].f === "ct", `patch shape: ${JSON.stringify(patches[0])}`);
+  assert(patches[0].o === "sp" && patches[0].k === "web-counter.value" && patches[0].f === "content", `patch shape: ${JSON.stringify(patches[0])}`);
   assert(
     patches[0].v?.v === `Count: ${expectedCount}`,
     `patched value is 'Count: ${expectedCount}', got ${JSON.stringify(patches[0].v)}`,
