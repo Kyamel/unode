@@ -4,6 +4,7 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
 
+use crate::recipes::TuiRenderer;
 use crate::screen::{TuiScreenView, render_tui_screen};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,7 +53,7 @@ pub enum TuiFocusedPane {
     Main,
 }
 
-pub fn render_tui_shell(frame: &mut Frame, view: &TuiShellView) {
+pub fn render_tui_shell(frame: &mut Frame, view: &TuiShellView, renderer: &TuiRenderer) {
     let root = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(0), Constraint::Length(3)])
@@ -124,7 +125,7 @@ pub fn render_tui_shell(frame: &mut Frame, view: &TuiShellView) {
 
     match &view.main {
         TuiMainContent::Panel(panel) => render_panel(frame, main_inner, panel),
-        TuiMainContent::Screen(screen) => render_tui_screen(frame, main_inner, screen),
+        TuiMainContent::Screen(screen) => render_tui_screen(frame, main_inner, screen, renderer),
     }
 
     let command_style = if view.command_bar.active {

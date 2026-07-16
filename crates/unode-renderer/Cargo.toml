@@ -1,11 +1,8 @@
 [package]
-name = "mugens-sdk"
+name = "unode-renderer"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 unode = { path = "../unode" }
-unode-sdk = { path = "../unode-sdk" }
-mugens-domain = { path = "../mugens-domain" }
-thiserror.workspace = true

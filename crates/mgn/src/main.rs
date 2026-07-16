@@ -12,8 +12,8 @@ use ratatui::backend::CrosstermBackend;
 use serde_json::{Value as JsonValue, json};
 use tui_renderer::{
     TuiCommandBar, TuiFocusedPane, TuiInteractiveElement, TuiInteractiveKind, TuiMainContent,
-    TuiMainPanel, TuiNavItem, TuiScreenView, TuiShellView, collect_screen_interactions,
-    render_tui_shell,
+    TuiMainPanel, TuiNavItem, TuiRenderer, TuiScreenView, TuiShellView,
+    collect_screen_interactions, ratatui_renderer, render_tui_shell,
 };
 use unode_runtime::{CommandResult, ShellContext};
 use unode_sdk::prelude::{
@@ -49,6 +49,7 @@ struct ActivePluginSession {
 
 struct App {
     runtime: TuiRuntime<()>,
+    renderer: TuiRenderer,
     shell: ShellContext,
     current_route: String,
     selected_nav: usize,
@@ -82,8 +83,15 @@ impl App {
             screen_kind: None,
         };
 
+        // The renderer is declared through the Rust renderer SDK — the same
+        // recipe model as the web `defineRenderer()`. Override any node kind
+        // here (e.g. `.recipe(NodeKind::Text, custom_text_recipe())`) to
+        // restyle how mgn paints that node.
+        let renderer = ratatui_renderer().build();
+
         let mut app = Self {
             runtime,
+            renderer,
             shell,
             current_route,
             selected_nav: 0,
@@ -130,7 +138,7 @@ impl App {
         loop {
             terminal.draw(|frame| {
                 let view = self.view();
-                render_tui_shell(frame, &view);
+                render_tui_shell(frame, &view, &self.renderer);
             })?;
 
             if !event::poll(Duration::from_millis(150))? {

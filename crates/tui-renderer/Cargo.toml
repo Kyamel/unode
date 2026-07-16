@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 unode = { path = "../unode" }
+unode-renderer = { path = "../unode-renderer" }
 unode-runtime = { path = "../unode-runtime" }
 ratatui.workspace = true
 crossterm.workspace = true

@@ -12,6 +12,28 @@ capability is unavailable.
 
 ---
 
+## Declaring a renderer (Rust hosts)
+
+Rust hosts declare their renderer with the `unode-renderer` crate — the same
+recipe model as the web `defineRenderer()`. The core crate is presentation-
+stack agnostic (a `Backend` picks the surface type), so the recipe machinery
+also serves hand-rolled terminal writers. `tui-renderer` ships the ratatui
+backend with default recipes:
+
+```rust
+use tui_renderer::{NodeKind, Recipe, ratatui_renderer};
+
+let renderer = ratatui_renderer()          // ratatui defaults for every node
+    .recipe(NodeKind::Text, my_text_recipe()) // override one node kind
+    .build();
+```
+
+Each recipe pairs `measure` (rows needed at a width) with `render` (paint into
+a `Region` of the backend surface); `RenderCtx` provides recursion into child
+nodes and the focus cursor for interactive elements.
+
+---
+
 ## Shared renderer responsibilities
 
 Both renderers — Web and TUI — must:

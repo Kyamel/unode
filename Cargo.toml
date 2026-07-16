@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "crates/unode",
+  "crates/unode-renderer",
   "crates/unode-runtime",
   "crates/unode-sdk",
   "crates/unode-web-runtime",

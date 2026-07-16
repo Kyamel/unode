@@ -8,6 +8,11 @@ and render the result through environment-specific packages.
 ## Architecture At A Glance
 
 - `crates/unode` is the core protocol. Keep it domain-agnostic and renderer-free.
+- `crates/unode-renderer` is the Rust renderer-definition SDK (recipe registry,
+  builder, focus cursor) — stack-agnostic, the counterpart of the
+  `packages/unode-renderer` TypeScript package.
+- `crates/tui-renderer` is the ratatui specialization of that SDK: default
+  recipes plus the `ratatui_renderer()` builder hosts start from.
 - `crates/unode-sdk` is the Rust authoring surface for plugin developers.
 - `crates/unode-runtime` contains shared host-runtime concepts.
 - `crates/unode-web-host` is the browser-side Rust core compiled with

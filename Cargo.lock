@@ -2184,6 +2184,7 @@ dependencies = [
  "ratatui",
  "serde_json",
  "unode",
+ "unode-renderer",
  "unode-runtime",
 ]
 
@@ -2253,6 +2254,13 @@ dependencies = [
  "unode",
  "unode-sdk",
  "unode-tui-runtime",
+]
+
+[[package]]
+name = "unode-renderer"
+version = "0.1.0"
+dependencies = [
+ "unode",
 ]
 
 [[package]]
