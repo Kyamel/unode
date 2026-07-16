@@ -1,17 +1,18 @@
-use serde_json::{json, Value as JsonValue};
+use serde_json::{Value as JsonValue, json};
 use unode_sdk::prelude::{
-    self as ui, create_route_tabs_meta, ActionIntent, ActionRef, ActionType, CoreActionType,
-    IntoNode, PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse,
-    PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest, ScreenNode, ScreenRouteTab,
-    TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, with_route_tabs,
+    self as ui, ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode,
+    PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
+    PluginManifestEnvelope, PluginRenderRequest, ScreenNode, ScreenRouteTab, TextRole, Tone,
+    UNODE_PLUGIN_ABI_VERSION, create_route_tabs_meta, with_route_tabs,
 };
 
 #[cfg(test)]
 use unode_sdk::prelude::{StringOrExpr, UiNode};
 
-const PLUGIN_ID: &str = "dev.mugens.sanity-check";
+const PLUGIN_ID: &str = "dev.unode.sanity-check";
 const PLUGIN_NAME: &str = "Sanity Check";
 const ROUTE_PATH: &str = "/plugins/sanity-check";
+const INSPECT_ROUTE_PATH: &str = "/plugins/sanity-check/inspect";
 
 fn manifest_envelope() -> PluginManifestEnvelope {
     PluginManifestEnvelope {
@@ -19,7 +20,13 @@ fn manifest_envelope() -> PluginManifestEnvelope {
         manifest: unode_sdk::plugin_manifest(PLUGIN_ID, PLUGIN_NAME)
             .version("0.1.0")
             .description("Runtime-loaded WASM sanity-check plugin for the MGN TUI shell.")
-            .author("Codex")
+            .author("Unode")
+            // One plugin, two screens: the host registers both routes and
+            // dispatches matching navigations back through `plugin_render`.
+            .routes([
+                unode_sdk::route(ROUTE_PATH).screen_kind(format!("{PLUGIN_ID}.overview")),
+                unode_sdk::route(INSPECT_ROUTE_PATH).screen_kind(format!("{PLUGIN_ID}.inspect")),
+            ])
             .build(),
     }
 }
@@ -35,7 +42,7 @@ fn route_tabs() -> Vec<ScreenRouteTab> {
         ScreenRouteTab {
             id: "inspect".to_string(),
             label: "Inspect".to_string(),
-            to: format!("{ROUTE_PATH}?view=inspect"),
+            to: INSPECT_ROUTE_PATH.to_string(),
             badge: None,
         },
     ]
@@ -51,13 +58,84 @@ fn load_response(request: &PluginLoadRequest) -> JsonValue {
 }
 
 fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
+    // Branch on the matched route pattern to pick the screen to render.
+    match request.route.pattern.as_str() {
+        INSPECT_ROUTE_PATH => render_inspect_screen(request),
+        _ => render_overview_screen(request),
+    }
+}
+
+fn render_inspect_screen(request: &PluginRenderRequest) -> ScreenNode {
     let locale = request.locale.as_deref().unwrap_or("en");
-    let active_tab = request
-        .route
-        .query
-        .get("view")
-        .map(String::as_str)
-        .unwrap_or("overview");
+    let query_summary = if request.route.query.is_empty() {
+        "none".to_string()
+    } else {
+        request
+            .route
+            .query
+            .iter()
+            .map(|(key, value)| format!("{key}={value}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let state_summary = if request.state_snapshot.is_empty() {
+        "empty".to_string()
+    } else {
+        request
+            .state_snapshot
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+
+    let screen = ui::screen()
+        .id("sanity-check.inspect-screen")
+        .title(format!("{PLUGIN_NAME} - Inspect"))
+        .subtitle(format!("route={} locale={locale}", request.route.pattern))
+        .children([
+            ui::text("This is a second screen rendered by the same plugin.")
+                .role(TextRole::Body)
+                .tone(Tone::Info)
+                .into_node(),
+            ui::text(format!("Query params: {query_summary}"))
+                .role(TextRole::Caption)
+                .tone(Tone::Muted)
+                .into_node(),
+            ui::text(format!("State snapshot keys: {state_summary}"))
+                .role(TextRole::Caption)
+                .tone(Tone::Muted)
+                .into_node(),
+            ui::actions()
+                .id("sanity-check.inspect.actions")
+                .children([ui::action(
+                    "Back to overview",
+                    ActionRef {
+                        r#type: ActionType::Core(CoreActionType::Navigate),
+                        params: Some(std::collections::BTreeMap::from([(
+                            "to".to_string(),
+                            json!(ROUTE_PATH),
+                        )])),
+                        confirm: None,
+                    },
+                )
+                .id("sanity-check.inspect.back")
+                .intent(ActionIntent::Primary)])
+                .into_node(),
+        ])
+        .initial_focus("sanity-check.inspect.back")
+        .build();
+
+    with_route_tabs(
+        screen,
+        create_route_tabs_meta("inspect", route_tabs())
+            .swipe_enabled(true)
+            .swipe_threshold(48.0),
+    )
+}
+
+fn render_overview_screen(request: &PluginRenderRequest) -> ScreenNode {
+    let locale = request.locale.as_deref().unwrap_or("en");
     let title = request
         .data
         .get("title")
@@ -122,12 +200,12 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                     .id("sanity-check.refresh")
                     .intent(ActionIntent::Primary),
                     ui::action(
-                        "Open inspect tab",
+                        "Open inspect screen",
                         ActionRef {
                             r#type: ActionType::Core(CoreActionType::Navigate),
                             params: Some(std::collections::BTreeMap::from([(
                                 "to".to_string(),
-                                json!(format!("{ROUTE_PATH}?view=inspect")),
+                                json!(INSPECT_ROUTE_PATH),
                             )])),
                             confirm: None,
                         },
@@ -152,7 +230,7 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
 
     with_route_tabs(
         screen,
-        create_route_tabs_meta(active_tab, route_tabs())
+        create_route_tabs_meta("overview", route_tabs())
             .swipe_enabled(true)
             .swipe_threshold(48.0),
     )
@@ -163,7 +241,10 @@ fn encode_action_response(request: &PluginDispatchRequest) -> PluginDispatchResp
         ActionType::Custom(action) if action == "sanity.refresh" => PluginDispatchResponse {
             handled: true,
             outcome: PluginDispatchOutcome::RefreshCurrentScreen,
-            message: Some(format!("Plugin requested refresh for {}", request.route.pattern)),
+            message: Some(format!(
+                "Plugin requested refresh for {}",
+                request.route.pattern
+            )),
             data: None,
         },
         ActionType::Custom(action) if action == "sanity.go-home" => PluginDispatchResponse {
@@ -226,7 +307,10 @@ fn collect_node_lines(node: &UiNode, depth: usize, lines: &mut Vec<String>) {
                 collect_node_lines(child, depth + 1, lines);
             }
         }
-        other => lines.push(format!("{prefix}[node] {}", serde_json::to_string(other).unwrap_or_default())),
+        other => lines.push(format!(
+            "{prefix}[node] {}",
+            serde_json::to_string(other).unwrap_or_default()
+        )),
     }
 }
 
@@ -234,7 +318,9 @@ fn collect_node_lines(node: &UiNode, depth: usize, lines: &mut Vec<String>) {
 fn render_text_value(value: &StringOrExpr) -> String {
     match value {
         StringOrExpr::Value(text) => text.clone(),
-        StringOrExpr::Expr(expr) => serde_json::to_string(expr).unwrap_or_else(|_| "<expr>".to_string()),
+        StringOrExpr::Expr(expr) => {
+            serde_json::to_string(expr).unwrap_or_else(|_| "<expr>".to_string())
+        }
     }
 }
 
@@ -247,7 +333,7 @@ unode_sdk::export_plugin! {
 
 #[cfg(test)]
 mod tests {
-    use super::{flatten_lines, manifest_envelope, render_screen, ROUTE_PATH};
+    use super::{ROUTE_PATH, flatten_lines, manifest_envelope, render_screen};
     use serde_json::json;
     use std::collections::BTreeMap;
     use unode_sdk::PluginRenderRequest;
@@ -258,6 +344,44 @@ mod tests {
         let manifest = manifest_envelope();
         assert_eq!(manifest.manifest.id, "dev.mugens.sanity-check");
         assert_eq!(manifest.manifest.name, "Sanity Check");
+    }
+
+    #[test]
+    fn manifest_declares_both_screens_as_routes() {
+        let manifest = manifest_envelope().manifest;
+        assert!(manifest.validate().is_ok());
+        assert_eq!(manifest.routes.len(), 2);
+        assert_eq!(manifest.routes[0].pattern, ROUTE_PATH);
+        assert_eq!(manifest.routes[1].pattern, super::INSPECT_ROUTE_PATH);
+        assert_eq!(
+            manifest.routes[1].screen_kind.as_deref(),
+            Some("dev.mugens.sanity-check.inspect")
+        );
+    }
+
+    #[test]
+    fn render_screen_branches_on_route_pattern() {
+        let inspect = render_screen(&PluginRenderRequest {
+            route: ResolvedRoute {
+                pattern: super::INSPECT_ROUTE_PATH.to_string(),
+                params: BTreeMap::new(),
+                query: BTreeMap::new(),
+            },
+            data: json!({}),
+            state_snapshot: BTreeMap::new(),
+            locale: None,
+        });
+
+        let lines = flatten_lines(&inspect);
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains("second screen rendered by the same plugin"))
+        );
+        assert_eq!(
+            inspect.route_tabs.as_ref().map(|tabs| tabs.active.as_str()),
+            Some("inspect")
+        );
     }
 
     #[test]
@@ -277,7 +401,15 @@ mod tests {
         });
 
         let lines = flatten_lines(&screen);
-        assert!(lines.iter().any(|line| line.contains("Loaded through Wasmtime")));
-        assert!(lines.iter().any(|line| line.contains("Rust plugin compiled to WebAssembly")));
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains("Loaded through Wasmtime"))
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains("Rust plugin compiled to WebAssembly"))
+        );
     }
 }

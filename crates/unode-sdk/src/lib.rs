@@ -21,7 +21,10 @@ pub use i18n::{
     LocaleSource, MessageCatalog, MessageCatalogs, MessageEntry, MessageValue, MessageValues,
     PluginI18n, PluginTranslator, msg, msg_with,
 };
-pub use manifest::{PermissionRequestBuilder, PluginManifestBuilder, permission, plugin_manifest};
+pub use manifest::{
+    PermissionRequestBuilder, PluginManifestBuilder, RouteDeclBuilder, permission, plugin_manifest,
+    route,
+};
 pub use permissions::{
     CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile, PermissionRequest,
     core_permission,
@@ -46,7 +49,8 @@ pub mod prelude {
         MessageValue, MessageValues, PluginI18n, PluginTranslator, msg, msg_with,
     };
     pub use crate::manifest::{
-        PermissionRequestBuilder, PluginManifestBuilder, permission, plugin_manifest,
+        PermissionRequestBuilder, PluginManifestBuilder, RouteDeclBuilder, permission,
+        plugin_manifest, route,
     };
     pub use crate::permissions::{
         CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile,
@@ -58,7 +62,7 @@ pub mod prelude {
     pub use unode::core::dsl::*;
     pub use unode::core::permissions::*;
     pub use unode::core::runtime::{
-        PluginManifest, ResolvedRoute, SlotContributionDecl, UNODE_CORE_API_VERSION,
+        PluginManifest, ResolvedRoute, RouteDecl, SlotContributionDecl, UNODE_CORE_API_VERSION,
     };
     pub use unode::core::slot::*;
     pub use unode::core::state::{MemoryStateStore, StateStore};

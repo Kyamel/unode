@@ -20,14 +20,16 @@ use unode_plugin_sdk::prelude::*;
 
 #[unode::plugin]
 fn manifest() -> PluginManifest {
-    PluginManifest {
-        id: "com.mugenx.catalog".into(),
-        permissions: vec![
-            permission("catalog.read").required(true).reason("Load works"),
-        ],
-        routes: vec!["/app/mangas/browse", "/app/mangas/:work_id/meta"],
-        ..Default::default()
-    }
+    plugin_manifest("com.mugenx.catalog", "Catalog")
+        .permission(permission("catalog.read").required(true).reason("Load works"))
+        // One plugin can declare multiple screens. The host registers each
+        // declared route and dispatches matching navigations back through
+        // `plugin_render`, which branches on the resolved `route.pattern`.
+        .routes([
+            route("/app/mangas/browse"),
+            route("/app/mangas/:work_id/meta").screen_kind("com.mugenx.catalog.work-meta"),
+        ])
+        .build()
 }
 
 #[unode::load("/app/mangas/browse")]
@@ -53,7 +55,12 @@ fn render_browse(data: &BrowseData, ctx: &PluginContext) -> ScreenNode {
 
 The plugin runtime maintains registries that plugins populate at activation:
 
-- **Routes** — pattern → (load fn, render fn)
+- **Routes** — pattern → (load fn, render fn). Declared in the manifest as
+  `routes: [RouteDecl]` (`pattern`, optional `screenKind`, `priority`). Hosts
+  register them at load time (`RouteRegistry::register_manifest_routes`) so a
+  single plugin can own multiple screens; the matched pattern and params come
+  back to the plugin in `PluginRenderRequest.route`. Plugins without declared
+  routes keep whatever route the host assigns them.
 - **Actions** — type string → handler fn
 - **Commands** — id → (title, category, handler)
 - **Navigation** — id → (label, path, priority)

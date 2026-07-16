@@ -1,5 +1,7 @@
 use unode::core::permissions::PermissionRequest;
-use unode::core::runtime::{PluginManifest, SlotContributionDecl, UNODE_CORE_API_VERSION};
+use unode::core::runtime::{
+    PluginManifest, RouteDecl, SlotContributionDecl, UNODE_CORE_API_VERSION,
+};
 
 /// Starts a plugin permission request builder.
 ///
@@ -73,6 +75,49 @@ impl From<PermissionRequestBuilder> for PermissionRequest {
     }
 }
 
+/// Starts a route declaration builder.
+///
+/// Declared routes tell the host which screens this plugin renders. The host
+/// registers them at load time and passes the matched route back through
+/// `PluginRenderRequest.route`, so the plugin can branch on
+/// `route.pattern` to render multiple screens.
+pub fn route(pattern: impl Into<String>) -> RouteDeclBuilder {
+    RouteDeclBuilder {
+        route: RouteDecl {
+            pattern: pattern.into(),
+            screen_kind: None,
+            priority: 0,
+        },
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RouteDeclBuilder {
+    route: RouteDecl,
+}
+
+impl RouteDeclBuilder {
+    pub fn screen_kind(mut self, screen_kind: impl Into<String>) -> Self {
+        self.route.screen_kind = Some(screen_kind.into());
+        self
+    }
+
+    pub fn priority(mut self, priority: i32) -> Self {
+        self.route.priority = priority;
+        self
+    }
+
+    pub fn build(self) -> RouteDecl {
+        self.route
+    }
+}
+
+impl From<RouteDeclBuilder> for RouteDecl {
+    fn from(value: RouteDeclBuilder) -> Self {
+        value.build()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PluginManifestBuilder {
     manifest: PluginManifest,
@@ -125,6 +170,22 @@ impl PluginManifestBuilder {
         self
     }
 
+    pub fn route(mut self, route: impl Into<RouteDecl>) -> Self {
+        self.manifest.routes.push(route.into());
+        self
+    }
+
+    pub fn routes<I, R>(mut self, routes: I) -> Self
+    where
+        I: IntoIterator<Item = R>,
+        R: Into<RouteDecl>,
+    {
+        self.manifest
+            .routes
+            .extend(routes.into_iter().map(Into::into));
+        self
+    }
+
     pub fn slot_contribution(mut self, contribution: SlotContributionDecl) -> Self {
         self.manifest.slot_contributions.push(contribution);
         self
@@ -156,7 +217,7 @@ impl Default for PluginManifestBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{permission, plugin_manifest};
+    use super::{permission, plugin_manifest, route};
 
     #[test]
     fn builds_manifest_with_permissions() {
@@ -183,5 +244,26 @@ mod tests {
             vec!["https://api.example.com".to_string()]
         );
         assert_eq!(manifest.requires, vec!["catalog.read".to_string()]);
+    }
+
+    #[test]
+    fn builds_manifest_with_routes() {
+        let manifest = plugin_manifest("demo.plugin", "Demo")
+            .route(route("/notes"))
+            .routes([
+                route("/notes/:id").screen_kind("demo.plugin.note-detail"),
+                route("/settings").priority(10),
+            ])
+            .build();
+
+        assert!(manifest.validate().is_ok());
+        assert_eq!(manifest.routes.len(), 3);
+        assert_eq!(manifest.routes[0].pattern, "/notes");
+        assert_eq!(manifest.routes[0].screen_kind, None);
+        assert_eq!(
+            manifest.routes[1].screen_kind.as_deref(),
+            Some("demo.plugin.note-detail")
+        );
+        assert_eq!(manifest.routes[2].priority, 10);
     }
 }

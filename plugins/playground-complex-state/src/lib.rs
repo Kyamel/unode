@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde_json::{Value as JsonValue, json};
 use unode_sdk::prelude::{
-    self as ui, ActionIntent, ActionRef, ActionType, IntoNode, PluginDispatchOutcome,
+    self as ui, ActionIntent, ActionRef, ActionType, PluginDispatchOutcome,
     PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
     PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION, expr, permission,
 };
@@ -101,8 +101,7 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                         .id("playground-complex-state.todo")
                         .role(TextRole::Title)
                         .tone(Tone::Info),
-                ])
-                .into_node(),
+                ]),
             ui::section()
                 .id("playground-complex-state.board")
                 .title("Task board")
@@ -118,10 +117,8 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                             ui::action("Reset board", custom("board.reset"))
                                 .id("playground-complex-state.reset")
                                 .intent(ActionIntent::Ghost),
-                        ])
-                        .into_node(),
-                ])
-                .into_node(),
+                        ]),
+                ]),
         ])
         .initial_focus("playground-complex-state.advance")
         .build()

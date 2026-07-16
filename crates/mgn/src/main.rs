@@ -312,10 +312,10 @@ impl App {
         let route = self.current_route.clone();
         let locale = self.shell.locale.clone();
         let parsed = parse_route(&route);
-        let plugin_index = self
-            .plugins
-            .iter()
-            .position(|plugin| plugin.route == parsed.pathname)?;
+        let resolved = self.runtime.inner.routes.resolve(&parsed.pathname)?;
+        let plugin_index = self.plugins.iter().position(|plugin| {
+            plugin.runtime_plugin.manifest().manifest.id == resolved.plugin_id
+        })?;
         let plugin = &self.plugins[plugin_index];
         let manifest = plugin.runtime_plugin.manifest().clone();
         let display_source = plugin.display_source.clone();
@@ -323,13 +323,8 @@ impl App {
         let state_snapshot = plugin.state.snapshot();
         let request = PluginRenderRequest {
             route: ResolvedRoute {
-                pattern: parsed.pathname,
-                params: self
-                    .shell
-                    .route
-                    .as_ref()
-                    .map(|resolved| resolved.params.clone())
-                    .unwrap_or_default(),
+                pattern: resolved.pattern.clone(),
+                params: resolved.params.clone(),
                 query: parsed.query,
             },
             data: json!({
@@ -606,7 +601,13 @@ impl App {
         let parsed = parse_route(&self.current_route);
         let request = PluginDispatchRequest {
             route: ResolvedRoute {
-                pattern: parsed.pathname,
+                pattern: self
+                    .shell
+                    .route
+                    .as_ref()
+                    .map(|resolved| resolved.pattern.clone())
+                    .filter(|pattern| !pattern.is_empty())
+                    .unwrap_or(parsed.pathname),
                 params: self
                     .shell
                     .route

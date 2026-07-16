@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use unode::core::ast::{ActionRef, ActionType};
+use unode::core::runtime::PluginManifest;
 
 use crate::text::DeferredText;
 
@@ -16,6 +17,10 @@ type ActionAvailability<Ctx> = Arc<dyn Fn(&ActionRef, &Ctx) -> bool + Send + Syn
 #[serde(rename_all = "camelCase")]
 pub struct ResolvedRouteInfo {
     pub pathname: String,
+    /// The registered pattern that matched (e.g. `/notes/:id`). Plugins that
+    /// declare multiple routes branch on this to pick the screen to render.
+    #[serde(default)]
+    pub pattern: String,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub params: BTreeMap<String, String>,
     pub screen_kind: String,
@@ -53,6 +58,27 @@ impl RouteRegistry {
         self.routes.push(route);
     }
 
+    /// Registers every route declared in a plugin manifest.
+    ///
+    /// `base_priority` positions the plugin's routes relative to host shell
+    /// routes; each declared route's own priority is added on top. Routes
+    /// without an explicit `screen_kind` get one derived from the plugin id
+    /// and the pattern segments (e.g. `demo.plugin` + `/notes/:id` becomes
+    /// `demo.plugin.notes.id`).
+    pub fn register_manifest_routes(&mut self, manifest: &PluginManifest, base_priority: i32) {
+        for decl in &manifest.routes {
+            self.register(RegisteredRoute {
+                plugin_id: manifest.id.clone(),
+                pattern: decl.pattern.clone(),
+                screen_kind: decl
+                    .screen_kind
+                    .clone()
+                    .unwrap_or_else(|| default_screen_kind(&manifest.id, &decl.pattern)),
+                priority: base_priority + decl.priority,
+            });
+        }
+    }
+
     pub fn resolve(&self, pathname: &str) -> Option<ResolvedRouteInfo> {
         let normalized_path = normalize_path(pathname);
         let mut matches = self
@@ -64,6 +90,7 @@ impl RouteRegistry {
                         route.priority,
                         ResolvedRouteInfo {
                             pathname: normalized_path.clone(),
+                            pattern: route.pattern.clone(),
                             params,
                             screen_kind: route.screen_kind.clone(),
                             plugin_id: route.plugin_id.clone(),
@@ -327,6 +354,21 @@ impl<Ctx> ActionRegistry<Ctx> {
     }
 }
 
+fn default_screen_kind(plugin_id: &str, pattern: &str) -> String {
+    let suffix = pattern
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .map(|segment| segment.trim_start_matches(':'))
+        .collect::<Vec<_>>()
+        .join(".");
+
+    if suffix.is_empty() {
+        format!("{plugin_id}.screen")
+    } else {
+        format!("{plugin_id}.{suffix}")
+    }
+}
+
 fn normalize_path(pathname: &str) -> String {
     if pathname.len() > 1 && pathname.ends_with('/') {
         pathname[..pathname.len() - 1].to_string()
@@ -404,7 +446,43 @@ mod tests {
 
         let resolved = routes.resolve("/works/42").expect("route");
         assert_eq!(resolved.plugin_id, "demo.plugin");
+        assert_eq!(resolved.pattern, "/works/:id");
         assert_eq!(resolved.params.get("id").map(String::as_str), Some("42"));
+    }
+
+    #[test]
+    fn registers_manifest_routes_with_derived_screen_kinds() {
+        use unode::core::runtime::{PluginManifest, RouteDecl};
+
+        let manifest = PluginManifest {
+            id: "demo.plugin".to_string(),
+            name: "Demo".to_string(),
+            routes: vec![
+                RouteDecl {
+                    pattern: "/notes".to_string(),
+                    screen_kind: None,
+                    priority: 0,
+                },
+                RouteDecl {
+                    pattern: "/notes/:id".to_string(),
+                    screen_kind: Some("demo.plugin.note-detail".to_string()),
+                    priority: 10,
+                },
+            ],
+            ..PluginManifest::default()
+        };
+
+        let mut routes = RouteRegistry::default();
+        routes.register_manifest_routes(&manifest, 500);
+
+        let list = routes.resolve("/notes").expect("list route");
+        assert_eq!(list.plugin_id, "demo.plugin");
+        assert_eq!(list.screen_kind, "demo.plugin.notes");
+
+        let detail = routes.resolve("/notes/42").expect("detail route");
+        assert_eq!(detail.screen_kind, "demo.plugin.note-detail");
+        assert_eq!(detail.pattern, "/notes/:id");
+        assert_eq!(detail.params.get("id").map(String::as_str), Some("42"));
     }
 
     #[test]

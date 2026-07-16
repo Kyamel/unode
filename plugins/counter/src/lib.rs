@@ -1,4 +1,4 @@
-//! `web-counter` — the reactive plugin behind the web vertical slice.
+//! `counter` — the reactive plugin behind the web vertical slice.
 //!
 //! It renders one reactive line bound to `ui.countLabel` plus three actions.
 //! On dispatch it reads the current count from the `state_snapshot` the host
@@ -20,10 +20,10 @@ use unode_sdk::prelude::{
     PluginRenderRequest, ScreenNode, TextRole, Tone, UNODE_PLUGIN_ABI_VERSION,
 };
 
-const PLUGIN_ID: &str = "dev.unode.web-counter";
-const PLUGIN_NAME: &str = "Web Counter";
+const PLUGIN_ID: &str = "dev.unode.counter";
+const PLUGIN_NAME: &str = "Counter";
 #[cfg(test)]
-const ROUTE_PATH: &str = "/plugins/web-counter";
+const ROUTE_PATH: &str = "/plugins/counter";
 const COUNT_PATH: &str = "ui.count";
 const LABEL_PATH: &str = "ui.countLabel";
 
@@ -61,7 +61,7 @@ fn custom(action: &str) -> ActionRef {
 
 fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
     ui::screen()
-        .id("web-counter.screen")
+        .id("counter.screen")
         .title(format!("{PLUGIN_NAME}"))
         .subtitle("Rendered from a Rust plugin compiled to WebAssembly.")
         .initial_state(BTreeMap::from([
@@ -72,29 +72,29 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
             // The one reactive node: its content is a binding, so the host
             // tracks it and patches only this line when `ui.countLabel` changes.
             ui::text(expr::binding::<String>(LABEL_PATH))
-                .id("web-counter.value")
+                .id("counter.value")
                 .role(TextRole::Title)
                 .tone(Tone::Info),
             ui::text("The number above is host state; the buttons dispatch intents.")
-                .id("web-counter.hint")
+                .id("counter.hint")
                 .role(TextRole::Caption)
                 .tone(Tone::Muted),
             ui::actions()
-                .id("web-counter.actions")
+                .id("counter.actions")
                 .children([
                     ui::action("Increment", custom("counter.inc"))
-                        .id("web-counter.inc")
+                        .id("counter.inc")
                         .intent(ActionIntent::Primary),
                     ui::action("Decrement", custom("counter.dec"))
-                        .id("web-counter.dec")
+                        .id("counter.dec")
                         .intent(ActionIntent::Secondary),
                     ui::action("Reset", custom("counter.reset"))
-                        .id("web-counter.reset")
+                        .id("counter.reset")
                         .intent(ActionIntent::Ghost),
                 ])
                 .into_node(),
         ])
-        .initial_focus("web-counter.inc")
+        .initial_focus("counter.inc")
         .build()
 }
 
@@ -133,7 +133,7 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
         None => PluginDispatchResponse {
             handled: false,
             outcome: PluginDispatchOutcome::None,
-            message: Some("web-counter ignored action".to_string()),
+            message: Some("counter ignored action".to_string()),
             data: None,
         },
     }

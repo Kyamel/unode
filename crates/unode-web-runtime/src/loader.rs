@@ -67,7 +67,7 @@ impl WebPluginDescriptor {
 
         self.manifest
             .manifest
-            .validate_slot_contributions()
+            .validate()
             .map_err(|err| WebLoaderError::InvalidManifest(err.to_string()))?;
 
         Ok(())

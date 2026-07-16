@@ -12,6 +12,12 @@ export type PluginManifestEnvelope = {
 	manifest: PluginManifest;
 };
 
+export type PluginRouteDecl = {
+	pattern: string;
+	screenKind?: string;
+	priority?: number;
+};
+
 export type PluginManifest = {
 	id: string;
 	name: string;
@@ -24,6 +30,8 @@ export type PluginManifest = {
 		priority?: number;
 		when?: unknown;
 	}>;
+	/** Screens the plugin declares; the playground routes navigations against these. */
+	routes?: PluginRouteDecl[];
 };
 
 export type PlaygroundPluginAsset = {

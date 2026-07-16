@@ -9,8 +9,8 @@ use unode_runtime::{
     CommandResult, DeferredText, RegisteredCommand, RegisteredNavigationItem, RegisteredRoute,
 };
 use unode_sdk::prelude::{
-    ActionNode, BoolOrExpr, CollectionContinuation, OneOrExpr, PrimitiveOrExpr, ScreenNode,
-    StringOrExpr, UiExpr, UiNode,
+    ActionNode, BoolOrExpr, CollectionContinuation, OneOrExpr, PluginManifest, PrimitiveOrExpr,
+    ScreenNode, StringOrExpr, UiExpr, UiNode,
 };
 use unode_tui_runtime::{CachedTuiPlugin, TuiHostCallDispatcher, TuiRuntime};
 
@@ -92,14 +92,23 @@ pub fn load_runtime_plugins(
         let runtime_plugin = CachedTuiPlugin::from_wasm_file(&wasm_path, dispatcher)
             .with_context(|| format!("failed to instantiate plugin at {}", wasm_path.display()))?;
         let manifest = runtime_plugin.manifest().clone();
-        let route = format!("/plugins/{}", plugin_slug(&manifest.manifest.id));
+        let route = primary_route(&manifest.manifest);
 
-        runtime.inner.routes.register(RegisteredRoute {
-            plugin_id: manifest.manifest.id.clone(),
-            pattern: route.clone(),
-            screen_kind: format!("{}.screen", manifest.manifest.id),
-            priority: 500,
-        });
+        if manifest.manifest.routes.is_empty() {
+            // Legacy plugins without declared routes keep the host-assigned
+            // `/plugins/{slug}` route.
+            runtime.inner.routes.register(RegisteredRoute {
+                plugin_id: manifest.manifest.id.clone(),
+                pattern: route.clone(),
+                screen_kind: format!("{}.screen", manifest.manifest.id),
+                priority: 500,
+            });
+        } else {
+            runtime
+                .inner
+                .routes
+                .register_manifest_routes(&manifest.manifest, 500);
+        }
         runtime.inner.navigation.register(RegisteredNavigationItem {
             id: format!("nav.{}", manifest.manifest.id),
             plugin_id: manifest.manifest.id.clone(),
@@ -415,6 +424,18 @@ fn latest_modified_in(path: PathBuf) -> Vec<std::time::SystemTime> {
         .filter_map(|entry| entry.ok())
         .flat_map(|entry| latest_modified_in(entry.path()))
         .collect()
+}
+
+/// The route used for navigation entries: the first declared static pattern,
+/// falling back to the host-assigned `/plugins/{slug}` route.
+fn primary_route(manifest: &PluginManifest) -> String {
+    manifest
+        .routes
+        .iter()
+        .map(|route| route.pattern.as_str())
+        .find(|pattern| !pattern.contains(':'))
+        .map(ToString::to_string)
+        .unwrap_or_else(|| format!("/plugins/{}", plugin_slug(&manifest.id)))
 }
 
 pub fn plugin_slug(plugin_id: &str) -> String {

@@ -83,9 +83,9 @@ copy_web_counter_demo_wasm() {
   local runtime_dir="$1"
   local runtime_name="$2"
 
-  step "Copying web-counter plugin WASM into $runtime_name demo"
+  step "Copying counter plugin WASM into $runtime_name demo"
   cp \
-    "$ROOT/plugins/web-counter/target/wasm32-unknown-unknown/release/web_counter_plugin.wasm" \
+    "$ROOT/plugins/counter/target/wasm32-unknown-unknown/release/web_counter_plugin.wasm" \
     "$runtime_dir/demo/web_counter_plugin.wasm"
 }
 

@@ -6,6 +6,7 @@
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
         "plugins/web-counter/Cargo.toml",
-        "plugins/sanity-check/Cargo.toml"
+        "plugins/sanity-check/Cargo.toml",
+        "plugins/playground-complex-state/Cargo.toml"
     ]
 }
