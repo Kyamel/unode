@@ -1,0 +1,15 @@
+[package]
+name = "tui-ratatui-example"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+crossterm.workspace = true
+ratatui.workspace = true
+serde_json.workspace = true
+unode = { path = "../../crates/unode" }
+unode-plugin-sdk = { path = "../../crates/unode-plugin-sdk" }
+unode-ratatui-renderer = { path = "../../crates/unode-ratatui-renderer" }
+unode-tui-runtime = { path = "../../crates/unode-tui-runtime" }
