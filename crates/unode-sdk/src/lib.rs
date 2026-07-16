@@ -3,6 +3,7 @@ pub mod host;
 pub mod i18n;
 pub mod manifest;
 pub mod permissions;
+pub mod state;
 
 pub use abi::{
     AbiError, EXPORT_PLUGIN_ABI_VERSION, EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN,
@@ -29,6 +30,7 @@ pub use permissions::{
     CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile, PermissionRequest,
     core_permission,
 };
+pub use state::StateKey;
 
 pub mod prelude {
     pub use crate::abi::{
@@ -56,6 +58,7 @@ pub mod prelude {
         CoreBuiltinPermission, PermissionGrant, PermissionGuard, PermissionProfile,
         PermissionRequest, core, core_permission,
     };
+    pub use crate::state::StateKey;
     pub use crate::{export_allocators, export_plugin};
     pub use unode::core::ast::*;
     pub use unode::core::chrome::*;

@@ -65,9 +65,9 @@ const PLUGIN_SPECS: &[PluginSpec] = &[
         priority: 410,
     },
     PluginSpec {
-        dir: "plugins/web-counter",
+        dir: "plugins/counter",
         wasm_file: "web_counter_plugin.wasm",
-        missing_message: "Web Counter plugin not built yet. Run `cargo build --manifest-path plugins/web-counter/Cargo.toml --target wasm32-unknown-unknown`.",
+        missing_message: "Web Counter plugin not built yet. Run `cargo build --manifest-path plugins/counter/Cargo.toml --target wasm32-unknown-unknown`.",
         priority: 400,
     },
 ];

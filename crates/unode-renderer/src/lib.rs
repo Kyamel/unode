@@ -18,7 +18,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use unode::core::ast::UiNode;
+use unode::core::ast::{self as ast, UiNode};
 
 /// Chooses the drawing surface recipes paint on. The generic-associated
 /// lifetime lets backends hand out per-frame surfaces (e.g. `ratatui::Frame`).
@@ -151,6 +151,79 @@ impl<B: Backend> Recipe<B> {
             render: Arc::new(|_, _, _| {}),
         }
     }
+}
+
+/// Generates typed recipe constructors: each pairs the [`NodeKind`] with
+/// closures that receive the concrete node struct, eliminating the manual
+/// `let UiNode::X(..) = node else ...` downcast. They return the
+/// `(NodeKind, Recipe)` entry expected by [`RendererBuilder::recipes`]:
+///
+/// ```ignore
+/// ratatui_renderer().recipes([Recipe::text(
+///     |_, node, width| measure_text(node, width),
+///     |ctx: &mut TuiRenderCtx<'_, '_>, node, area| paint_text(ctx, node, area),
+/// )])
+/// ```
+macro_rules! typed_recipe_constructors {
+    ($($method:ident => $kind:ident / $variant:ident : $node_ty:ty;)*) => {
+        impl<B: Backend> Recipe<B> {
+            $(
+                pub fn $method(
+                    measure: impl Fn(&MeasureCtx<'_, B>, &$node_ty, u16) -> u16
+                    + Send
+                    + Sync
+                    + 'static,
+                    render: impl for<'a, 'f> Fn(&mut RenderCtx<'a, 'f, B>, &$node_ty, Region)
+                    + Send
+                    + Sync
+                    + 'static,
+                ) -> (NodeKind, Recipe<B>) {
+                    (
+                        NodeKind::$kind,
+                        Recipe::new(
+                            move |ctx, node, width| match node {
+                                UiNode::$variant(node) => measure(ctx, node, width),
+                                _ => 1,
+                            },
+                            move |ctx: &mut RenderCtx<'_, '_, B>, node, region| {
+                                if let UiNode::$variant(node) = node {
+                                    render(ctx, node, region);
+                                }
+                            },
+                        ),
+                    )
+                }
+            )*
+        }
+    };
+}
+
+typed_recipe_constructors! {
+    section => Section / Section: ast::SectionNode;
+    stack => Stack / Stack: ast::StackNode;
+    inline => Inline / Inline: ast::InlineNode;
+    grid => Grid / Grid: ast::GridNode;
+    scroll => Scroll / Scroll: ast::ScrollNode;
+    text => Text / Text: ast::TextNode;
+    value => Value / Value: ast::ValueNode;
+    icon => Icon / Icon: ast::IconNode;
+    badge => Badge / Badge: ast::BadgeNode;
+    divider => Divider / Divider: ast::DividerNode;
+    media => Media / Media: ast::MediaNode;
+    pressable => Pressable / Pressable: ast::PressableNode;
+    item => Item / Item: ast::ItemNode;
+    list => List / List: ast::ListNode;
+    action => Action / Action: ast::ActionNode;
+    actions => Actions / Actions: ast::ActionsNode;
+    disclosure => Disclosure / Disclosure: ast::DisclosureNode;
+    menu => Menu / Menu: ast::MenuNode;
+    input => Input / Input: ast::InputNode;
+    form => Form / Form: ast::FormNode;
+    status => Status / Status: ast::StatusNode;
+    empty => Empty / Empty: ast::EmptyStateNode;
+    loading => Loading / Loading: ast::LoadingNode;
+    conditional => Conditional / Conditional: ast::ConditionalNode;
+    slot => Slot / Slot: ast::SlotNode;
 }
 
 /// The resolved recipe set: per-kind recipes plus a fallback.

@@ -8,8 +8,6 @@ members = [
   "crates/unode-web-host",
   "crates/unode-tui-runtime",
   "crates/tui-renderer",
-  "crates/mugens-domain",
-  "crates/mugens-sdk",
   "crates/mgn",
   "crates/unode-devtools",
 ]

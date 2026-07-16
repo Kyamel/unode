@@ -123,6 +123,16 @@ impl RouteDeclBuilder {
         self
     }
 
+    /// Sugar for a label bound to a state path (dynamic label).
+    pub fn label_bind(self, path: impl Into<String>) -> Self {
+        self.label(unode::core::dsl::expr::binding::<String>(path))
+    }
+
+    /// Sugar for a badge bound to a state path (dynamic badge).
+    pub fn badge_bind(self, path: impl Into<String>) -> Self {
+        self.badge(unode::core::dsl::expr::binding::<String>(path))
+    }
+
     /// Joins a route group declared with `route_group(...)`.
     pub fn group(mut self, group: impl Into<String>) -> Self {
         self.route.group = Some(group.into());

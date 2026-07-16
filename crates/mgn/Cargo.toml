@@ -5,8 +5,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-mugens-domain = { path = "../mugens-domain" }
-mugens-sdk = { path = "../mugens-sdk" }
 tui-renderer = { path = "../tui-renderer" }
 unode-runtime = { path = "../unode-runtime" }
 unode-tui-runtime = { path = "../unode-tui-runtime" }

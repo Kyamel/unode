@@ -18,7 +18,7 @@ import {
 import { Button } from "./Button";
 
 const renderer = defineRenderer()
-  .node("action", ({ label, prop, action }) =>
+  .recipe("action", ({ label, prop, action }) =>
     hostSlot("Button", { children: label, intent: prop("intent"), action }),
   )
   .recipe("section", ({ title, children }) =>

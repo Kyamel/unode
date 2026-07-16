@@ -29,6 +29,40 @@ export interface Renderer {
   mountNodes(container: Element, nodes: IrNode[], store: ScreenStore, options?: MountOptions): RendererHandle;
 }
 
+/**
+ * Node types the IR can contain: the closed protocol node set (serialized
+ * `UiNode` variants; `Conditional` lowers to `"if"`) plus the `screen` root.
+ * The set is closed by design — hosts specialize by overriding recipes, not
+ * by inventing node types — so `recipe()` is typed against all of it.
+ */
+export type NodeType =
+  | "screen"
+  | "section"
+  | "stack"
+  | "inline"
+  | "grid"
+  | "scroll"
+  | "text"
+  | "value"
+  | "icon"
+  | "badge"
+  | "divider"
+  | "media"
+  | "pressable"
+  | "item"
+  | "list"
+  | "action"
+  | "actions"
+  | "disclosure"
+  | "menu"
+  | "input"
+  | "form"
+  | "status"
+  | "empty"
+  | "loading"
+  | "if"
+  | "slot";
+
 /** Functional, framework-free defaults. Every one is overridable. */
 export const defaultRecipes = {
   screen: ({ props, children }) =>
@@ -51,28 +85,18 @@ export const defaultRecipes = {
   inline: ({ children }) => h("div", { class: "unode-inline" }, children),
 
   section: ({ children }) => h("section", { class: "unode-section" }, children),
-} satisfies Record<string, Recipe>;
-
-export type BuiltinNodeType = keyof typeof defaultRecipes;
+} satisfies Partial<Record<NodeType, Recipe>>;
 
 export const defaultFallback: Recipe = ({ children }) => children;
 
 export interface RendererBuilder {
   /** Recipe for the screen root (sugar for `.recipe("screen", ...)`). */
   screen(recipe: Recipe): this;
-  /** Override a built-in node type. Use `.custom()` for app-defined node types. */
-  recipe(type: BuiltinNodeType, recipe: Recipe): this;
-  /** Override many built-in node types at once. */
-  recipes(map: Partial<Record<BuiltinNodeType, Recipe>>): this;
-  /** Register an app-defined node type. */
-  cnode(type: string, recipe: Recipe): this;
-  /** Register many app-defined node types. */
-  cnodes(map: Record<string, Recipe>): this;
-  /** Alias of `recipe`, mirroring the lower-level "node" vocabulary. */
-  node(type: BuiltinNodeType, recipe: Recipe): this;
-  /** Alias of `recipes`. */
-  nodes(map: Partial<Record<BuiltinNodeType, Recipe>>): this;
-  /** Recipe used for unknown node types. */
+  /** Set (or override) the recipe for a node type. */
+  recipe(type: NodeType, recipe: Recipe): this;
+  /** Set many recipes at once. */
+  recipes(map: Partial<Record<NodeType, Recipe>>): this;
+  /** Recipe used for node types without a dedicated recipe. */
   fallback(recipe: Recipe): this;
   /** The resolved spec (defaults merged with overrides). */
   spec(): RendererSpec;
@@ -93,32 +117,14 @@ class RendererBuilderImpl implements RendererBuilder {
     return this.recipe("screen", recipe);
   }
 
-  recipe(type: BuiltinNodeType, recipe: Recipe): this {
+  recipe(type: NodeType, recipe: Recipe): this {
     this.overrides[type] = recipe;
     return this;
   }
 
-  recipes(map: Partial<Record<BuiltinNodeType, Recipe>>): this {
+  recipes(map: Partial<Record<NodeType, Recipe>>): this {
     Object.assign(this.overrides, map);
     return this;
-  }
-
-  cnode(type: string, recipe: Recipe): this {
-    this.overrides[type] = recipe;
-    return this;
-  }
-
-  cnodes(map: Record<string, Recipe>): this {
-    Object.assign(this.overrides, map);
-    return this;
-  }
-
-  node(type: BuiltinNodeType, recipe: Recipe): this {
-    return this.recipe(type, recipe);
-  }
-
-  nodes(map: Partial<Record<BuiltinNodeType, Recipe>>): this {
-    return this.recipes(map);
   }
 
   fallback(recipe: Recipe): this {
@@ -138,7 +144,7 @@ class RendererBuilderImpl implements RendererBuilder {
   }
 }
 
-/** Entry point: `defineRenderer().recipe("action", ...).custom("app.card", ...).build()`. */
+/** Entry point: `defineRenderer().recipe("action", ...).build()`. */
 export function defineRenderer(base?: Partial<RendererSpec>): RendererBuilder {
   return new RendererBuilderImpl(base);
 }

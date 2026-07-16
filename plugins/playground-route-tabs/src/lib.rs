@@ -3,7 +3,7 @@ use unode_sdk::prelude::{
     self as ui, ActionIntent, ActionRef, ActionType, CoreActionType, IntoNode,
     PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
     PluginManifestEnvelope, PluginRenderRequest, ScreenNode, TextRole, Tone,
-    UNODE_PLUGIN_ABI_VERSION, expr, permission, route_group,
+    StateKey, UNODE_PLUGIN_ABI_VERSION, permission, route_group,
 };
 
 const PLUGIN_ID: &str = "dev.unode.playground.route-tabs";
@@ -11,7 +11,10 @@ const PLUGIN_NAME: &str = "Route Tabs";
 const COMPOSE_PATH: &str = "/playground/route-tabs";
 const REVIEW_PATH: &str = "/playground/route-tabs/review";
 const SHIP_PATH: &str = "/playground/route-tabs/ship";
-const SHIP_COUNT_STATE: &str = "routeTabs.shipCount";
+// Typed state keys: the path is stated once; reads, writes, and bindings
+// all agree on the value type.
+const SHIP_COUNT: StateKey<u32> = StateKey::new("routeTabs.shipCount");
+const LAST_SHIP: StateKey<String> = StateKey::new("routeTabs.lastShip");
 
 fn manifest_envelope() -> PluginManifestEnvelope {
     PluginManifestEnvelope {
@@ -38,7 +41,7 @@ fn manifest_envelope() -> PluginManifestEnvelope {
                 unode_sdk::route(SHIP_PATH)
                     .group("flow")
                     .label("Ship")
-                    .badge(expr::binding::<String>(SHIP_COUNT_STATE)),
+                    .badge_bind(SHIP_COUNT.path()),
             ])
             .build(),
     }
@@ -70,10 +73,10 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
         .id("playground-route-tabs.screen")
         .title(PLUGIN_NAME)
         .subtitle("Tabs come from manifest route groups; the renderer decides how to show them.")
-        .initial_state(std::collections::BTreeMap::from([(
-            SHIP_COUNT_STATE.to_string(),
-            json!("3"),
-        )]))
+        .initial_state(std::collections::BTreeMap::from([
+            (SHIP_COUNT.path().to_string(), json!(3)),
+            (LAST_SHIP.path().to_string(), json!("nothing shipped yet")),
+        ]))
         .children(ui::nodes![
             ui::section()
                 .id("playground-route-tabs.panel")
@@ -85,6 +88,12 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                     ))
                     .role(TextRole::Body)
                     .tone(Tone::Info),
+                    // One action, two state writes: the ship counter feeds
+                    // the route badge (manifest binding) and the last-ship
+                    // text below (screen binding).
+                    ui::text(LAST_SHIP.bind_text())
+                        .role(TextRole::Caption)
+                        .tone(Tone::Muted),
                     ui::actions()
                         .id("playground-route-tabs.actions")
                         .children([
@@ -94,9 +103,28 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
                             ui::action("Review", navigate_action(REVIEW_PATH))
                                 .id("playground-route-tabs.review")
                                 .intent(ActionIntent::Secondary),
-                            ui::action("Ship", navigate_action(SHIP_PATH))
-                                .id("playground-route-tabs.ship")
-                                .intent(ActionIntent::Secondary),
+                            // One button, two effects: the dispatch handler
+                            // writes state AND returns a Navigate outcome.
+                            ui::action(
+                                "Ship",
+                                ActionRef {
+                                    r#type: ActionType::Custom("ship.open".to_string()),
+                                    params: None,
+                                    confirm: None,
+                                },
+                            )
+                            .id("playground-route-tabs.ship")
+                            .intent(ActionIntent::Secondary),
+                            ui::action(
+                                "Ship one more",
+                                ActionRef {
+                                    r#type: ActionType::Custom("ship.increment".to_string()),
+                                    params: None,
+                                    confirm: None,
+                                },
+                            )
+                            .id("playground-route-tabs.ship-one")
+                            .intent(ActionIntent::Secondary),
                         ])
                         .into_node(),
                 ])
@@ -106,8 +134,40 @@ fn render_screen(request: &PluginRenderRequest) -> ScreenNode {
         .build()
 }
 
+/// Increments the ship counter and records the last-ship message — two
+/// state writes shared by both ship actions.
+fn ship_one(snapshot: &std::collections::BTreeMap<String, JsonValue>) -> u32 {
+    let next = SHIP_COUNT.get_or(snapshot, 3) + 1;
+    SHIP_COUNT.set(next);
+    LAST_SHIP.set(format!("shipped #{next}"));
+    next
+}
+
 fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse {
     match &request.action.r#type {
+        // One button press mutating two state paths: the badge binding and
+        // the on-screen text binding both pick the writes up.
+        ActionType::Custom(action) if action == "ship.increment" => {
+            let next = ship_one(&request.state_snapshot);
+            PluginDispatchResponse {
+                handled: true,
+                outcome: PluginDispatchOutcome::RefreshCurrentScreen,
+                message: Some(format!("ship count is now {next}")),
+                data: None,
+            }
+        }
+        // Same button: mutate state AND navigate, in one dispatch.
+        ActionType::Custom(action) if action == "ship.open" => {
+            let next = ship_one(&request.state_snapshot);
+            PluginDispatchResponse {
+                handled: true,
+                outcome: PluginDispatchOutcome::Navigate {
+                    to: SHIP_PATH.to_string(),
+                },
+                message: Some(format!("shipped #{next} and opened the ship screen")),
+                data: None,
+            }
+        }
         ActionType::Core(CoreActionType::Navigate) => PluginDispatchResponse {
             handled: true,
             outcome: PluginDispatchOutcome::Navigate {
@@ -154,7 +214,7 @@ mod tests {
 
         // Host-side derivation: active comes from the matched route and the
         // ship badge resolves against the state snapshot.
-        let state = BTreeMap::from([(SHIP_COUNT_STATE.to_string(), serde_json::json!("3"))]);
+        let state = BTreeMap::from([(SHIP_COUNT.path().to_string(), serde_json::json!(3))]);
         let view = route_tabs_view(&manifest, REVIEW_PATH, &state).expect("tabs");
         assert_eq!(view.active, REVIEW_PATH);
         assert_eq!(view.tabs.len(), 3);
@@ -164,6 +224,38 @@ mod tests {
         // Without state the dynamic badge is simply omitted.
         let view = route_tabs_view(&manifest, SHIP_PATH, &BTreeMap::new()).expect("tabs");
         assert_eq!(view.tabs[2].badge, None);
+    }
+
+    #[test]
+    fn ship_increment_writes_two_states_and_refreshes() {
+        ui::host::clear_recorded_host_calls();
+        let response = dispatch_response(&PluginDispatchRequest {
+            route: unode_sdk::prelude::ResolvedRoute {
+                pattern: SHIP_PATH.to_string(),
+                params: Default::default(),
+                query: Default::default(),
+            },
+            action: ActionRef {
+                r#type: ActionType::Custom("ship.increment".to_string()),
+                params: None,
+                confirm: None,
+            },
+            state_snapshot: BTreeMap::from([(
+                SHIP_COUNT.path().to_string(),
+                serde_json::json!(5),
+            )]),
+            locale: None,
+        });
+
+        assert!(response.handled);
+        assert_eq!(response.message.as_deref(), Some("ship count is now 6"));
+
+        // One action, two state writes.
+        let calls = ui::host::recorded_host_calls();
+        assert_eq!(calls.len(), 2);
+        assert!(calls.iter().all(|call| call.operation == "state.set"));
+        assert_eq!(calls[0].params["value"], serde_json::json!(6));
+        assert_eq!(calls[1].params["value"], serde_json::json!("shipped #6"));
     }
 
     #[test]

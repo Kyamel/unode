@@ -1124,8 +1124,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crossterm",
- "mugens-domain",
- "mugens-sdk",
  "ratatui",
  "serde",
  "serde_json",
@@ -1152,23 +1150,6 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys",
-]
-
-[[package]]
-name = "mugens-domain"
-version = "0.1.0"
-dependencies = [
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "mugens-sdk"
-version = "0.1.0"
-dependencies = [
- "mugens-domain",
- "thiserror 2.0.18",
- "unode",
- "unode-sdk",
 ]
 
 [[package]]
