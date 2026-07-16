@@ -3,23 +3,13 @@ use unode_runtime::{
 };
 use unode_tui_runtime::TuiRuntime;
 
+/// Registers the shell's own surface: a single Home landing screen. Every
+/// other sidebar entry comes from the discovered plugins' manifests.
 pub fn register_builtin_shell(runtime: &mut TuiRuntime<()>) {
     runtime.inner.routes.register(RegisteredRoute {
         plugin_id: "dev.unode.shell.home".to_string(),
         pattern: "/home".to_string(),
         screen_kind: "dev.unode.shell.home".to_string(),
-        priority: 100,
-    });
-    runtime.inner.routes.register(RegisteredRoute {
-        plugin_id: "dev.unode.shell.samples.hot".to_string(),
-        pattern: "/samples/hot".to_string(),
-        screen_kind: "dev.unode.shell.samples.hot".to_string(),
-        priority: 100,
-    });
-    runtime.inner.routes.register(RegisteredRoute {
-        plugin_id: "dev.unode.shell.samples.recent".to_string(),
-        pattern: "/samples/recent".to_string(),
-        screen_kind: "dev.unode.shell.samples.recent".to_string(),
         priority: 100,
     });
 
@@ -31,29 +21,7 @@ pub fn register_builtin_shell(runtime: &mut TuiRuntime<()>) {
         to: "/home".to_string(),
         icon: None,
         section: Some("main".to_string()),
-        priority: 300,
-        when: None,
-    });
-    runtime.inner.navigation.register(RegisteredNavigationItem {
-        id: "nav.mangas.hot".to_string(),
-        plugin_id: "dev.unode.shell.samples.hot".to_string(),
-        label: DeferredText::from("Samples Hot"),
-        short_label: None,
-        to: "/samples/hot".to_string(),
-        icon: None,
-        section: Some("main".to_string()),
-        priority: 200,
-        when: None,
-    });
-    runtime.inner.navigation.register(RegisteredNavigationItem {
-        id: "nav.mangas.recent".to_string(),
-        plugin_id: "dev.unode.shell.samples.recent".to_string(),
-        label: DeferredText::from("Samples Recent"),
-        short_label: None,
-        to: "/samples/recent".to_string(),
-        icon: None,
-        section: Some("main".to_string()),
-        priority: 100,
+        priority: 500,
         when: None,
     });
 
@@ -65,23 +33,5 @@ pub fn register_builtin_shell(runtime: &mut TuiRuntime<()>) {
         keywords: vec!["home".to_string()],
         when: None,
         run: std::sync::Arc::new(|_| CommandResult::Navigate("/home".to_string())),
-    });
-    runtime.inner.commands.register(RegisteredCommand {
-        id: "goto.samples.hot".to_string(),
-        plugin_id: "dev.unode.shell.samples.hot".to_string(),
-        title: DeferredText::from("Go to Samples Hot"),
-        category: Some(DeferredText::from("Navigation")),
-        keywords: vec!["samples".to_string(), "hot".to_string()],
-        when: None,
-        run: std::sync::Arc::new(|_| CommandResult::Navigate("/samples/hot".to_string())),
-    });
-    runtime.inner.commands.register(RegisteredCommand {
-        id: "goto.samples.recent".to_string(),
-        plugin_id: "dev.unode.shell.samples.recent".to_string(),
-        title: DeferredText::from("Go to Samples Recent"),
-        category: Some(DeferredText::from("Navigation")),
-        keywords: vec!["samples".to_string(), "recent".to_string()],
-        when: None,
-        run: std::sync::Arc::new(|_| CommandResult::Navigate("/samples/recent".to_string())),
     });
 }

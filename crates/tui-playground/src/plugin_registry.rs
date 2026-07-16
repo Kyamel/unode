@@ -19,40 +19,81 @@ pub struct LoadedPlugin {
     pub state: PluginState,
 }
 
-struct PluginSpec {
-    dir: &'static str,
-    wasm_file: &'static str,
-    missing_message: &'static str,
-    priority: i32,
+/// Discovers every plugin under `plugins/` that has a compiled wasm artifact
+/// (newest of debug/release), mirroring how the web playground lists all
+/// example plugins. Directories without an artifact produce a hint message.
+fn discover_plugins() -> (Vec<(String, PathBuf)>, Vec<String>) {
+    let plugins_root = workspace_root().join("plugins");
+    let mut found = Vec::new();
+    let mut messages = Vec::new();
+
+    let Ok(entries) = fs::read_dir(&plugins_root) else {
+        return (
+            found,
+            vec![format!(
+                "plugins directory not found: {}",
+                plugins_root.display()
+            )],
+        );
+    };
+    let mut dirs: Vec<PathBuf> = entries
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .filter(|path| path.is_dir())
+        .collect();
+    dirs.sort();
+
+    for dir in dirs {
+        let name = dir
+            .file_name()
+            .map(|value| value.to_string_lossy().to_string())
+            .unwrap_or_default();
+        match newest_wasm_in(&dir) {
+            Some(wasm) => found.push((name, wasm)),
+            None => messages.push(format!(
+                "{name} not built yet. Run `cargo build --manifest-path plugins/{name}/Cargo.toml --target wasm32-unknown-unknown`."
+            )),
+        }
+    }
+
+    (found, messages)
 }
 
-const PLUGIN_SPECS: &[PluginSpec] = &[
-    PluginSpec {
-        dir: "plugins/sanity-check",
-        wasm_file: "sanity_check_plugin.wasm",
-        missing_message: "Sanity plugin not built yet. Run `cargo build --manifest-path plugins/sanity-check/Cargo.toml --target wasm32-unknown-unknown`.",
-        priority: 410,
-    },
-    PluginSpec {
-        dir: "plugins/counter",
-        wasm_file: "web_counter_plugin.wasm",
-        missing_message: "Web Counter plugin not built yet. Run `cargo build --manifest-path plugins/counter/Cargo.toml --target wasm32-unknown-unknown`.",
-        priority: 400,
-    },
-];
+/// Newest `.wasm` artifact across the plugin's debug and release targets.
+fn newest_wasm_in(plugin_root: &Path) -> Option<PathBuf> {
+    ["debug", "release"]
+        .iter()
+        .filter_map(|profile| {
+            fs::read_dir(
+                plugin_root
+                    .join("target/wasm32-unknown-unknown")
+                    .join(profile),
+            )
+            .ok()
+        })
+        .flatten()
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "wasm"))
+        .filter_map(|path| {
+            let modified = fs::metadata(&path).ok()?.modified().ok()?;
+            Some((modified, path))
+        })
+        .max_by_key(|(modified, _)| *modified)
+        .map(|(_, path)| path)
+}
 
 pub fn load_runtime_plugins(
     runtime: &mut TuiRuntime<()>,
 ) -> Result<(Vec<LoadedPlugin>, Vec<String>)> {
-    let mut messages = Vec::new();
+    let (discovered, mut messages) = discover_plugins();
     let mut plugins = Vec::new();
 
-    for spec in PLUGIN_SPECS {
-        let plugin_root = workspace_root().join(spec.dir);
-        let Some(wasm_path) = find_plugin_wasm(&plugin_root, spec.wasm_file) else {
-            messages.push(spec.missing_message.to_string());
-            continue;
-        };
+    for (index, (dir_name, wasm_path)) in discovered.iter().enumerate() {
+        let plugin_root = workspace_root().join("plugins").join(dir_name);
+        let wasm_path = wasm_path.clone();
+        // Alphabetical discovery order becomes sidebar order.
+        let nav_priority = 400 - index as i32;
 
         let source_newer_than_wasm = plugin_source_is_newer_than_wasm(&plugin_root, &wasm_path);
         let state = PluginState::default();
@@ -86,7 +127,7 @@ pub fn load_runtime_plugins(
             to: route.clone(),
             icon: None,
             section: Some("plugins".to_string()),
-            priority: spec.priority,
+            priority: nav_priority,
             when: None,
         });
         runtime.inner.commands.register(RegisteredCommand {
@@ -150,6 +191,8 @@ fn plugin_dispatcher(state: PluginState) -> TuiHostCallDispatcher {
     dispatcher
 }
 
+/// Kept for the integration tests, which probe specific artifacts.
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn find_plugin_wasm(plugin_root: &Path, wasm_file: &str) -> Option<PathBuf> {
     let candidates = [
         plugin_root

@@ -253,7 +253,7 @@ fn app_registers_web_counter_and_applies_state_set_host_calls() {
     let Some(plugin_index) = app
         .plugins
         .iter()
-        .position(|plugin| plugin.runtime_plugin.manifest().manifest.id == "dev.unode.web-counter")
+        .position(|plugin| plugin.runtime_plugin.manifest().manifest.id == "dev.unode.counter")
     else {
         return;
     };
@@ -304,7 +304,7 @@ fn web_counter_survives_many_increment_cycles() {
     let Some(plugin_index) = app
         .plugins
         .iter()
-        .position(|plugin| plugin.runtime_plugin.manifest().manifest.id == "dev.unode.web-counter")
+        .position(|plugin| plugin.runtime_plugin.manifest().manifest.id == "dev.unode.counter")
     else {
         return;
     };
@@ -342,4 +342,58 @@ fn web_counter_survives_many_increment_cycles() {
             TuiMainContent::Screen(_) => {}
         }
     }
+}
+
+#[test]
+fn discovers_all_example_plugins_and_ships_from_route_tabs() {
+    let mut app = match App::new() {
+        Ok(app) => app,
+        Err(_) => return,
+    };
+
+    // Discovery must load every example plugin that has a wasm artifact.
+    let loaded = app
+        .plugins
+        .iter()
+        .map(|plugin| plugin.runtime_plugin.manifest().manifest.id.clone())
+        .collect::<Vec<_>>();
+    for id in [
+        "dev.unode.counter",
+        "dev.unode.sanity-check",
+        "dev.unode.playground.route-tabs",
+        "dev.unode.playground.host-slot",
+        "dev.unode.playground.split-host",
+        "dev.unode.playground.split-contributor",
+        "dev.unode.playground.complex-layout",
+        "dev.unode.playground.complex-state",
+    ] {
+        assert!(
+            loaded.iter().any(|value| value == id),
+            "missing {id}: {loaded:?}"
+        );
+    }
+
+    // Route-tabs plugin: activate "Ship one more" and watch the manifest
+    // badge binding pick up the state write.
+    app.navigate_to("/playground/route-tabs".to_string());
+    app.focused_pane = TuiFocusedPane::Main;
+
+    let ship_index = app
+        .main_interactions
+        .iter()
+        .position(|interaction| interaction.label.contains("Ship one more"))
+        .unwrap_or_else(|| panic!("ship interaction not found: {:?}", app.main_interactions));
+    app.selected_main_interaction = Some(ship_index);
+    app.activate_main_interaction().expect("ship one more");
+
+    let TuiMainContent::Screen(view) = &app.main_panel else {
+        panic!("expected plugin screen after dispatch");
+    };
+    let tabs = view.route_tabs.as_ref().expect("route tabs from manifest");
+    let ship_tab = tabs
+        .tabs
+        .iter()
+        .find(|tab| tab.label == "Ship")
+        .expect("ship tab");
+    assert_eq!(ship_tab.badge.as_deref(), Some("4"), "badge after one ship");
 }
