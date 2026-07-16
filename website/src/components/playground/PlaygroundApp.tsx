@@ -148,7 +148,7 @@ const renderer = defineRenderer()
 			h('div', { class: 'pg-node-stack' }, children),
 		),
 	)
-	.node('action', ({ label, intent, action }) =>
+	.recipe('action', ({ label, intent, action }) =>
 		hostSlot('Button', { children: label, intent, action }),
 	)
 	.recipe('actions', ({ children }) => h('div', { class: 'pg-inline' }, children))
@@ -172,19 +172,19 @@ const renderer = defineRenderer()
 	.recipe('text', ({ content, role, prop }) =>
 		h('p', { class: `pg-text role-${role} tone-${text(prop('tone')) || 'neutral'}` }, content),
 	)
-	.cnode('grid', ({ children, prop }) =>
+	.recipe('grid', ({ children, prop }) =>
 		h('div', { class: `pg-grid pg-grid-${Number(prop('maxColumns', 2)) || 2}` }, children),
 	)
-	.cnode('badge', ({ label, prop }) =>
+	.recipe('badge', ({ label, prop }) =>
 		h('span', { class: `pg-badge tone-${text(prop('tone')) || 'neutral'}` }, label),
 	)
-	.cnode('value', ({ prop }) =>
+	.recipe('value', ({ prop }) =>
 		h('strong', { class: `pg-value tone-${text(prop('tone')) || 'neutral'}` }, text(prop('value'))),
 	)
-	.cnode('list', ({ childNodes, renderChildren }) =>
+	.recipe('list', ({ childNodes, renderChildren }) =>
 		h('div', { class: 'pg-list' }, renderChildren(childNodes)),
 	)
-	.cnode('item', ({ childNodes, renderChildren, props, dispatch }) =>
+	.recipe('item', ({ childNodes, renderChildren, props, dispatch }) =>
 		h(
 			'button',
 			{
@@ -374,7 +374,12 @@ export default function PlaygroundApp() {
 	}, [applyRoute]);
 
 	useEffect(() => {
-		void mountActivePlugin().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+		// Seed remounts with the session snapshot so plugin state survives
+		// navigation between the plugin's own routes (mirrors the TUI host,
+		// where PluginState lives for the whole app session).
+		void mountActivePlugin(sessionRef.current?.stateSnapshot() ?? {}).catch((cause) =>
+			setError(cause instanceof Error ? cause.message : String(cause)),
+		);
 	}, [mountActivePlugin, selectedPluginId, plugins.length, session]);
 
 	const handleAction = useCallback(
@@ -415,6 +420,19 @@ export default function PlaygroundApp() {
 			const writes = target.sink.drain();
 			if (Object.keys(writes).length > 0) {
 				currentStore.applyPatches(activeSession.applyWrites(writes));
+				// State writes may feed dynamic route-tab labels/badges.
+				const activeEntry = pluginsRef.current.find(
+					(entry) => entry.asset.id === selectedPluginIdRef.current,
+				);
+				if (activeEntry) {
+					setTabsView(
+						routeTabsView(
+							activeEntry.envelope.manifest,
+							route.pattern,
+							activeSession.stateSnapshot(),
+						) ?? null,
+					);
+				}
 			}
 
 			appendEvent({
