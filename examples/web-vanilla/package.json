@@ -1,0 +1,23 @@
+{
+  "name": "web-vanilla",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-free demo: the Unode DOM renderer and its own keyed reactivity, no adapter.",
+  "scripts": {
+    "build:wasm": "./build.sh",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
+    "lint": "eslint demo vite.config.ts"
+  },
+  "dependencies": {
+    "unode-web-core": "workspace:*",
+    "unode-web-renderer": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0"
+  }
+}

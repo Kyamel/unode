@@ -1,0 +1,25 @@
+{
+  "name": "web-solid",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SolidJS demo app for the Unode web runtime.",
+  "scripts": {
+    "build:wasm": "./build.sh",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
+    "lint": "eslint demo vite.config.ts"
+  },
+  "dependencies": {
+    "unode-web-core": "workspace:*",
+    "unode-solid": "workspace:*",
+    "solid-js": "^1.9.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vite-plugin-solid": "^2.11.0"
+  }
+}

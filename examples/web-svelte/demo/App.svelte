@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import * as webHostModule from "../pkg/unode_web_host.js";
-  import webHostWasmUrl from "../pkg/unode_web_host_bg.wasm?url";
   import {
     defineRenderer,
     h,
@@ -9,14 +7,9 @@
     ScreenStore,
     UnodeScreen,
   } from "unode-svelte";
-  import {
-    HostSession,
-    StateWriteSink,
-    WebPluginRegistry,
-    WebRuntime,
-  } from "unode-web-core";
+  import type { WebRuntime } from "unode-web-core";
   import Button from "./Button.svelte";
-  import pluginWasmUrl from "./web_counter_plugin.wasm?url";
+  import { bootRuntime } from "./runtime";
 
   // Recipes written once in the universal TS language: `action` nodes render as
   // the host's native <Button> via a host slot; the rest use built-in recipes.
@@ -29,57 +22,16 @@
     )
     .build();
 
-  const PLUGIN_ROUTE_PATTERN = "/plugins/web-counter";
-  const pluginRegistry = new WebPluginRegistry().register({
-    id: "dev.unode.web-counter",
-    routePattern: PLUGIN_ROUTE_PATTERN,
-    loadWasm: () => fetch(pluginWasmUrl),
-  });
-
   let store: ScreenStore | null = $state(null);
   let runtime: WebRuntime | null = $state(null);
   let error: string | null = $state(null);
-
-  function routeTargetForCurrentLocation() {
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive URL helper
-    const url = new URL(window.location.href);
-
-    if (url.pathname === "/") {
-      window.history.replaceState(null, "", `${PLUGIN_ROUTE_PATTERN}${url.search}${url.hash}`);
-      url.pathname = PLUGIN_ROUTE_PATTERN;
-    }
-
-    return {
-      pathname: url.pathname,
-      query: Object.fromEntries(url.searchParams.entries()),
-    };
-  }
 
   onMount(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        const session = await HostSession.create(
-          webHostModule as never,
-          webHostWasmUrl,
-          "en",
-        );
-        const sink = new StateWriteSink();
-        const pluginTarget = routeTargetForCurrentLocation();
-        const { registration, plugin, route } = await pluginRegistry.instantiateForPath(
-          pluginTarget.pathname,
-          pluginTarget.query,
-          sink.handler,
-        );
-        const nextRuntime = new WebRuntime({
-          pluginId: registration.id,
-          plugin,
-          session,
-          sink,
-          route,
-          locale: "en",
-        });
+        const nextRuntime = await bootRuntime();
         const nextStore = nextRuntime.mount();
 
         if (!cancelled) {

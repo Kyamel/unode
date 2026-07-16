@@ -7,7 +7,7 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use unode::core::ast::{ActionIntent, ActionNode, BoolOrExpr};
 use unode_ratatui_renderer::util::render_string_or_expr;
-use unode_ratatui_renderer::{NodeKind, TuiRecipe, TuiRenderCtx, rect};
+use unode_ratatui_renderer::{NodeKind, TuiRecipe, rect};
 
 /// `action` nodes render as this host-styled button.
 pub fn button_recipe() -> (NodeKind, TuiRecipe) {

@@ -19,6 +19,8 @@ export default tseslint.config(
 			'**/pkg/**',
 			'website/.astro/**',
 			'**/*.astro',
+			// SFCs need eslint-plugin-vue; the demo lint scripts target .ts files.
+			'**/*.vue',
 		],
 	},
 	js.configs.recommended,
@@ -52,7 +54,11 @@ export default tseslint.config(
 		},
 	},
 	{
-		files: ['**/*.tsx'],
+		files: [
+			'packages/unode-react/**/*.tsx',
+			'examples/web-react/**/*.tsx',
+			'website/**/*.tsx',
+		],
 		plugins: { 'react-hooks': reactHooks },
 		rules: reactHooks.configs.recommended.rules,
 	},

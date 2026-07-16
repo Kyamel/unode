@@ -46,10 +46,10 @@ export type PlaygroundPluginAsset = {
 
 export const playgroundPluginAssets: PlaygroundPluginAsset[] = [
 	{
-		id: 'dev.unode.web-counter',
+		id: 'dev.unode.counter',
 		name: 'Web Counter',
-		routePattern: '/plugins/web-counter',
-		sourcePath: 'plugins/web-counter',
+		routePattern: '/plugins/counter',
+		sourcePath: 'plugins/counter',
 		wasmUrl: webCounterWasm,
 		tags: ['real plugin', 'state', 'reactivity'],
 	},

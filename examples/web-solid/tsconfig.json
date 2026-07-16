@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "types": [
+      "vite/client"
+    ],
+    "paths": {
+      "unode-web-core": [
+        "../../packages/unode-web-core/src"
+      ],
+      "unode-solid": [
+        "../../packages/unode-solid/src"
+      ],
+      "unode-web-renderer": [
+        "../../packages/unode-web-renderer/src"
+      ]
+    }
+  },
+  "include": [
+    "demo",
+    "vite.config.ts"
+  ]
+}

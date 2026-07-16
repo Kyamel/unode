@@ -1,0 +1,22 @@
+{
+  "name": "unode-vue",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Vue 3 mount target and host-component portal for the Unode web renderer.",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "unode-web-renderer": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vue": "^3.5.13"
+  }
+}

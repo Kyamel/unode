@@ -9,13 +9,9 @@ import {
   ScreenStore,
   UnodeScreen,
 } from "unode-react";
-import {
-  HostSession,
-  StateWriteSink,
-  WebPluginRegistry,
-  WebRuntime,
-} from "unode-web-core";
+import type { WebRuntime } from "unode-web-core";
 import { Button } from "./Button";
+import { bootRuntime } from "./runtime";
 
 const renderer = defineRenderer()
   .recipe("action", ({ label, prop, action }) =>
@@ -26,34 +22,6 @@ const renderer = defineRenderer()
   )
   .build();
 
-// wasm-bindgen generated module + its wasm asset (built into ../pkg).
-import * as webHostModule from "../pkg/unode_web_host.js";
-import webHostWasmUrl from "../pkg/unode_web_host_bg.wasm?url";
-// The plugin wasm, served as a URL by Vite.
-import pluginWasmUrl from "./web_counter_plugin.wasm?url";
-
-const PLUGIN_ROUTE_PATTERN = "/plugins/web-counter";
-const pluginRegistry = new WebPluginRegistry().register({
-  id: "dev.unode.web-counter",
-  routePattern: PLUGIN_ROUTE_PATTERN,
-  loadWasm: () => fetch(pluginWasmUrl),
-});
-
-function routeTargetForCurrentLocation() {
-  const url = new URL(window.location.href);
-
-  if (url.pathname === "/") {
-    window.history.replaceState(null, "", `${PLUGIN_ROUTE_PATTERN}${url.search}${url.hash}`);
-    url.pathname = PLUGIN_ROUTE_PATTERN;
-  }
-
-  return {
-    pathname: url.pathname,
-    query: Object.fromEntries(url.searchParams.entries()),
-  };
-}
-
-
 export function App() {
   const [state, setState] = useState<{ store: ScreenStore; runtime: WebRuntime } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,32 +29,8 @@ export function App() {
   useEffect(() => {
     (async () => {
       try {
-        const session = await HostSession.create(
-          webHostModule as never,
-          webHostWasmUrl,
-          "en",
-        );
-        // The plugin writes state through the `host_call` sandbox boundary; the
-        // sink services `state.set`. A real app would extend the handler with
-        // `navigation.navigate`, domain APIs, etc.
-        const sink = new StateWriteSink();
-        const pluginTarget = routeTargetForCurrentLocation();
-        const { registration, plugin, route } = await pluginRegistry.instantiateForPath(
-          pluginTarget.pathname,
-          pluginTarget.query,
-          sink.handler,
-        );
-
-        const runtime = new WebRuntime({
-          pluginId: registration.id,
-          plugin,
-          session,
-          sink,
-          route,
-          locale: "en",
-        });
-        const store = runtime.mount();
-        setState({ store, runtime });
+        const runtime = await bootRuntime();
+        setState({ store: runtime.mount(), runtime });
       } catch (e) {
         setError(String(e));
       }

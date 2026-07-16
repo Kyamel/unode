@@ -70,7 +70,7 @@ const pcall = (fn, lenFn, req) => {
   return readJson(rp, ex[lenFn]());
 };
 
-const route = { pattern: "/plugins/web-counter", params: {}, query: {} };
+const route = { pattern: "/plugins/counter", params: {}, query: {} };
 
 // --- the loop ---
 const screen = pcall("plugin_render", "plugin_render_result_len", { route, data: {}, locale: "en" });
@@ -79,13 +79,13 @@ const ir = JSON.parse(session.mount(JSON.stringify(screen), "{}"));
 // The reactive line mounts with a symbolic binding.
 const findKey = (n, key) =>
   n?.p?._k === key ? n : (n?.c ?? []).map((c) => findKey(c, key)).find(Boolean);
-const label = findKey(ir, "web-counter.value");
+const label = findKey(ir, "counter.value");
 assert(label, "mounted IR contains the bound node");
 assert(label.p.content?.b === "ui.countLabel", `mounts as a binding, got ${JSON.stringify(label.p.content)}`);
 
 // Initial resolution pass turns the binding into a concrete value.
 const initial = JSON.parse(session.initialPatches());
-const initLabel = initial.find((op) => op.k === "web-counter.value");
+const initLabel = initial.find((op) => op.k === "counter.value");
 assert(initLabel?.v?.v === "Count: 0", `initial resolved label is 'Count: 0', got ${JSON.stringify(initLabel?.v)}`);
 
 function dispatchAndApply(type, expectedCount) {
@@ -107,7 +107,7 @@ function dispatchAndApply(type, expectedCount) {
   const patches = JSON.parse(session.applyWrites(JSON.stringify(writes)));
 
   assert(patches.length === 1, `expected 1 patch, got ${patches.length}: ${JSON.stringify(patches)}`);
-  assert(patches[0].o === "sp" && patches[0].k === "web-counter.value" && patches[0].f === "content", `patch shape: ${JSON.stringify(patches[0])}`);
+  assert(patches[0].o === "sp" && patches[0].k === "counter.value" && patches[0].f === "content", `patch shape: ${JSON.stringify(patches[0])}`);
   assert(
     patches[0].v?.v === `Count: ${expectedCount}`,
     `patched value is 'Count: ${expectedCount}', got ${JSON.stringify(patches[0].v)}`,

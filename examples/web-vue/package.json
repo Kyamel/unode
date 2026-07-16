@@ -1,0 +1,26 @@
+{
+  "name": "web-vue",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Vue 3 demo app for the Unode web runtime.",
+  "scripts": {
+    "build:wasm": "./build.sh",
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
+    "lint": "eslint demo/main.ts demo/App.ts demo/runtime.ts vite.config.ts"
+  },
+  "dependencies": {
+    "unode-web-core": "workspace:*",
+    "unode-vue": "workspace:*",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

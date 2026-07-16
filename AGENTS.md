@@ -27,7 +27,9 @@ and render the result through environment-specific packages.
 - `packages/unode-web-renderer` contains the shared TypeScript renderer primitives.
 - `packages/unode-react` contains the maintained React mount package.
 - `packages/unode-svelte` contains the maintained Svelte mount package.
-- `examples/web-react` and `examples/web-svelte` contain the maintained web demos.
+- `packages/unode-vue` and `packages/unode-solid` are the Vue/Solid mount packages.
+- `examples/web-react`, `examples/web-svelte`, `examples/web-vue`, `examples/web-solid`,
+  and `examples/web-vanilla` (framework-free) contain the maintained web demos.
 - `examples/tui-ratatui` is the minimal ratatui host demo (main/App/Button, mirroring the web examples).
 - `crates/tui-playground` is an example/application binary, not the reusable TUI runtime.
 - `plugins/` contains example WASM plugins.

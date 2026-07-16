@@ -1,0 +1,22 @@
+{
+  "name": "unode-solid",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SolidJS mount target and host-component portal for the Unode web renderer.",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "unode-web-renderer": "workspace:*"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.8.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "solid-js": "^1.9.4"
+  }
+}

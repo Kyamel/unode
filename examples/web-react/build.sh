@@ -21,13 +21,13 @@ wasm-bindgen \
   --out-name unode_web_host \
   "$ROOT/target/wasm32-unknown-unknown/release/unode_web_host.wasm"
 
-echo "==> Building web-counter plugin (raw wasm C ABI)"
+echo "==> Building counter plugin (raw wasm C ABI)"
 cargo build \
-  --manifest-path "$ROOT/plugins/web-counter/Cargo.toml" \
+  --manifest-path "$ROOT/plugins/counter/Cargo.toml" \
   --target wasm32-unknown-unknown \
   --release
 
-cp "$ROOT/plugins/web-counter/target/wasm32-unknown-unknown/release/web_counter_plugin.wasm" \
+cp "$ROOT/plugins/counter/target/wasm32-unknown-unknown/release/web_counter_plugin.wasm" \
   "$HERE/demo/web_counter_plugin.wasm"
 
 echo "==> Done. Now: pnpm install && pnpm run dev"
