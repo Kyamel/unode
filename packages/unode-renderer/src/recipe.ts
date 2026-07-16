@@ -65,9 +65,9 @@ export interface RendererBuilder {
   /** Override many built-in node types at once. */
   recipes(map: Partial<Record<BuiltinNodeType, Recipe>>): this;
   /** Register an app-defined node type. */
-  custom(type: string, recipe: Recipe): this;
+  cnode(type: string, recipe: Recipe): this;
   /** Register many app-defined node types. */
-  customs(map: Record<string, Recipe>): this;
+  cnodes(map: Record<string, Recipe>): this;
   /** Alias of `recipe`, mirroring the lower-level "node" vocabulary. */
   node(type: BuiltinNodeType, recipe: Recipe): this;
   /** Alias of `recipes`. */
@@ -103,12 +103,12 @@ class RendererBuilderImpl implements RendererBuilder {
     return this;
   }
 
-  custom(type: string, recipe: Recipe): this {
+  cnode(type: string, recipe: Recipe): this {
     this.overrides[type] = recipe;
     return this;
   }
 
-  customs(map: Record<string, Recipe>): this {
+  cnodes(map: Record<string, Recipe>): this {
     Object.assign(this.overrides, map);
     return this;
   }
