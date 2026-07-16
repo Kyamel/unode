@@ -8,9 +8,10 @@ pub use abi::{
     AbiError, EXPORT_PLUGIN_ABI_VERSION, EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN,
     EXPORT_PLUGIN_LOAD, EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST,
     EXPORT_PLUGIN_MANIFEST_LEN, EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN,
-    EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC, HostCallEnvelope, IMPORT_HOST_CALL,
-    IMPORT_HOST_CALL_RESULT_LEN, PluginDispatchOutcome, PluginDispatchRequest,
-    PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
+    EXPORT_PLUGIN_RENDER_SLOT, EXPORT_PLUGIN_RENDER_SLOT_RESULT_LEN, EXPORT_UNODE_ALLOC,
+    EXPORT_UNODE_DEALLOC, HostCallEnvelope, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN,
+    PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest,
+    PluginManifestEnvelope, PluginRenderRequest, PluginRenderSlotRequest, PluginRenderSlotResponse,
     REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION, UNODE_PLUGIN_ABI_VERSION_BYTES, WasmPtrLen,
     decode_json_bytes, encode_json_bytes,
 };
@@ -31,11 +32,13 @@ pub mod prelude {
         AbiError, EXPORT_PLUGIN_ABI_VERSION, EXPORT_PLUGIN_DISPATCH,
         EXPORT_PLUGIN_DISPATCH_RESULT_LEN, EXPORT_PLUGIN_LOAD, EXPORT_PLUGIN_LOAD_RESULT_LEN,
         EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_MANIFEST_LEN, EXPORT_PLUGIN_RENDER,
-        EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC,
+        EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_PLUGIN_RENDER_SLOT,
+        EXPORT_PLUGIN_RENDER_SLOT_RESULT_LEN, EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC,
         HostCallEnvelope, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN, PluginDispatchOutcome,
         PluginDispatchRequest, PluginDispatchResponse, PluginLoadRequest, PluginManifestEnvelope,
-        PluginRenderRequest, REQUIRED_EXPORTS, UNODE_PLUGIN_ABI_VERSION,
-        UNODE_PLUGIN_ABI_VERSION_BYTES, WasmPtrLen, decode_json_bytes, encode_json_bytes,
+        PluginRenderRequest, PluginRenderSlotRequest, PluginRenderSlotResponse, REQUIRED_EXPORTS,
+        UNODE_PLUGIN_ABI_VERSION, UNODE_PLUGIN_ABI_VERSION_BYTES, WasmPtrLen, decode_json_bytes,
+        encode_json_bytes,
     };
     pub use crate::host;
     pub use crate::i18n::{
@@ -54,6 +57,9 @@ pub mod prelude {
     pub use unode::core::chrome::*;
     pub use unode::core::dsl::*;
     pub use unode::core::permissions::*;
-    pub use unode::core::runtime::{PluginManifest, ResolvedRoute, UNODE_CORE_API_VERSION};
+    pub use unode::core::runtime::{
+        PluginManifest, ResolvedRoute, SlotContributionDecl, UNODE_CORE_API_VERSION,
+    };
+    pub use unode::core::slot::*;
     pub use unode::core::state::{MemoryStateStore, StateStore};
 }

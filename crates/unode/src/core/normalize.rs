@@ -296,6 +296,7 @@ fn freeze_meta(
         subtree_shape_reactivity,
         structural_dependencies,
         static_fields,
+        origin: None,
     }
 }
 

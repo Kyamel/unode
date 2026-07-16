@@ -58,30 +58,27 @@ pub struct SlotNode {
 The slot name is a namespaced string by convention:
 `"<plugin-id>:<slot-identifier>"` — e.g. `"catalog.work-detail:footer"`.
 
-### Contribution registration
+### Contribution declaration
 
-Plugins register slot contributions at activation time:
+Plugins declare slot contributions in their manifest. The declaration is
+serializable host metadata; the rendered UI still comes from
+`plugin_render_slot` at mount time.
 
 ```rust
-// In plugin activation
-ctx.slots.register(SlotContribution {
-    id: "reading-list.add-button".into(),
-    target: "catalog.work-detail:footer".into(),
-    priority: 10,
-    when: Some(|ctx| ctx.route.params.get("workId").is_some()),
-    render: |ctx| {
-        let work_id = ctx.route.params["workId"].clone();
-        ui::action(
-            "Add to reading list",
-            ActionRef {
-                type_: "reading-list.add".into(),
-                params: json!({ "workId": work_id }),
-                ..Default::default()
-            }
-        ).intent(ActionIntent::Secondary)
-    },
-});
+PluginManifest {
+    id: "com.mugenx.reading-list".into(),
+    slot_contributions: vec![SlotContributionDecl {
+        id: "reading-list.add-button".into(),
+        target: "catalog.work-detail:footer".into(),
+        priority: 10,
+        when: None,
+    }],
+    ..Default::default()
+}
 ```
+
+`when` uses the same serializable boolean expression shape as the AST. It is not
+a Rust closure, because manifests must cross host and WASM boundaries as JSON.
 
 ### WASM protocol for SlotNode
 
@@ -89,14 +86,22 @@ Each slot contribution render call crosses the WASM boundary:
 
 ```rust
 // Host calls this export on the contributing plugin
-pub extern "C" fn plugin_render_slot(
-    slot_name_ptr: *const u8, slot_name_len: usize,
-    ctx_ptr:       *const u8, ctx_len:       usize,
-) -> *const u8;  // returns UiNode JSON
+pub extern "C" fn plugin_render_slot(request_ptr: u32, request_len: u32) -> u32;
+pub extern "C" fn plugin_render_slot_result_len() -> u32;
 ```
 
-The host collects all contributions, deserializes each UiNode JSON, and
-assembles the final tree before passing it to the renderer.
+The request is `PluginRenderSlotRequest` JSON and includes `contributionId`,
+`slotName`, `route`, `stateSnapshot`, and `locale`. The response is
+`PluginRenderSlotResponse` JSON:
+
+```json
+{ "nodes": [] }
+```
+
+An empty node list means the contribution opts out dynamically. The host
+collects all contributions, deserializes each response, normalizes the returned
+`UiNode`s, annotates them with the contributor origin, resolves nested slots,
+and assembles the final tree before passing it to the renderer.
 
 ### SlotNode in a Web adapter
 
@@ -133,7 +138,8 @@ action bar, the bottom navigation on mobile.
 
 These regions exist outside any plugin screen. They are owned by the app shell
 (the web application's layout components, or the `mgn` TUI app frame). Plugins
-register contributions to them at activation time.
+declare UI slot contributions in the manifest, while data-only shell entries
+such as navigation items live in host-owned registries.
 
 ### Use case
 
@@ -196,23 +202,18 @@ plugin needs to contribute actual UiNodes (not just data). These work like
 `SlotNode` but target the shell chrome instead of another plugin's screen:
 
 ```rust
-ctx.slots.register(SlotContribution {
+SlotContributionDecl {
     id: "catalog.header-search".into(),
     target: "shell:header-actions".into(),
     priority: 10,
-    render: |ctx| {
-        ui::action("Search", ActionRef {
-            type_: "catalog.openSearch".into(),
-            ..Default::default()
-        }).variant(ActionVariant::IconButton)
-         .leading_icon("search")
-    },
-});
+    when: None,
+}
 ```
 
-The host calls `plugin_render_slot("shell:header-actions", ctx)` on each plugin
-that registered for this target, collects the UiNode JSON responses, and renders
-them via the active framework adapter in the header.
+At mount time the host calls `plugin_render_slot` with a
+`PluginRenderSlotRequest` for each plugin that declared this target, collects
+the UiNode JSON responses, and renders them via the active framework adapter in
+the header.
 
 ---
 
@@ -351,36 +352,47 @@ applies to shell slot contributions just as much as to screen nodes.
 
 ## Registration summary
 
-Everything a plugin contributes to slots is declared at activation time:
+Everything a plugin contributes to slots is declared in its manifest:
 
 ```rust
-fn activate(ctx: &mut PluginSetupContext) {
-    // Shell: navigation item (data, no WASM call to render)
-    ctx.navigation.register(NavigationItem {
-        id: "catalog.browse.nav".into(),
-        label: msg("nav_browse"),
-        to: "/app/mangas/browse".into(),
-        icon: Some("library".into()),
-        priority: 100,
-    });
-
-    // Shell: UI contribution (WASM called to render)
-    ctx.slots.register(SlotContribution {
-        id: "catalog.header-search".into(),
-        target: "shell:header-actions".into(),
-        render: |ctx| ui::action(...),
-    });
-
-    // Intra-screen: contributes to another plugin's SlotNode
-    ctx.slots.register(SlotContribution {
-        id: "catalog.reading-list-button".into(),
-        target: "catalog.work-detail:footer".into(),
-        render: |ctx| ui::action(...),
-    });
+PluginManifest {
+    slot_contributions: vec![
+        // Shell UI contribution (WASM called to render)
+        SlotContributionDecl {
+            id: "catalog.header-search".into(),
+            target: "shell:header-actions".into(),
+            priority: 10,
+            when: None,
+        },
+        // Intra-screen: contributes to another plugin's SlotNode
+        SlotContributionDecl {
+            id: "catalog.reading-list-button".into(),
+            target: "catalog.work-detail:footer".into(),
+            priority: 10,
+            when: None,
+        },
+    ],
+    ..Default::default()
 }
 ```
 
-All three go through `ctx.slots.register` or `ctx.navigation.register`. The
-distinction between shell and intra-screen is encoded in the target name
-convention: `"shell:*"` targets are shell chrome, everything else is a
-`SlotNode` in another plugin's screen.
+Navigation items and command palette entries still live in their own registries.
+Slot UI contributions use `slotContributions`. The distinction between shell and
+intra-screen slot UI is encoded in the target name convention: `"shell:*"`
+targets are shell chrome, everything else is a `SlotNode` in another plugin's
+screen.
+
+## Origin and permissions
+
+Injected nodes belong to the contributing plugin, not to the plugin that
+declared the slot. The host preserves this as internal origin metadata and
+lowers it into renderer IR so action dispatch and capability checks can use the
+contributor namespace. Equal local node IDs from different contributors are
+namespaced before normalization.
+
+## ABI compatibility
+
+Raw ABI `0.2.0` makes `plugin_render_slot` and
+`plugin_render_slot_result_len` required exports. Plugins that do not declare
+slot contributions normally return `{ "nodes": [] }`; the Rust SDK macro
+generates that default handler when no `render_slot` function is supplied.

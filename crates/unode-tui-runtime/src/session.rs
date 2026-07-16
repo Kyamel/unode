@@ -5,6 +5,7 @@ use serde_json::Value as JsonValue;
 use thiserror::Error;
 use unode_sdk::{
     PluginDispatchRequest, PluginLoadRequest, PluginManifestEnvelope, PluginRenderRequest,
+    PluginRenderSlotRequest,
 };
 
 use crate::bridge::{TuiAbiBridgeError, TuiPluginBridge};
@@ -82,6 +83,18 @@ impl PluginSession {
     {
         self.bridge
             .call_plugin_dispatch(request)
+            .map_err(Into::into)
+    }
+
+    pub fn render_slot<Resp>(
+        &mut self,
+        request: &PluginRenderSlotRequest,
+    ) -> Result<Resp, TuiPluginRuntimeError>
+    where
+        Resp: DeserializeOwned,
+    {
+        self.bridge
+            .call_plugin_render_slot(request)
             .map_err(Into::into)
     }
 

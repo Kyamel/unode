@@ -6,6 +6,7 @@ use serde_json::{Value as JsonValue, json};
 use crate::core::ast::*;
 use crate::core::canonical::*;
 use crate::core::patch::{PatchOp, PatchValue};
+use crate::core::slot::{SLOT_ORIGIN_CONTRIBUTION_ID, SLOT_ORIGIN_PLUGIN_ID};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct IrScreen {
@@ -479,6 +480,12 @@ fn lower_action(n: &CanonicalActionNode) -> IrNode {
 /// rather than reintroducing this metadata into the IR.
 fn inject_meta(p: &mut BTreeMap<String, JsonValue>, meta: &CanonicalMetadata) {
     p.insert("_k".into(), json!(meta.key));
+    if let Some(origin) = &meta.origin {
+        p.insert(SLOT_ORIGIN_PLUGIN_ID.into(), json!(origin.plugin_id));
+        if let Some(contribution_id) = &origin.contribution_id {
+            p.insert(SLOT_ORIGIN_CONTRIBUTION_ID.into(), json!(contribution_id));
+        }
+    }
 }
 
 fn wrap_group(group: &str, nodes: &[CanonicalUiNode]) -> Vec<IrNode> {
@@ -1079,6 +1086,7 @@ mod tests {
                 },
             ],
             static_fields: BTreeMap::from([("label".to_string(), Some(json!("Continue")))]),
+            origin: None,
         };
         let mut out = BTreeMap::new();
 

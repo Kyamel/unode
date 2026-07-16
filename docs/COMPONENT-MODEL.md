@@ -17,6 +17,8 @@ specified:
 ```text
 plugin_render(ptr, len) -> ptr
 plugin_render_result_len() -> len
+plugin_render_slot(ptr, len) -> ptr
+plugin_render_slot_result_len() -> len
 ```
 
 Every SDK must implement the same pointer/length memory convention, JSON
@@ -52,6 +54,7 @@ Keep today's ABI as the production path:
 - `plugin_manifest`
 - `plugin_load`
 - `plugin_render`
+- `plugin_render_slot`
 - `plugin_dispatch`
 - `*_result_len`
 - `unode_alloc`
@@ -65,12 +68,13 @@ Rust plugins keep using `unode-sdk::export_plugin!()`.
 Add an experimental WIT contract that preserves today's JSON envelopes:
 
 ```wit
-package unode:plugin@0.1.0;
+package unode:plugin@0.2.0;
 
 interface lifecycle {
     manifest: func() -> string;
     load: func(request-json: string) -> string;
     render: func(request-json: string) -> string;
+    render-slot: func(request-json: string) -> string;
     dispatch: func(request-json: string) -> string;
 }
 
@@ -154,13 +158,14 @@ The shared host abstraction should expose:
 - `manifest() -> PluginManifestEnvelope`;
 - `load(request) -> JsonValue`;
 - `render(request) -> ScreenNode`;
+- `render_slot(request) -> PluginRenderSlotResponse`;
 - `dispatch(request) -> PluginDispatchResponse`;
 - host-call/capability dispatch through the existing permission model.
 
 Everything after `render()` should stay unchanged:
 
 ```text
-ScreenNode JSON -> normalize -> CanonicalScreen -> track -> IrScreen -> renderer
+ScreenNode JSON -> normalize -> resolve slots -> CanonicalScreen -> track -> IrScreen -> renderer
 ```
 
 ## SDK guidance

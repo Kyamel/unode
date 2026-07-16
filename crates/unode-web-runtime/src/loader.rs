@@ -46,6 +46,8 @@ pub enum WebLoaderError {
     AbiVersionMismatch { expected: String, found: String },
     #[error("plugin is missing required export `{0}`")]
     MissingRequiredExport(String),
+    #[error("plugin manifest is invalid: {0}")]
+    InvalidManifest(String),
 }
 
 impl WebPluginDescriptor {
@@ -62,6 +64,11 @@ impl WebPluginDescriptor {
                 return Err(WebLoaderError::MissingRequiredExport(export.to_string()));
             }
         }
+
+        self.manifest
+            .manifest
+            .validate_slot_contributions()
+            .map_err(|err| WebLoaderError::InvalidManifest(err.to_string()))?;
 
         Ok(())
     }
@@ -136,6 +143,18 @@ mod tests {
         assert!(matches!(
             loader.prepare(descriptor),
             Err(WebLoaderError::AbiVersionMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn rejects_missing_render_slot_export() {
+        let loader = WebPluginLoader::new(WebLoaderConfig::default());
+        let mut descriptor = descriptor();
+        descriptor.exports.remove("plugin_render_slot");
+
+        assert!(matches!(
+            loader.prepare(descriptor),
+            Err(WebLoaderError::MissingRequiredExport(export)) if export == "plugin_render_slot"
         ));
     }
 }

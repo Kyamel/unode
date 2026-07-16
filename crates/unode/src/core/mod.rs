@@ -10,5 +10,6 @@ pub mod planner;
 pub mod reactive;
 pub mod resolver;
 pub mod runtime;
+pub mod slot;
 pub mod state;
 pub mod transport;

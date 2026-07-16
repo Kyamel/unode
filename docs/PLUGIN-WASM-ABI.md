@@ -8,7 +8,7 @@ Owns the ABI names and request envelopes:
 
 - `UNODE_PLUGIN_ABI_VERSION`
 - required exports like `plugin_manifest`, `plugin_load`, `plugin_render`
-- request payloads for load/render/dispatch
+- request payloads for load/render/render_slot/dispatch
 - host-call envelope
 - full plugin export macro via `export_plugin!()`
 - lower-level allocator export macro via `export_allocators!()`
@@ -20,6 +20,7 @@ the SDK macro:
 fn manifest() -> PluginManifestEnvelope { /* ... */ }
 fn load(request: &PluginLoadRequest) -> serde_json::Value { /* ... */ }
 fn render(request: &PluginRenderRequest) -> ScreenNode { /* ... */ }
+fn render_slot(request: &PluginRenderSlotRequest) -> PluginRenderSlotResponse { /* ... */ }
 fn dispatch(request: &PluginDispatchRequest) -> PluginDispatchResponse { /* ... */ }
 
 unode_sdk::export_plugin! {
@@ -27,10 +28,13 @@ unode_sdk::export_plugin! {
     load: load,
     render: render,
     dispatch: dispatch,
+    render_slot: render_slot,
 }
 ```
 
-The macro generates the raw C ABI exports. The host contract does not change.
+The macro generates the raw C ABI exports. Plugins without slot UI can omit
+`render_slot`; the macro still exports `plugin_render_slot` and returns
+`{ "nodes": [] }`.
 
 ## Host packages
 
@@ -117,8 +121,8 @@ need to provide:
 - builder helpers that mirror the Rust DSL closely enough for examples to look
   familiar;
 - a small ABI shim that implements `plugin_manifest`, `plugin_load`,
-  `plugin_render`, `plugin_dispatch`, result-length exports, allocation, JSON
-  encoding/decoding, and `host_call` wrappers;
+  `plugin_render`, `plugin_render_slot`, `plugin_dispatch`, result-length
+  exports, allocation, JSON encoding/decoding, and `host_call` wrappers;
 - golden tests proving a Rust-authored plugin and a TypeScript-authored plugin
   can produce equivalent JSON for the same screen.
 
@@ -211,13 +215,16 @@ The lowest-risk path is:
 ## Component Model compatibility
 
 Unode should evolve toward Component Model/WIT compatibility without breaking the
-raw ABI above. The first step is a JSON-preserving WIT contract that mirrors the
-current lifecycle:
+raw ABI above. The current JSON-preserving WIT contract mirrors the complete
+raw ABI lifecycle:
 
 ```wit
+package unode:plugin@0.2.0;
+
 manifest: func() -> string
 load: func(request-json: string) -> string
 render: func(request-json: string) -> string
+render-slot: func(request-json: string) -> string
 dispatch: func(request-json: string) -> string
 ```
 
@@ -227,3 +234,27 @@ Component Model support can then be added as a second loading path, not as an
 immediate replacement for pointer/length raw modules.
 
 See `COMPONENT-MODEL.md` and `../wit/unode-plugin.wit` for the staged plan.
+
+## Raw ABI 0.2.0 exports
+
+Every raw plugin module exports:
+
+```text
+unode_alloc(len) -> ptr
+unode_dealloc(ptr, len)
+plugin_abi_version() -> nul-terminated "0.2.0"
+plugin_manifest() -> ptr
+plugin_manifest_len() -> len
+plugin_load(request_ptr, request_len) -> ptr
+plugin_load_result_len() -> len
+plugin_render(request_ptr, request_len) -> ptr
+plugin_render_result_len() -> len
+plugin_render_slot(request_ptr, request_len) -> ptr
+plugin_render_slot_result_len() -> len
+plugin_dispatch(request_ptr, request_len) -> ptr
+plugin_dispatch_result_len() -> len
+```
+
+`plugin_render_slot` uses the same pointer/length, allocation, result-length,
+and JSON conventions as `plugin_render`. The host validates the ABI version and
+all required exports before reading and validating the manifest.

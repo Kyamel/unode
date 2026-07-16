@@ -1,4 +1,4 @@
-package unode:plugin@0.1.0;
+package unode:plugin@0.2.0;
 
 /// Initial Component Model shape for Unode plugins.
 ///
@@ -15,6 +15,9 @@ interface lifecycle {
 
     /// Receives PluginRenderRequest JSON and returns ScreenNode JSON.
     render: func(request-json: string) -> string;
+
+    /// Receives PluginRenderSlotRequest JSON and returns PluginRenderSlotResponse JSON.
+    render-slot: func(request-json: string) -> string;
 
     /// Receives PluginDispatchRequest JSON and returns PluginDispatchResponse JSON.
     dispatch: func(request-json: string) -> string;

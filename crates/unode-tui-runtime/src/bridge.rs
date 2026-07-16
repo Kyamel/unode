@@ -22,6 +22,12 @@ pub trait TuiGuestInstance {
         request_len: u32,
     ) -> Result<u32, TuiAbiBridgeError>;
     fn plugin_render_result_len(&mut self) -> Result<u32, TuiAbiBridgeError>;
+    fn plugin_render_slot(
+        &mut self,
+        request_ptr: u32,
+        request_len: u32,
+    ) -> Result<u32, TuiAbiBridgeError>;
+    fn plugin_render_slot_result_len(&mut self) -> Result<u32, TuiAbiBridgeError>;
     fn plugin_dispatch(
         &mut self,
         request_ptr: u32,
@@ -116,19 +122,25 @@ impl<G: TuiGuestInstance> TuiPluginBridge<G> {
         Req: Serialize,
         Resp: DeserializeOwned,
     {
-        let request_bytes = encode_json_bytes(request)?;
-        let request_ptr = self.guest.alloc(request_bytes.len() as u32)?;
-        self.guest.write_memory(request_ptr, &request_bytes)?;
+        self.call_json_export(
+            request,
+            |guest, ptr, len| guest.plugin_render(ptr, len),
+            |guest| guest.plugin_render_result_len(),
+        )
+    }
 
-        let result_ptr = self
-            .guest
-            .plugin_render(request_ptr, request_bytes.len() as u32)?;
-        self.guest
-            .dealloc(request_ptr, request_bytes.len() as u32)?;
-        let result_len = self.guest.plugin_render_result_len()?;
-        let result_bytes = self.guest.read_memory(result_ptr, result_len)?;
-        self.guest.dealloc(result_ptr, result_len)?;
-        decode_json_bytes(&result_bytes).map_err(TuiAbiBridgeError::from)
+    pub fn call_plugin_render_slot<Resp>(
+        &mut self,
+        request: &unode_sdk::PluginRenderSlotRequest,
+    ) -> Result<Resp, TuiAbiBridgeError>
+    where
+        Resp: DeserializeOwned,
+    {
+        self.call_json_export(
+            request,
+            |guest, ptr, len| guest.plugin_render_slot(ptr, len),
+            |guest| guest.plugin_render_slot_result_len(),
+        )
     }
 
     pub fn call_plugin_load<Req, Resp>(&mut self, request: &Req) -> Result<Resp, TuiAbiBridgeError>
@@ -136,19 +148,11 @@ impl<G: TuiGuestInstance> TuiPluginBridge<G> {
         Req: Serialize,
         Resp: DeserializeOwned,
     {
-        let request_bytes = encode_json_bytes(request)?;
-        let request_ptr = self.guest.alloc(request_bytes.len() as u32)?;
-        self.guest.write_memory(request_ptr, &request_bytes)?;
-
-        let result_ptr = self
-            .guest
-            .plugin_load(request_ptr, request_bytes.len() as u32)?;
-        self.guest
-            .dealloc(request_ptr, request_bytes.len() as u32)?;
-        let result_len = self.guest.plugin_load_result_len()?;
-        let result_bytes = self.guest.read_memory(result_ptr, result_len)?;
-        self.guest.dealloc(result_ptr, result_len)?;
-        decode_json_bytes(&result_bytes).map_err(TuiAbiBridgeError::from)
+        self.call_json_export(
+            request,
+            |guest, ptr, len| guest.plugin_load(ptr, len),
+            |guest| guest.plugin_load_result_len(),
+        )
     }
 
     pub fn call_plugin_dispatch<Resp>(
@@ -158,16 +162,31 @@ impl<G: TuiGuestInstance> TuiPluginBridge<G> {
     where
         Resp: DeserializeOwned,
     {
+        self.call_json_export(
+            request,
+            |guest, ptr, len| guest.plugin_dispatch(ptr, len),
+            |guest| guest.plugin_dispatch_result_len(),
+        )
+    }
+
+    fn call_json_export<Req, Resp>(
+        &mut self,
+        request: &Req,
+        call: impl FnOnce(&mut G, u32, u32) -> Result<u32, TuiAbiBridgeError>,
+        result_len: impl FnOnce(&mut G) -> Result<u32, TuiAbiBridgeError>,
+    ) -> Result<Resp, TuiAbiBridgeError>
+    where
+        Req: Serialize,
+        Resp: DeserializeOwned,
+    {
         let request_bytes = encode_json_bytes(request)?;
         let request_ptr = self.guest.alloc(request_bytes.len() as u32)?;
         self.guest.write_memory(request_ptr, &request_bytes)?;
 
-        let result_ptr = self
-            .guest
-            .plugin_dispatch(request_ptr, request_bytes.len() as u32)?;
+        let result_ptr = call(&mut self.guest, request_ptr, request_bytes.len() as u32)?;
         self.guest
             .dealloc(request_ptr, request_bytes.len() as u32)?;
-        let result_len = self.guest.plugin_dispatch_result_len()?;
+        let result_len = result_len(&mut self.guest)?;
         let result_bytes = self.guest.read_memory(result_ptr, result_len)?;
         self.guest.dealloc(result_ptr, result_len)?;
         decode_json_bytes(&result_bytes).map_err(TuiAbiBridgeError::from)
@@ -193,10 +212,11 @@ mod tests {
     use std::collections::BTreeMap;
 
     use serde_json::{Value as JsonValue, json};
+    use unode::core::dsl::IntoNode;
     use unode::core::runtime::ResolvedRoute;
     use unode_sdk::{
         HostCallEnvelope, PluginDispatchOutcome, PluginDispatchResponse, PluginManifestEnvelope,
-        PluginRenderRequest, UNODE_PLUGIN_ABI_VERSION, plugin_manifest,
+        PluginRenderRequest, PluginRenderSlotResponse, UNODE_PLUGIN_ABI_VERSION, plugin_manifest,
     };
 
     use super::{TuiAbiBridgeError, TuiGuestInstance, TuiHostImportAdapter, TuiPluginBridge};
@@ -209,6 +229,7 @@ mod tests {
         manifest_len: u32,
         load_len: u32,
         render_len: u32,
+        render_slot_len: u32,
         dispatch_len: u32,
     }
 
@@ -219,6 +240,7 @@ mod tests {
                 manifest_len: 0,
                 load_len: 0,
                 render_len: 0,
+                render_slot_len: 0,
                 dispatch_len: 0,
             }
         }
@@ -303,6 +325,35 @@ mod tests {
 
         fn plugin_render_result_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
             Ok(self.render_len)
+        }
+
+        fn plugin_render_slot(
+            &mut self,
+            request_ptr: u32,
+            request_len: u32,
+        ) -> Result<u32, TuiAbiBridgeError> {
+            let request = read_json::<unode_sdk::PluginRenderSlotRequest>(
+                &self.memory,
+                request_ptr,
+                request_len,
+            )
+            .expect("render slot request");
+            let response = PluginRenderSlotResponse {
+                nodes: vec![
+                    unode::core::dsl::text(format!(
+                        "{}:{}",
+                        request.slot_name, request.contribution_id
+                    ))
+                    .into_node(),
+                ],
+            };
+            let bytes = serde_json::to_vec(&response).expect("render slot response");
+            self.render_slot_len = bytes.len() as u32;
+            Ok(self.write_guest_bytes(&bytes))
+        }
+
+        fn plugin_render_slot_result_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
+            Ok(self.render_slot_len)
         }
 
         fn plugin_dispatch(
@@ -429,6 +480,24 @@ mod tests {
                 data: None,
             }
         );
+    }
+
+    #[test]
+    fn calls_plugin_render_slot_through_guest_exports() {
+        let mut bridge = bridge();
+        let response = bridge
+            .call_plugin_render_slot::<PluginRenderSlotResponse>(
+                &unode_sdk::PluginRenderSlotRequest {
+                    contribution_id: "reviews-summary".to_string(),
+                    slot_name: "catalog.work-detail:footer".to_string(),
+                    route: ResolvedRoute::default(),
+                    state_snapshot: BTreeMap::new(),
+                    locale: Some("en".to_string()),
+                },
+            )
+            .expect("render slot");
+
+        assert_eq!(response.nodes.len(), 1);
     }
 
     #[test]

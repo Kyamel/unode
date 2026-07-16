@@ -49,6 +49,8 @@ pub enum TuiLoaderError {
     AbiVersionMismatch { expected: String, found: String },
     #[error("plugin is missing required export `{0}`")]
     MissingRequiredExport(String),
+    #[error("plugin manifest is invalid: {0}")]
+    InvalidManifest(String),
 }
 
 impl TuiPluginDescriptor {
@@ -65,6 +67,11 @@ impl TuiPluginDescriptor {
                 return Err(TuiLoaderError::MissingRequiredExport(export.to_string()));
             }
         }
+
+        self.manifest
+            .manifest
+            .validate_slot_contributions()
+            .map_err(|err| TuiLoaderError::InvalidManifest(err.to_string()))?;
 
         Ok(())
     }
@@ -139,6 +146,30 @@ mod tests {
         assert!(matches!(
             loader.prepare(descriptor),
             Err(TuiLoaderError::MissingRequiredExport(export)) if export == "plugin_render"
+        ));
+    }
+
+    #[test]
+    fn rejects_missing_render_slot_export() {
+        let loader = TuiPluginLoader::new(TuiLoaderConfig::default());
+        let mut descriptor = descriptor();
+        descriptor.exports.remove("plugin_render_slot");
+
+        assert!(matches!(
+            loader.prepare(descriptor),
+            Err(TuiLoaderError::MissingRequiredExport(export)) if export == "plugin_render_slot"
+        ));
+    }
+
+    #[test]
+    fn rejects_old_abi_version() {
+        let loader = TuiPluginLoader::new(TuiLoaderConfig::default());
+        let mut descriptor = descriptor();
+        descriptor.manifest.abi_version = "0.1.0".to_string();
+
+        assert!(matches!(
+            loader.prepare(descriptor),
+            Err(TuiLoaderError::AbiVersionMismatch { found, .. }) if found == "0.1.0"
         ));
     }
 }

@@ -1,4 +1,5 @@
 use unode::core::permissions::PermissionGuard;
+use unode::core::slot::SlotRegistry;
 
 use crate::host::RuntimeSandbox;
 use crate::registry::{ActionRegistry, CommandRegistry, NavigationRegistry, RouteRegistry};
@@ -45,6 +46,7 @@ pub struct HostedRuntime<Ctx> {
     pub navigation: NavigationRegistry,
     pub commands: CommandRegistry<Ctx>,
     pub actions: ActionRegistry<Ctx>,
+    pub slots: SlotRegistry,
 }
 
 impl<Ctx> HostedRuntime<Ctx> {
@@ -62,6 +64,7 @@ impl<Ctx> HostedRuntime<Ctx> {
             navigation: NavigationRegistry::default(),
             commands: CommandRegistry::default(),
             actions: ActionRegistry::default(),
+            slots: SlotRegistry::default(),
         }
     }
 }

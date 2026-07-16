@@ -9,7 +9,7 @@ pub const UNODE_AST_VERSION: &str = "2.0.0-alpha.1";
 // Generic Expression Types
 
 /// Expression form used for route params, local bindings, and literals.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind")]
 #[serde(rename_all = "camelCase")]
 pub enum UiExpr<T> {
@@ -19,7 +19,7 @@ pub enum UiExpr<T> {
 }
 
 /// Represents a value that can either be a direct value or a `UiExpr`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum OneOrExpr<T> {
     Value(T),
@@ -180,7 +180,7 @@ pub enum MediaKind {
     Thumbnail,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum ActionType {
     Core(CoreActionType),
@@ -200,7 +200,7 @@ pub enum CoreActionType {
 // Core AST Structures
 
 /// Shared node metadata.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeBase {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -210,7 +210,7 @@ pub struct NodeBase {
 }
 
 /// Symbolic action reference interpreted by the runtime or renderer.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionRef {
     pub r#type: ActionType,
@@ -220,7 +220,7 @@ pub struct ActionRef {
     pub confirm: Option<ActionConfirm>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionConfirm {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -229,7 +229,7 @@ pub struct ActionConfirm {
 }
 
 /// Reference to a media resource.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type")]
 #[serde(rename_all = "camelCase")]
 pub enum MediaRef {
@@ -252,7 +252,7 @@ pub enum MediaRef {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ResponsiveGridColumns {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -269,7 +269,7 @@ pub struct ResponsiveGridColumns {
 
 // UI Node Definitions
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind")]
 #[serde(rename_all = "camelCase")]
 pub enum UiNode {
@@ -301,7 +301,7 @@ pub enum UiNode {
 }
 
 /// Root screen node returned from plugin `render()`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ScreenNode {
     #[serde(flatten)]
@@ -319,7 +319,7 @@ pub struct ScreenNode {
     pub children: Vec<UiNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SectionNode {
     #[serde(flatten)]
@@ -333,7 +333,7 @@ pub struct SectionNode {
     pub children: Vec<UiNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StackNode {
     #[serde(flatten)]
@@ -343,7 +343,7 @@ pub struct StackNode {
     pub children: Vec<UiNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct InlineNode {
     #[serde(flatten)]
@@ -357,7 +357,7 @@ pub struct InlineNode {
     pub children: Vec<UiNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GridNode {
     #[serde(flatten)]
@@ -373,7 +373,7 @@ pub struct GridNode {
     pub children: Vec<UiNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ScrollNode {
     #[serde(flatten)]
@@ -381,7 +381,7 @@ pub struct ScrollNode {
     pub children: Vec<UiNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TextNode {
     #[serde(flatten)]
@@ -397,7 +397,7 @@ pub struct TextNode {
     pub truncate: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ValueNode {
     #[serde(flatten)]
@@ -412,7 +412,7 @@ pub struct ValueNode {
     pub tone: Option<Tone>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct IconNode {
     #[serde(flatten)]
@@ -423,7 +423,7 @@ pub struct IconNode {
     pub tone: Option<Tone>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct BadgeNode {
     #[serde(flatten)]
@@ -433,7 +433,7 @@ pub struct BadgeNode {
     pub tone: Option<Tone>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DividerNode {
     #[serde(flatten)]
@@ -442,7 +442,7 @@ pub struct DividerNode {
     pub label: Option<StringOrExpr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MediaNode {
     #[serde(flatten)]
@@ -456,7 +456,7 @@ pub struct MediaNode {
     pub expandable: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PressableNode {
     #[serde(flatten)]
@@ -467,7 +467,7 @@ pub struct PressableNode {
     pub label: Option<StringOrExpr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemNode {
     // Note: No `base` field. `id` is mandatory and not part of `NodeBase`.
@@ -485,7 +485,7 @@ pub struct ItemNode {
     pub action: Option<ActionRef>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind")]
 #[serde(rename_all = "camelCase")]
 pub enum CollectionContinuation {
@@ -493,7 +493,7 @@ pub enum CollectionContinuation {
     Remote(RemoteContinuation),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct IncrementalContinuation {
     pub binding: String,
@@ -503,7 +503,7 @@ pub struct IncrementalContinuation {
     pub label: Option<StringOrExpr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoteContinuation {
     pub has_more: bool,
@@ -514,7 +514,7 @@ pub struct RemoteContinuation {
     pub loading_label: Option<StringOrExpr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ListNode {
     #[serde(flatten)]
@@ -526,7 +526,7 @@ pub struct ListNode {
     pub continuation: Option<CollectionContinuation>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionNode {
     #[serde(flatten)]
@@ -543,7 +543,7 @@ pub struct ActionNode {
     pub disabled: Option<BoolOrExpr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionsNode {
     #[serde(flatten)]
@@ -553,7 +553,7 @@ pub struct ActionsNode {
     pub children: Vec<ActionNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DisclosureNode {
     #[serde(flatten)]
@@ -565,7 +565,7 @@ pub struct DisclosureNode {
     pub children: Vec<UiNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuItem {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -578,7 +578,7 @@ pub struct MenuItem {
     pub disabled: Option<BoolOrExpr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuNode {
     #[serde(flatten)]
@@ -591,7 +591,7 @@ pub struct MenuNode {
     pub align: Option<Align>, // Exclude "center"
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectChoice {
     pub label: String,
@@ -600,7 +600,7 @@ pub struct SelectChoice {
     pub disabled: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct InputConstraints {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -615,7 +615,7 @@ pub struct InputConstraints {
     pub pattern: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct InputNode {
     #[serde(flatten)]
@@ -639,7 +639,7 @@ pub struct InputNode {
     pub constraints: Option<InputConstraints>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct FormNode {
     #[serde(flatten)]
@@ -650,7 +650,7 @@ pub struct FormNode {
     pub submit: Option<ActionRef>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StatusNode {
     #[serde(flatten)]
@@ -663,7 +663,7 @@ pub struct StatusNode {
     pub actions: Vec<ActionNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EmptyStateNode {
     #[serde(flatten)]
@@ -677,7 +677,7 @@ pub struct EmptyStateNode {
     pub actions: Vec<ActionNode>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct LoadingNode {
     #[serde(flatten)]
@@ -688,7 +688,7 @@ pub struct LoadingNode {
     pub progress: Option<NumberOrExpr>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConditionalNode {
     #[serde(flatten)]
@@ -699,7 +699,7 @@ pub struct ConditionalNode {
     pub r#else: Option<Box<UiNode>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SlotNode {
     #[serde(flatten)]

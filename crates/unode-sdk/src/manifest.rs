@@ -1,5 +1,5 @@
 use unode::core::permissions::PermissionRequest;
-use unode::core::runtime::{PluginManifest, UNODE_CORE_API_VERSION};
+use unode::core::runtime::{PluginManifest, SlotContributionDecl, UNODE_CORE_API_VERSION};
 
 /// Starts a plugin permission request builder.
 ///
@@ -122,6 +122,19 @@ impl PluginManifestBuilder {
 
     pub fn host_id(mut self, host_id: impl Into<String>) -> Self {
         self.manifest.host_id = Some(host_id.into());
+        self
+    }
+
+    pub fn slot_contribution(mut self, contribution: SlotContributionDecl) -> Self {
+        self.manifest.slot_contributions.push(contribution);
+        self
+    }
+
+    pub fn slot_contributions<I>(mut self, contributions: I) -> Self
+    where
+        I: IntoIterator<Item = SlotContributionDecl>,
+    {
+        self.manifest.slot_contributions.extend(contributions);
         self
     }
 

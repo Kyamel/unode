@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 
 use crate::core::ast::*;
+use crate::core::slot::NodeOrigin;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -64,6 +65,8 @@ pub struct CanonicalMetadata {
     pub structural_dependencies: Vec<StructuralDependency>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub static_fields: BTreeMap<String, Primitive>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin: Option<NodeOrigin>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

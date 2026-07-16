@@ -5,9 +5,10 @@ use serde_json::Value as JsonValue;
 use thiserror::Error;
 use unode::core::ast::ActionRef;
 use unode::core::runtime::{PluginManifest, ResolvedRoute};
+pub use unode::core::slot::{PluginRenderSlotRequest, PluginRenderSlotResponse};
 
-pub const UNODE_PLUGIN_ABI_VERSION: &str = "0.1.0";
-pub const UNODE_PLUGIN_ABI_VERSION_BYTES: &[u8] = b"0.1.0\0";
+pub const UNODE_PLUGIN_ABI_VERSION: &str = "0.2.0";
+pub const UNODE_PLUGIN_ABI_VERSION_BYTES: &[u8] = b"0.2.0\0";
 
 pub const EXPORT_UNODE_ALLOC: &str = "unode_alloc";
 pub const EXPORT_UNODE_DEALLOC: &str = "unode_dealloc";
@@ -18,12 +19,14 @@ pub const EXPORT_PLUGIN_LOAD: &str = "plugin_load";
 pub const EXPORT_PLUGIN_LOAD_RESULT_LEN: &str = "plugin_load_result_len";
 pub const EXPORT_PLUGIN_RENDER: &str = "plugin_render";
 pub const EXPORT_PLUGIN_RENDER_RESULT_LEN: &str = "plugin_render_result_len";
+pub const EXPORT_PLUGIN_RENDER_SLOT: &str = "plugin_render_slot";
+pub const EXPORT_PLUGIN_RENDER_SLOT_RESULT_LEN: &str = "plugin_render_slot_result_len";
 pub const EXPORT_PLUGIN_DISPATCH: &str = "plugin_dispatch";
 pub const EXPORT_PLUGIN_DISPATCH_RESULT_LEN: &str = "plugin_dispatch_result_len";
 pub const IMPORT_HOST_CALL: &str = "host_call";
 pub const IMPORT_HOST_CALL_RESULT_LEN: &str = "host_call_result_len";
 
-pub const REQUIRED_EXPORTS: [&str; 11] = [
+pub const REQUIRED_EXPORTS: [&str; 13] = [
     EXPORT_UNODE_ALLOC,
     EXPORT_UNODE_DEALLOC,
     EXPORT_PLUGIN_ABI_VERSION,
@@ -33,6 +36,8 @@ pub const REQUIRED_EXPORTS: [&str; 11] = [
     EXPORT_PLUGIN_LOAD_RESULT_LEN,
     EXPORT_PLUGIN_RENDER,
     EXPORT_PLUGIN_RENDER_RESULT_LEN,
+    EXPORT_PLUGIN_RENDER_SLOT,
+    EXPORT_PLUGIN_RENDER_SLOT_RESULT_LEN,
     EXPORT_PLUGIN_DISPATCH,
     EXPORT_PLUGIN_DISPATCH_RESULT_LEN,
 ];
@@ -188,6 +193,7 @@ macro_rules! export_plugin {
         manifest: $manifest:expr,
         load: $load:expr,
         render: $render:expr,
+        render_slot: $render_slot:expr,
         dispatch: $dispatch:expr $(,)?
     ) => {
         $crate::export_allocators!();
@@ -196,6 +202,7 @@ macro_rules! export_plugin {
             static __UNODE_MANIFEST_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
             static __UNODE_LOAD_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
             static __UNODE_RENDER_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
+            static __UNODE_RENDER_SLOT_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
             static __UNODE_DISPATCH_BUFFER_LEN: ::std::cell::Cell<u32> = const { ::std::cell::Cell::new(0) };
         }
 
@@ -289,6 +296,22 @@ macro_rules! export_plugin {
         }
 
         #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_render_slot(request_ptr: u32, request_len: u32) -> u32 {
+            let request = __unode_decode_guest_json::<$crate::PluginRenderSlotRequest>(
+                request_ptr,
+                request_len,
+            );
+            __unode_with_output_buffer(&__UNODE_RENDER_SLOT_BUFFER_LEN, || {
+                __unode_json_or_error(&($render_slot)(&request))
+            })
+        }
+
+        #[unsafe(no_mangle)]
+        pub extern "C" fn plugin_render_slot_result_len() -> u32 {
+            __unode_output_len(&__UNODE_RENDER_SLOT_BUFFER_LEN)
+        }
+
+        #[unsafe(no_mangle)]
         pub extern "C" fn plugin_dispatch(request_ptr: u32, request_len: u32) -> u32 {
             let request = __unode_decode_guest_json::<$crate::PluginDispatchRequest>(
                 request_ptr,
@@ -304,6 +327,37 @@ macro_rules! export_plugin {
             __unode_output_len(&__UNODE_DISPATCH_BUFFER_LEN)
         }
     };
+    (
+        manifest: $manifest:expr,
+        load: $load:expr,
+        render: $render:expr,
+        dispatch: $dispatch:expr,
+        render_slot: $render_slot:expr $(,)?
+    ) => {
+        $crate::export_plugin! {
+            manifest: $manifest,
+            load: $load,
+            render: $render,
+            render_slot: $render_slot,
+            dispatch: $dispatch,
+        }
+    };
+    (
+        manifest: $manifest:expr,
+        load: $load:expr,
+        render: $render:expr,
+        dispatch: $dispatch:expr $(,)?
+    ) => {
+        $crate::export_plugin! {
+            manifest: $manifest,
+            load: $load,
+            render: $render,
+            render_slot: |_request: &$crate::PluginRenderSlotRequest| {
+                $crate::PluginRenderSlotResponse { nodes: ::std::vec::Vec::new() }
+            },
+            dispatch: $dispatch,
+        }
+    };
 }
 
 #[cfg(test)]
@@ -313,9 +367,11 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        HostCallEnvelope, PluginDispatchOutcome, PluginDispatchRequest, PluginDispatchResponse,
-        PluginManifestEnvelope, PluginRenderRequest, UNODE_PLUGIN_ABI_VERSION, decode_json_bytes,
-        encode_json_bytes,
+        EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_LOAD, EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_RENDER,
+        EXPORT_PLUGIN_RENDER_SLOT, HostCallEnvelope, PluginDispatchOutcome, PluginDispatchRequest,
+        PluginDispatchResponse, PluginManifestEnvelope, PluginRenderRequest,
+        PluginRenderSlotRequest, PluginRenderSlotResponse, REQUIRED_EXPORTS,
+        UNODE_PLUGIN_ABI_VERSION, decode_json_bytes, encode_json_bytes,
     };
     use crate::plugin_manifest;
     use unode::core::ast::{ActionRef, ActionType};
@@ -331,6 +387,13 @@ mod tests {
         let bytes = encode_json_bytes(&envelope).expect("encode");
         let decoded = decode_json_bytes::<PluginManifestEnvelope>(&bytes).expect("decode");
         assert_eq!(decoded, envelope);
+    }
+
+    #[test]
+    fn abi_version_and_required_exports_include_slots() {
+        assert_eq!(UNODE_PLUGIN_ABI_VERSION, "0.2.0");
+        assert!(REQUIRED_EXPORTS.contains(&EXPORT_PLUGIN_RENDER_SLOT));
+        assert!(REQUIRED_EXPORTS.contains(&"plugin_render_slot_result_len"));
     }
 
     #[test]
@@ -382,6 +445,24 @@ mod tests {
     }
 
     #[test]
+    fn serializes_default_render_slot_response() {
+        let request = PluginRenderSlotRequest {
+            contribution_id: "reviews-summary".to_string(),
+            slot_name: "catalog.work-detail:footer".to_string(),
+            route: ResolvedRoute::default(),
+            state_snapshot: BTreeMap::new(),
+            locale: None,
+        };
+        let response = PluginRenderSlotResponse::default();
+
+        let request_json = serde_json::to_value(&request).expect("request");
+        let response_json = serde_json::to_value(&response).expect("response");
+
+        assert_eq!(request_json["contributionId"], "reviews-summary");
+        assert_eq!(response_json, json!({ "nodes": [] }));
+    }
+
+    #[test]
     fn serializes_host_call_envelope() {
         let call = HostCallEnvelope {
             operation: "navigation.navigate".to_string(),
@@ -395,5 +476,23 @@ mod tests {
         let decoded = decode_json_bytes::<HostCallEnvelope>(&bytes).expect("decode");
         assert_eq!(decoded.operation, "navigation.navigate");
         assert_eq!(decoded.params.get("to"), Some(&json!("/app/mangas/hot")));
+    }
+
+    #[test]
+    fn raw_abi_and_wit_expose_same_lifecycle_functions() {
+        let wit = include_str!("../../../wit/unode-plugin.wit");
+        for export in [
+            EXPORT_PLUGIN_MANIFEST,
+            EXPORT_PLUGIN_LOAD,
+            EXPORT_PLUGIN_RENDER,
+            EXPORT_PLUGIN_RENDER_SLOT,
+            EXPORT_PLUGIN_DISPATCH,
+        ] {
+            let wit_name = export.strip_prefix("plugin_").unwrap().replace('_', "-");
+            assert!(
+                wit.contains(&format!("{wit_name}: func")),
+                "missing {wit_name} in WIT"
+            );
+        }
     }
 }

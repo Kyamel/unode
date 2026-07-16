@@ -6,9 +6,10 @@ A plugin is a WASM module that exports:
 
 ```
 plugin_manifest()           → manifest JSON string
-plugin_load(route_json)     → data JSON string (merged into StateStore)
-plugin_render(data_json)    → CanonicalScreen JSON string
-plugin_dispatch(action_json) (no return — side effects via host functions)
+plugin_load(request_json)    → data JSON string
+plugin_render(request_json)  → ScreenNode JSON string
+plugin_render_slot(request_json) → PluginRenderSlotResponse JSON string
+plugin_dispatch(request_json) → PluginDispatchResponse JSON string
 ```
 
 In Rust, plugin authors use `unode-sdk` which hides the WASM export
@@ -99,18 +100,25 @@ build navigation menus, command palettes, and slot contributions.
    → assigns structural _key fallbacks
    // Also merges screen.initialState into StateStore
 
-7. Track bindings
+7. Resolve slots
+   resolve_slots(canonical_screen, slot_registry, ctx, renderer)
+   → evaluates manifest-declared slot contribution `when` expressions
+   → calls contributing plugins through plugin_render_slot()
+   → normalizes returned UiNodes
+   → preserves contributor origin for action/capability routing
+
+8. Track bindings
    track_reactive_bindings(screen, resolver, state, on_patch)
    → walks static-skipping tree
    → registers path subscriptions
 
-8. Lower + mount
+9. Lower + mount
    lower_screen(canonical_screen)
    renderer.mount(ir_screen)
    → Web: keyed framework adapter (React in the current vertical slice)
    → TUI: Ratatui widget layout
 
-9. Reactive loop
+10. Reactive loop
    on user interaction:
      → dispatch ActionRef to plugin.dispatch()
      → plugin calls host functions (state.set, navigate, etc.)
@@ -119,7 +127,7 @@ build navigation menus, command palettes, and slot contributions.
      → plan_patch_ops(...) produces targeted patch ops
      → renderer applies only those patches
 
-10. Teardown on navigation
+11. Teardown on navigation
     subscriptions.teardown()
     state.reset()
     // WASM instance may be kept in a pool for reuse

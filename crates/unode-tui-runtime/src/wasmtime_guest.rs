@@ -10,8 +10,9 @@ use wasmtime::{
 use unode_sdk::{
     EXPORT_PLUGIN_DISPATCH, EXPORT_PLUGIN_DISPATCH_RESULT_LEN, EXPORT_PLUGIN_LOAD,
     EXPORT_PLUGIN_LOAD_RESULT_LEN, EXPORT_PLUGIN_MANIFEST, EXPORT_PLUGIN_MANIFEST_LEN,
-    EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_UNODE_ALLOC,
-    EXPORT_UNODE_DEALLOC, IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN,
+    EXPORT_PLUGIN_RENDER, EXPORT_PLUGIN_RENDER_RESULT_LEN, EXPORT_PLUGIN_RENDER_SLOT,
+    EXPORT_PLUGIN_RENDER_SLOT_RESULT_LEN, EXPORT_UNODE_ALLOC, EXPORT_UNODE_DEALLOC,
+    IMPORT_HOST_CALL, IMPORT_HOST_CALL_RESULT_LEN,
 };
 
 use crate::bridge::{TuiAbiBridgeError, TuiGuestInstance, TuiHostImportAdapter, TuiPluginBridge};
@@ -40,6 +41,8 @@ pub struct WasmtimeGuest {
     plugin_load_result_len: TypedFunc<(), u32>,
     plugin_render: TypedFunc<(u32, u32), u32>,
     plugin_render_result_len: TypedFunc<(), u32>,
+    plugin_render_slot: TypedFunc<(u32, u32), u32>,
+    plugin_render_slot_result_len: TypedFunc<(), u32>,
     plugin_dispatch: TypedFunc<(u32, u32), u32>,
     plugin_dispatch_result_len: TypedFunc<(), u32>,
     enable_fuel_metering: bool,
@@ -220,6 +223,10 @@ impl CompiledWasmtimePlugin {
             instance.get_typed_func::<(u32, u32), u32>(&mut store, EXPORT_PLUGIN_RENDER)?;
         let plugin_render_result_len =
             instance.get_typed_func::<(), u32>(&mut store, EXPORT_PLUGIN_RENDER_RESULT_LEN)?;
+        let plugin_render_slot =
+            instance.get_typed_func::<(u32, u32), u32>(&mut store, EXPORT_PLUGIN_RENDER_SLOT)?;
+        let plugin_render_slot_result_len =
+            instance.get_typed_func::<(), u32>(&mut store, EXPORT_PLUGIN_RENDER_SLOT_RESULT_LEN)?;
         let plugin_dispatch =
             instance.get_typed_func::<(u32, u32), u32>(&mut store, EXPORT_PLUGIN_DISPATCH)?;
         let plugin_dispatch_result_len =
@@ -239,6 +246,8 @@ impl CompiledWasmtimePlugin {
             plugin_load_result_len,
             plugin_render,
             plugin_render_result_len,
+            plugin_render_slot,
+            plugin_render_slot_result_len,
             plugin_dispatch,
             plugin_dispatch_result_len,
             enable_fuel_metering: self.enable_fuel_metering,
@@ -338,6 +347,24 @@ impl TuiGuestInstance for WasmtimeGuest {
     fn plugin_render_result_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
         self.refuel_export_call()?;
         self.plugin_render_result_len
+            .call(&mut self.store, ())
+            .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
+    }
+
+    fn plugin_render_slot(
+        &mut self,
+        request_ptr: u32,
+        request_len: u32,
+    ) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
+        self.plugin_render_slot
+            .call(&mut self.store, (request_ptr, request_len))
+            .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
+    }
+
+    fn plugin_render_slot_result_len(&mut self) -> Result<u32, TuiAbiBridgeError> {
+        self.refuel_export_call()?;
+        self.plugin_render_slot_result_len
             .call(&mut self.store, ())
             .map_err(|err| TuiAbiBridgeError::Guest(err.to_string()))
     }
