@@ -4,9 +4,9 @@
 # Recommended:
 #   nix-shell --run ./build.sh
 #
-# This keeps the artifacts consumed by MGN and the web demos in sync with the
-# Rust sources: workspace crates, plugin WASM builds, wasm-bindgen web-host
-# bindings, and copied demo plugin binaries.
+# This keeps the artifacts consumed by MGN, the web demos, and the website
+# playground in sync with the Rust sources: workspace crates, plugin WASM
+# builds, wasm-bindgen web-host bindings, and copied browser plugin binaries.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,6 +41,18 @@ build_plugin_wasm() {
     --release
 }
 
+plugin_package_name() {
+  local manifest="$1"
+  awk -F '"' '/^name =/ { print $2; exit }' "$manifest"
+}
+
+plugin_wasm_name() {
+  local manifest="$1"
+  local package_name
+  package_name="$(plugin_package_name "$manifest")"
+  printf '%s.wasm\n' "${package_name//-/_}"
+}
+
 generate_web_host_bindings() {
   local runtime_dir="$1"
   local runtime_name="$2"
@@ -51,6 +63,20 @@ generate_web_host_bindings() {
     --out-dir "$runtime_dir/pkg" \
     --out-name unode_web_host \
     "$ROOT/target/wasm32-unknown-unknown/release/unode_web_host.wasm"
+}
+
+copy_plugin_wasm_to_playground() {
+  local manifest="$1"
+  local plugin_dir
+  local wasm_name
+
+  plugin_dir="$(cd "$(dirname "$manifest")" && pwd)"
+  wasm_name="$(plugin_wasm_name "$manifest")"
+
+  step "Copying $wasm_name into website playground"
+  cp \
+    "$plugin_dir/target/wasm32-unknown-unknown/release/$wasm_name" \
+    "$ROOT/website/src/playground/wasm/$wasm_name"
 }
 
 copy_web_counter_demo_wasm() {
@@ -68,20 +94,30 @@ cd "$ROOT"
 require_cmd cargo
 require_cmd wasm-bindgen
 
+mkdir -p "$ROOT/website/src/playground/pkg" "$ROOT/website/src/playground/wasm"
+
 step "Building Rust workspace (all targets)"
 cargo build --workspace --all-targets
 
-build_plugin_wasm "$ROOT/plugins/sanity-check/Cargo.toml" "sanity-check"
-build_plugin_wasm "$ROOT/plugins/web-counter/Cargo.toml" "web-counter"
+mapfile -t plugin_manifests < <(find "$ROOT/plugins" -mindepth 2 -maxdepth 2 -name Cargo.toml | sort)
+for manifest in "${plugin_manifests[@]}"; do
+  plugin_name="$(basename "$(dirname "$manifest")")"
+  build_plugin_wasm "$manifest" "$plugin_name"
+done
 
 step "Building unode-web-host WASM (release)"
 cargo build -p unode-web-host --target wasm32-unknown-unknown --release
 
 generate_web_host_bindings "$ROOT/examples/web-react" "React"
 generate_web_host_bindings "$ROOT/examples/web-svelte" "Svelte"
+generate_web_host_bindings "$ROOT/website/src/playground" "website playground"
+
+for manifest in "${plugin_manifests[@]}"; do
+  copy_plugin_wasm_to_playground "$manifest"
+done
 
 copy_web_counter_demo_wasm "$ROOT/examples/web-react" "React"
 copy_web_counter_demo_wasm "$ROOT/examples/web-svelte" "Svelte"
 
 step "Done"
-echo "Artifacts are in sync for MGN, web-react, and web-svelte."
+echo "Artifacts are in sync for MGN, web-react, web-svelte, and the website playground."

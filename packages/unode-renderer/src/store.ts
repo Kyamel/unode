@@ -35,7 +35,7 @@ export class ScreenStore {
   private index(node: IrNode): void {
     const key = nodeKey(node);
     if (key) {
-      this.props.set(key, { ...node.p });
+      this.props.set(key, { ...(node.p ?? {}) });
       if (!this.versions.has(key)) this.versions.set(key, 0);
     }
     for (const child of node.c ?? []) this.index(child);
@@ -73,7 +73,7 @@ export class ScreenStore {
 
   snapshotOf(node: IrNode): RendererNodeSnapshot {
     const key = nodeKey(node);
-    const rawProps = key ? this.propsOf(key) : node.p;
+    const rawProps = key ? this.propsOf(key) : (node.p ?? {});
     const replacement = key ? this.replacementOf(key) : undefined;
     const activeNode = replacement && nodeKey(replacement) === key ? replacement : node;
     const children = (key ? this.childrenOverrideOf(key) : undefined) ?? activeNode.c ?? [];

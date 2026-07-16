@@ -8,8 +8,11 @@ use std::collections::BTreeMap;
 
 use serde_json::json;
 
+use unode::core::ast::{ActionRef, ActionType};
 use unode::core::dsl::{self as ui, IntoNode, expr};
-use unode_web_host::WebSessionCore;
+use unode::core::runtime::{PluginManifest, SlotContributionDecl};
+use unode::core::slot::PluginRenderSlotResponse;
+use unode_web_host::{WebSessionCore, session::WebSlotResponseEnvelope};
 
 /// A screen with one reactive line (bound to `ui.count`) and one static line.
 fn counter_screen() -> unode::core::ast::ScreenNode {
@@ -129,6 +132,66 @@ fn unrelated_write_produces_no_patches() {
     assert!(ops.is_empty(), "no node depends on ui.unrelated: {ops:?}");
 }
 
+#[test]
+fn mount_with_slots_preserves_contributor_action_origin() {
+    let mut session = WebSessionCore::new("en");
+    let host_screen = ui::screen()
+        .id("slot-host.screen")
+        .title("Slot host")
+        .child(ui::slot("demo.slot").id("slot-host.anchor"))
+        .build();
+    let contributor_manifest = PluginManifest {
+        id: "plugin.b".to_string(),
+        name: "Plugin B".to_string(),
+        slot_contributions: vec![SlotContributionDecl {
+            id: "inject-button".to_string(),
+            target: "demo.slot".to_string(),
+            priority: 10,
+            when: None,
+        }],
+        ..PluginManifest::default()
+    };
+    let response = WebSlotResponseEnvelope {
+        plugin_id: "plugin.b".to_string(),
+        contribution_id: "inject-button".to_string(),
+        response: PluginRenderSlotResponse {
+            nodes: vec![
+                ui::action(
+                    "Injected",
+                    ActionRef {
+                        r#type: ActionType::Custom("plugin-b.approve".to_string()),
+                        params: None,
+                        confirm: None,
+                    },
+                )
+                .id("approve")
+                .into_node(),
+            ],
+        },
+    };
+
+    let ir = session
+        .mount_with_slots(
+            host_screen,
+            BTreeMap::new(),
+            vec![contributor_manifest],
+            vec![response],
+        )
+        .expect("mount with slots");
+    let json = serde_json::to_value(&ir).expect("ir json");
+    let action = find_node_by_type(&json, "action").expect("injected action");
+
+    assert_eq!(
+        action.pointer("/p/_originPluginId"),
+        Some(&json!("plugin.b")),
+        "contributed actions must keep contributor origin"
+    );
+    assert_eq!(
+        action.pointer("/p/_originContributionId"),
+        Some(&json!("inject-button"))
+    );
+}
+
 /// Walk an IR JSON tree collecting every node key (`p._k`).
 fn collect_keys(node: &serde_json::Value) -> Vec<String> {
     let mut out = Vec::new();
@@ -145,4 +208,24 @@ fn collect_keys(node: &serde_json::Value) -> Vec<String> {
         }
     }
     out
+}
+
+fn find_node_by_type<'a>(
+    node: &'a serde_json::Value,
+    node_type: &str,
+) -> Option<&'a serde_json::Value> {
+    if node.get("t").and_then(|t| t.as_str()) == Some(node_type) {
+        return Some(node);
+    }
+    for child in node
+        .get("c")
+        .and_then(|c| c.as_array())
+        .into_iter()
+        .flatten()
+    {
+        if let Some(found) = find_node_by_type(child, node_type) {
+            return Some(found);
+        }
+    }
+    None
 }

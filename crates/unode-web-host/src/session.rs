@@ -32,8 +32,20 @@ use unode::core::normalize::normalize_screen;
 use unode::core::planner::plan_patch_ops;
 use unode::core::reactive::{BindingSubscriptions, track_reactive_bindings};
 use unode::core::resolver::{DefaultExprResolver, ResolverContext};
-use unode::core::runtime::ResolvedRoute;
+use unode::core::runtime::{PluginId, PluginManifest, ResolvedRoute};
+use unode::core::slot::{
+    PluginRenderSlotRequest, PluginRenderSlotResponse, SlotContributionRenderer, SlotRegistry,
+    SlotRenderError, SlotResolutionContext, resolve_slots,
+};
 use unode::core::state::{MemoryStateStore, StateStore};
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebSlotResponseEnvelope {
+    pub plugin_id: PluginId,
+    pub contribution_id: String,
+    pub response: PluginRenderSlotResponse,
+}
 
 /// One mounted screen's worth of host state: the canonical tree, the store, and
 /// the reactive dependency graph tying state paths to node keys.
@@ -86,14 +98,55 @@ impl WebSessionCore {
         self.state = MemoryStateStore::new(None);
 
         let canonical = normalize_screen(screen)?;
+        self.seed_state(&canonical, seed_state);
+        self.mount_canonical(canonical)
+    }
 
+    pub fn mount_with_slots(
+        &mut self,
+        screen: ScreenNode,
+        seed_state: BTreeMap<String, JsonValue>,
+        manifests: Vec<PluginManifest>,
+        slot_responses: Vec<WebSlotResponseEnvelope>,
+    ) -> Result<IrScreen, String> {
+        if let Some(subs) = self.subscriptions.take() {
+            subs.teardown(&mut self.state);
+        }
+        self.resolver = DefaultExprResolver::default();
+        self.state = MemoryStateStore::new(None);
+
+        let canonical = normalize_screen(screen)?;
+        self.seed_state(&canonical, seed_state);
+
+        let mut registry = SlotRegistry::new();
+        for manifest in &manifests {
+            registry
+                .register_plugin(manifest)
+                .map_err(|error| error.to_string())?;
+        }
+
+        let context = SlotResolutionContext {
+            route: self.route.clone(),
+            state_snapshot: flatten_snapshot(self.state.snapshot()),
+            locale: Some(self.locale.clone()),
+            ..SlotResolutionContext::default()
+        };
+        let mut renderer = ResponseMapSlotRenderer::new(slot_responses);
+        let canonical = resolve_slots(canonical, &registry, &context, &mut renderer)
+            .map_err(|error| error.to_string())?;
+        self.mount_canonical(canonical)
+    }
+
+    fn seed_state(&mut self, canonical: &CanonicalScreen, seed_state: BTreeMap<String, JsonValue>) {
         if let Some(initial) = &canonical.initial_state {
             self.state.merge_data(initial.clone());
         }
         if !seed_state.is_empty() {
             self.state.merge_data(seed_state);
         }
+    }
 
+    fn mount_canonical(&mut self, canonical: CanonicalScreen) -> Result<IrScreen, String> {
         // The tracking walk resolves bindings against a read snapshot while it
         // subscribes on the live store, so the two cannot be the same borrow.
         let read_state = MemoryStateStore::new(Some(self.state.snapshot()));
@@ -181,6 +234,43 @@ impl WebSessionCore {
     /// on the next `dispatch` so action handlers can read current values.
     pub fn state_snapshot(&self) -> BTreeMap<String, JsonValue> {
         flatten_snapshot(self.state.snapshot())
+    }
+}
+
+struct ResponseMapSlotRenderer {
+    responses: BTreeMap<(PluginId, String), PluginRenderSlotResponse>,
+}
+
+impl ResponseMapSlotRenderer {
+    fn new(responses: Vec<WebSlotResponseEnvelope>) -> Self {
+        Self {
+            responses: responses
+                .into_iter()
+                .map(|envelope| {
+                    (
+                        (envelope.plugin_id, envelope.contribution_id),
+                        envelope.response,
+                    )
+                })
+                .collect(),
+        }
+    }
+}
+
+impl SlotContributionRenderer for ResponseMapSlotRenderer {
+    fn render_slot(
+        &mut self,
+        plugin_id: &PluginId,
+        request: &PluginRenderSlotRequest,
+    ) -> Result<PluginRenderSlotResponse, SlotRenderError> {
+        self.responses
+            .remove(&(plugin_id.clone(), request.contribution_id.clone()))
+            .ok_or_else(|| {
+                SlotRenderError::Message(format!(
+                    "missing slot response for {plugin_id}:{}",
+                    request.contribution_id
+                ))
+            })
     }
 }
 

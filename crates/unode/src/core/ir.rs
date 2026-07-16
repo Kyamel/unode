@@ -58,6 +58,9 @@ pub fn lower_screen(screen: &CanonicalScreen) -> IrScreen {
     if let Some(subtitle) = &screen.subtitle {
         p.insert("subtitle".into(), lower_string_or_expr(subtitle));
     }
+    if let Some(route_tabs) = &screen.route_tabs {
+        p.insert("routeTabs".into(), json!(route_tabs));
+    }
 
     inject_meta(&mut p, &screen.meta);
 
@@ -435,10 +438,10 @@ fn lower_item(n: &CanonicalItemNode) -> IrNode {
     inject_meta(&mut p, &n.meta);
 
     let mut c = Vec::new();
-    c.extend(wrap_group("leading", &n.leading));
-    c.extend(wrap_group("primary", &n.primary));
-    c.extend(wrap_group("secondary", &n.secondary));
-    c.extend(wrap_group("trailing", &n.trailing));
+    c.extend(wrap_group(&n.meta.key, "leading", &n.leading));
+    c.extend(wrap_group(&n.meta.key, "primary", &n.primary));
+    c.extend(wrap_group(&n.meta.key, "secondary", &n.secondary));
+    c.extend(wrap_group(&n.meta.key, "trailing", &n.trailing));
 
     IrNode {
         t: "item".into(),
@@ -488,14 +491,17 @@ fn inject_meta(p: &mut BTreeMap<String, JsonValue>, meta: &CanonicalMetadata) {
     }
 }
 
-fn wrap_group(group: &str, nodes: &[CanonicalUiNode]) -> Vec<IrNode> {
+fn wrap_group(parent_key: &str, group: &str, nodes: &[CanonicalUiNode]) -> Vec<IrNode> {
     if nodes.is_empty() {
         return vec![];
     }
 
+    let mut p = BTreeMap::new();
+    p.insert("_k".into(), json!(format!("{parent_key}.{group}")));
+
     vec![IrNode {
         t: group.to_string(),
-        p: BTreeMap::new(),
+        p,
         c: nodes.iter().map(lower_node).collect(),
     }]
 }

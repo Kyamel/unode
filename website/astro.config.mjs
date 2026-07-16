@@ -1,11 +1,26 @@
 // @ts-check
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
 import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://unode.dev',
+	vite: {
+		resolve: {
+			alias: {
+				'unode-core': fileURLToPath(new URL('../packages/unode-core/src/index.ts', import.meta.url)),
+				'unode-react': fileURLToPath(new URL('../packages/unode-react/src/index.ts', import.meta.url)),
+				'unode-renderer': fileURLToPath(
+					new URL('../packages/unode-renderer/src/index.ts', import.meta.url),
+				),
+			},
+		},
+	},
 	integrations: [
+		react(),
 		starlight({
 			title: 'Unode',
 			description:

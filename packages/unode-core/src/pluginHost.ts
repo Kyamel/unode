@@ -14,6 +14,8 @@ interface PluginExports {
   plugin_load_result_len(): number;
   plugin_render(ptr: number, len: number): number;
   plugin_render_result_len(): number;
+  plugin_render_slot(ptr: number, len: number): number;
+  plugin_render_slot_result_len(): number;
   plugin_dispatch(ptr: number, len: number): number;
   plugin_dispatch_result_len(): number;
 }
@@ -108,6 +110,14 @@ export class PluginInstance {
 
   render<T = unknown>(request: unknown): T {
     return this.call<T>(this.ex.plugin_render, this.ex.plugin_render_result_len, request);
+  }
+
+  renderSlot<T = unknown>(request: unknown): T {
+    return this.call<T>(
+      this.ex.plugin_render_slot,
+      this.ex.plugin_render_slot_result_len,
+      request,
+    );
   }
 
   dispatch<T = unknown>(request: unknown): T {

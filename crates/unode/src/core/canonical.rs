@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 
 use crate::core::ast::*;
+use crate::core::chrome::ScreenRouteTabsMeta;
 use crate::core::slot::NodeOrigin;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -78,6 +79,8 @@ pub struct CanonicalScreen {
     pub title: Option<StringOrExpr>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subtitle: Option<StringOrExpr>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub route_tabs: Option<ScreenRouteTabsMeta>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub initial_focus: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

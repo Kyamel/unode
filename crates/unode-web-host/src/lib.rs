@@ -37,7 +37,7 @@ mod wasm {
     use unode::core::ast::ScreenNode;
     use unode::core::runtime::ResolvedRoute;
 
-    use crate::session::WebSessionCore;
+    use crate::session::{WebSessionCore, WebSlotResponseEnvelope};
 
     fn json_err(err: impl std::fmt::Display) -> JsValue {
         JsValue::from_str(&err.to_string())
@@ -76,6 +76,33 @@ mod wasm {
             let seed: BTreeMap<String, JsonValue> =
                 serde_json::from_str(seed_json).map_err(json_err)?;
             let ir = self.core.mount(screen, seed).map_err(json_err)?;
+            serde_json::to_string(&ir).map_err(json_err)
+        }
+
+        /// Normalize, resolve plugin slot contributions, then track and lower.
+        ///
+        /// JS instantiates contributing plugin WASMs and passes their manifest
+        /// envelopes plus `plugin_render_slot` responses here. The Rust core
+        /// still owns slot ordering, limits, normalization, and contributor
+        /// origin annotation.
+        #[wasm_bindgen(js_name = mountWithSlots)]
+        pub fn mount_with_slots(
+            &mut self,
+            screen_json: &str,
+            seed_json: &str,
+            manifests_json: &str,
+            slot_responses_json: &str,
+        ) -> Result<String, JsValue> {
+            let screen: ScreenNode = serde_json::from_str(screen_json).map_err(json_err)?;
+            let seed: BTreeMap<String, JsonValue> =
+                serde_json::from_str(seed_json).map_err(json_err)?;
+            let manifests = serde_json::from_str(manifests_json).map_err(json_err)?;
+            let slot_responses: Vec<WebSlotResponseEnvelope> =
+                serde_json::from_str(slot_responses_json).map_err(json_err)?;
+            let ir = self
+                .core
+                .mount_with_slots(screen, seed, manifests, slot_responses)
+                .map_err(json_err)?;
             serde_json::to_string(&ir).map_err(json_err)
         }
 

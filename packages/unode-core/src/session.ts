@@ -14,6 +14,12 @@ export interface WebHostModule {
 interface WasmWebSession {
   setRoute(routeJson: string): void;
   mount(screenJson: string, seedJson: string): string;
+  mountWithSlots(
+    screenJson: string,
+    seedJson: string,
+    manifestsJson: string,
+    slotResponsesJson: string,
+  ): string;
   initialPatches(): string;
   applyWrites(writesJson: string): string;
   stateSnapshot(): string;
@@ -49,6 +55,22 @@ export class HostSession {
   /** Normalize + track a rendered screen; returns the IR to mount. */
   mount(screen: unknown, seed: Record<string, unknown> = {}): IrScreen {
     return JSON.parse(this.inner.mount(JSON.stringify(screen), JSON.stringify(seed))) as IrScreen;
+  }
+
+  mountWithSlots(
+    screen: unknown,
+    seed: Record<string, unknown> = {},
+    manifests: unknown[] = [],
+    slotResponses: unknown[] = [],
+  ): IrScreen {
+    return JSON.parse(
+      this.inner.mountWithSlots(
+        JSON.stringify(screen),
+        JSON.stringify(seed),
+        JSON.stringify(manifests),
+        JSON.stringify(slotResponses),
+      ),
+    ) as IrScreen;
   }
 
   /** Patch ops that resolve every binding against seeded state. */

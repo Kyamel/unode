@@ -513,6 +513,7 @@ pub fn normalize_screen(mut screen: ScreenNode) -> Result<CanonicalScreen, Strin
         base: screen.base,
         title: screen.title,
         subtitle: screen.subtitle,
+        route_tabs: screen.route_tabs,
         initial_focus: screen.initial_focus,
         initial_state: screen.initial_state,
         children,

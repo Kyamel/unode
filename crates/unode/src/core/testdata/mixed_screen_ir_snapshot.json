@@ -141,6 +141,9 @@
           "c": [
             {
               "t": "leading",
+              "p": {
+                "_k": "chapter-1.leading"
+              },
               "c": [
                 {
                   "t": "icon",
@@ -155,6 +158,9 @@
             },
             {
               "t": "primary",
+              "p": {
+                "_k": "chapter-1.primary"
+              },
               "c": [
                 {
                   "t": "text",
@@ -171,6 +177,9 @@
             },
             {
               "t": "trailing",
+              "p": {
+                "_k": "chapter-1.trailing"
+              },
               "c": [
                 {
                   "t": "value",

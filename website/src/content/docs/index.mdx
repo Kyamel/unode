@@ -5,6 +5,9 @@ template: splash
 hero:
   tagline: Write plugin UI once as serializable intent. Run it sandboxed in WASM. Render it natively on web and terminal.
   actions:
+    - text: Open playground
+      link: /playground/
+      icon: puzzle
     - text: Get started
       link: /getting-started/introduction/
       icon: right-arrow
@@ -62,6 +65,11 @@ be embedded in applications built with React, Svelte, Vue, or any other stack.
 	<Card title="Build a plugin" icon="rocket">
 		Follow the [Quickstart](/getting-started/quickstart/) to build the
 		reactive `web-counter` plugin from scratch.
+	</Card>
+	<Card title="Open the playground" icon="puzzle">
+		Try the [interactive playground](/playground/) to switch between plugins,
+		inspect host slots, and see cross-plugin slot contributions dispatch back
+		to their contributor.
 	</Card>
 	<Card title="Learn the architecture" icon="setting">
 		Read the [Architecture](/concepts/architecture/) to see how the core,

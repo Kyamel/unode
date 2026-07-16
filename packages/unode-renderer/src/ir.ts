@@ -25,14 +25,14 @@ export interface IrNode {
   /** Node type tag: "text" | "stack" | "actions" | "action" | "screen" | ... */
   t: string;
   /** Props map. `_k` is the stable node key used to address patches. */
-  p: Record<string, unknown>;
+  p?: Record<string, unknown>;
   /** Children. */
   c?: IrNode[];
 }
 
 export interface IrScreen {
   t: "screen";
-  p: Record<string, unknown>;
+  p?: Record<string, unknown>;
   c?: IrNode[];
 }
 
@@ -53,7 +53,7 @@ export interface IrPatchOp {
 
 /** The `_k` prop is the node key. */
 export function nodeKey(node: IrNode): string {
-  return String(node.p["_k"] ?? "");
+  return String(node.p?.["_k"] ?? "");
 }
 
 /** Unwrap a lowered literal value to a plain JS value for display. */
