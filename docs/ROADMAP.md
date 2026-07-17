@@ -253,15 +253,6 @@ plugin source (`plugins/counter`). Remaining:
 - **`unode-react` portal adapter** uses a lazily ref-initialized external
   store (lint-suppressed); migrate to `useSyncExternalStore`.
 
-## Legacy TypeScript Role
-
-`ts-implementation/` is deprecated reference and migration material. The current
-web demos live under `examples/web-*` (React, Svelte, Vue, Solid, and a
-framework-free vanilla demo), backed by reusable packages under `packages/`. The old
-same-process TypeScript plugin runtime should not be treated as the target
-security model because it does not provide the WASM sandbox boundary Unode
-needs.
-
 ## What Should Not Change
 
 - Plugins describe semantic UI, not DOM or terminal layout.
