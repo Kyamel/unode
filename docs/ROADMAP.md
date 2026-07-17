@@ -245,6 +245,43 @@ plugin source (`plugins/counter`). Remaining:
   caller's identity. JSON request/response only, host timeout, no streaming.
   The manifest `requires` field already reserves the vocabulary.
 
+### Systemic gaps to design (not yet scoped)
+
+Identified in design review as likely-necessary for a truly generic, safe
+plugin system; none has a decided shape yet.
+
+1. **Async host calls / long operations** — the biggest architectural gap.
+   Every boundary call today is synchronous request/response; `http.fetch`
+   (an already-named permission) cannot work that way in a browser. Needs an
+   async model — WIT async when stable, or callback-style re-dispatch
+   ("host performs, then re-dispatches with the result") — plus loading-state
+   conventions in the protocol.
+2. **Resource limits** — CPU (fuel/epoch interruption: the TUI loader already
+   carries `enable_fuel_metering`, unused), per-instance memory caps, call
+   timeouts, host-call rate limiting, and render output size limits (an
+   unbounded ScreenNode JSON is a DoS). Essential for "safe in any app".
+3. **State namespacing** — state paths are a shared global map by convention;
+   plugin A can write plugin B's `routeTabs.shipCount` today. Host-enforced
+   per-plugin namespaces with explicit shared scopes (permission-gated).
+4. **Crash isolation policy** — trap/panic in a plugin must never take the
+   host down: quarantine, restart with backoff, and a systematic error
+   surface (the playground's error panel, promoted to contract).
+5. **Persistent storage** — `ctx.storage` (session/persistent, namespaced,
+   quota'd) exists only in vision docs; any real app needs it.
+6. **Plugin lifecycle events** — install/enable/disable/uninstall hooks and
+   state/storage cleanup on uninstall; plus a state-migration story across
+   plugin versions (v2 reading v1's writes).
+7. **Distribution & trust** — artifact signing/content hashes in the
+   manifest, provenance verification at load, and an update channel format.
+8. **Host conformance kit** — generalize the raw-vs-component golden test
+   into a suite any host implementation runs to prove it implements the
+   contract (the "certified Unode host" story).
+9. **Accessibility contract** — node semantics (labels, roles, descriptions)
+   sufficient for hosts to render accessible UI; partially covered by roles,
+   no systematic story.
+10. **Form validation contract** — `input`/`form` nodes exist; validation
+    rules, error display, and submit semantics are undefined.
+
 ### Cleanups
 
 - **Examples share 5 copies** of `scripts/smoke.mjs` and `pkg/`; extract an
