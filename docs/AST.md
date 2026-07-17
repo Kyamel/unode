@@ -4,11 +4,11 @@
 
 Every node in the canonical AST must be:
 
-- **JSON-serializable** — no functions, closures, class instances, or symbols
-- **Semantically typed** — `kind` discriminates the union; field names describe
+- **JSON-serializable** -- no functions, closures, class instances, or symbols
+- **Semantically typed** -- `kind` discriminates the union; field names describe
   intent, not appearance
-- **Renderer-agnostic** — no CSS class names, pixel values, or terminal escapes
-- **Domain-agnostic** — no references to works, chapters, users, or any app concept
+- **Renderer-agnostic** -- no CSS class names, pixel values, or terminal escapes
+- **Domain-agnostic** -- no references to works, chapters, users, or any app concept
 
 ## Two authoring layers
 
@@ -29,13 +29,13 @@ canonical nodes. Adding DSL helpers never changes the canonical protocol.
 Three expression kinds cover all reactive and route-driven values:
 
 ```
-literal  → static scalar, resolved at normalization time
-binding  → dot-path into the screen StateStore, resolved at render time
-param    → route param or query string key, resolved at mount time
+literal  -> static scalar, resolved at normalization time
+binding  -> dot-path into the screen StateStore, resolved at render time
+param    -> route param or query string key, resolved at mount time
 ```
 
 The expression model is intentionally minimal. i18n key lookup is not an
-expression kind — plugins resolve translations themselves using the locale
+expression kind; plugins resolve translations themselves using the locale
 string from `ctx.locale()` and their own catalogs.
 
 ### In Rust
@@ -87,7 +87,7 @@ pub type NumberOrExpr = Either<f64,    UiExpr>;
 | `list` | Navigable list of `item` nodes |
 | `item` | Structured row: leading, primary, secondary, trailing |
 
-`ItemNode.id` is required — items appear in dynamic collections where order
+`ItemNode.id` is required: items appear in dynamic collections where order
 can change and the renderer needs stable identity for reconciliation.
 
 ### Actions
@@ -120,6 +120,7 @@ can change and the renderer needs stable identity for reconciliation.
 | `disclosure` | Collapsible region, trigger + content |
 | `menu` | Popup/contextual menu |
 | `slot` | Named injection point for other plugins |
+| `tabs` | In-page tabbed content that does not change route |
 | `pressable` | Makes any node an interactive region |
 
 ---
@@ -128,11 +129,11 @@ can change and the renderer needs stable identity for reconciliation.
 
 Every node has an optional `id` field that serves two purposes:
 
-1. **Reconciliation identity** — the renderer uses `id` to track nodes across
+1. **Reconciliation identity** -- the renderer uses `id` to track nodes across
    reactive updates (equivalent to React's `key`). Must be unique among siblings
    in dynamic collections.
 
-2. **Semantic/accessibility identity** — becomes the DOM element `id` in the web
+2. **Semantic/accessibility identity** -- becomes the DOM element `id` in the web
    renderer, the focus target label in TUI, and the target for `initialFocus`.
 
 ### Structural fallback
@@ -160,10 +161,10 @@ for granular updates. These are prefixed with `_` to signal that they are
 infrastructure, not plugin-authored data.
 
 ```
-_key                — resolved identity (id or structural fallback)
-_reactivity         — "static" | "reactive" | "conditional" for this node
-_subtreeReactivity  — aggregate reactivity for this node and all descendants
-_staticFields       — primitive fields already resolved (literals collapsed)
+_key                - resolved identity (id or structural fallback)
+_reactivity         - "static" | "reactive" | "conditional" for this node
+_subtreeReactivity  - aggregate reactivity for this node and all descendants
+_staticFields       - primitive fields already resolved (literals collapsed)
 ```
 
 The `_subtreeReactivity` field allows renderers to skip entire static subtrees
@@ -234,10 +235,11 @@ versions are always compatible.
 
 These are useful but belong in sugar or app-level layers:
 
-- `card`, `banner_card` — composition patterns, not semantic primitives
-- `tabs` — application chrome, owned by the app shell
-- `table` — out of scope for now; TUI mapping is non-trivial
-- `image_reader` — app-specific media widget
-- `page_header` — shell chrome
+- `card`, `banner_card` -- composition patterns, not semantic primitives
+- route tabs/navigation tabs -- application chrome derived from manifest route
+  groups, owned by the app shell
+- `table` -- out of scope for now; TUI mapping is non-trivial
+- `image_reader` -- app-specific media widget
+- `page_header` -- shell chrome
 
 If a feature can be expressed as composition of simpler nodes, prefer composition.

@@ -34,8 +34,8 @@ custom adapter should consume the same IR contract.
 - Keep one plugin artifact usable by both Web and TUI packages.
 - Investigate TypeScript-authored plugins as a second SDK path while preserving
   the same JSON protocol and host capability model.
-- Add Component Model compatibility as a parallel loading path, starting with
-  the JSON-preserving WIT contract in `wit/unode-plugin.wit`.
+- Add Component Model compatibility as a parallel loading path, using the typed
+  WIT envelope contract in `wit/unode-plugin.wit`.
 
 ### 3. Normalize The Renderer Authoring Surface
 
@@ -147,7 +147,7 @@ Decisions taken in design discussions but not yet implemented, in rough
 priority order. Each entry records the agreed direction so implementation can
 start without re-litigating the design.
 
-### Component Model (WIT) — vertical slice DONE, web pending
+### Component Model (WIT) -- vertical slice DONE, web pending
 
 The typed contract lives in `wit/unode-plugin.wit` (`unode:plugin@0.3.0`) and
 is real on the TUI path: `unode-plugin-sdk` exposes
@@ -158,7 +158,7 @@ produce identical JSON and identical host-call side effects for the same
 plugin source (`plugins/counter`). Remaining:
 
 - Web host: `jco transpile` pipeline (browsers cannot instantiate components
-  natively) — the long pole.
+  natively) -- the long pole.
 - Componentize the remaining plugins + wire the component build into
   `build.sh`; teach the TUI loader to detect module vs component bytes.
 - Generate TS manifest types from the WIT (`jco types`) so non-Rust tooling
@@ -166,79 +166,79 @@ plugin source (`plugins/counter`). Remaining:
 
 ### Renderer
 
-- **Theme layer (tokens)** — the first customization layer, below
+- **Theme layer (tokens)** -- the first customization layer, below
   `wrap`/`override_render`/full recipes: color/border/spacing tokens read by
   the default recipes on both stacks (`ratatui_renderer().theme(...)`, web
   `defineRenderer().theme(...)`). Most overrides are styling; today they
   require a full recipe.
-- **Typed `RecipeContext` per node type (web)** — a `NodeType → props` map so
+- **Typed `RecipeContext` per node type (web)** -- a `NodeType -> props` map so
   `recipe("text", ...)` gets typed props/autocomplete instead of
   `prop("tone")` strings. Ideally the `NodeType` union (and the props map) is
   code-generated from the Rust `UiNode` enum to prevent drift.
-- **Docstring pass** — `#![warn(missing_docs)]` on `unode` and
+- **Docstring pass** -- `#![warn(missing_docs)]` on `unode` and
   `unode-renderer` once public items are fully documented.
 
 ### Protocol / expressions
 
-- **Derived expressions** — `UiExpr` only has `Literal | Binding | Param`;
+- **Derived expressions** -- `UiExpr` only has `Literal | Binding | Param`;
   there is no `$derived` equivalent (concat, formatting, arithmetic). Today
   "derived" means the plugin re-renders (`RefreshCurrentScreen`). A minimal
   computed-expression form is the most valuable `UiExpr` evolution.
-- **`when` on routes/route groups** — conditional navigation entries and tabs
+- **`when` on routes/route groups** -- conditional navigation entries and tabs
   (e.g. permission-gated), mirroring `SlotContributionDecl.when`.
-- **i18n for manifest labels** — route `label`/`badge` are static strings or
+- **i18n for manifest labels** -- route `label`/`badge` are static strings or
   state bindings; message-key support (host-side `DeferredText`) is the path
   to localized navigation chrome.
-- **Overlay/Layer node** — the dialog/popover/toast gap is a presentation
+- **Overlay/Layer node** -- the dialog/popover/toast gap is a presentation
   layer, not content: one `Overlay` node (modal, dismissible, optional
   anchor) wrapping existing nodes; TUI renders it as a centered box.
   `ContainerRole::Dialog` exists but carries no overlay semantics.
   Calibrate by building 3–4 target screens with current nodes first.
-- **Content `Tabs` node** — in-page tabs that do not change the route;
+- **Content `Tabs` node** -- in-page tabs that do not change the route;
   deliberately distinct from manifest route groups.
 - The node set stays **closed**: no `UiNode::Custom`. Hosts specialize by
   overriding recipes, never by inventing node types (portability guarantee).
 
 ### Plugin surfaces
 
-- **Headless (service) plugins** — today UI is mandatory twice: `plugin_render`
+- **Headless (service) plugins** -- today UI is mandatory twice: `plugin_render`
   is a required export (raw ABI and WIT world) and hosts assign a fallback
   route to plugins that declare none (the counter relies on it). Decided
   direction:
-  - Short term: convention *zero declared routes = no surface of its own* —
+  - Short term: convention *zero declared routes = no surface of its own* --
     hosts stop assigning fallback routes/nav entries (refactor: remove the
     fallback in `tui-playground::plugin_registry` and make `counter` declare
     its route); SDK sugar `export_headless_plugin! { manifest, dispatch }`
     filling `render`/`load` with empty defaults. Headless plugins act through
     slot contributions, host-dispatched actions, and (later) capabilities.
   - Long term: a second WIT world `unode:plugin/service` without the `render`
-    export — the natural shape for the *provider* role in the deferred
+    export -- the natural shape for the *provider* role in the deferred
     cross-plugin capability design (optional exports don't exist in a single
     world; profiles are separate worlds).
-  - Security note: headless means no obvious user-consent moment — install
+  - Security note: headless means no obvious user-consent moment -- install
     time is the only permission gate, so host policy matters more.
 
-- **Hover / contextual UI (LSP-style) — to analyze** — e.g. a language plugin
+- **Hover / contextual UI (LSP-style) -- to analyze** -- e.g. a language plugin
   contributing a dialog when hovering content another plugin rendered.
-  Viability sketch: it is the slot mechanism with a *dynamic* target — instead
+  Viability sketch: it is the slot mechanism with a *dynamic* target -- instead
   of a named slot, the target is the node under the cursor. Ingredients:
   - a `render_hover(node-id, context)`-shaped export (same envelope family as
-    `render_slot`), called by the host **debounced/async** — hover is
+    `render_slot`), called by the host **debounced/async** -- hover is
     high-frequency and must never cross the sandbox per mousemove;
   - manifest declaration of the provider (`hover for <node kinds / plugin>`),
     permission-gated like slot contributions;
   - the **Overlay node** (already on this roadmap) as the presentation layer;
-  - intent, not command: TUI has no hover — hosts map it to focus + a peek
+  - intent, not command: TUI has no hover -- hosts map it to focus + a peek
     key, exactly like tabs degrade to pages.
   Depends on Overlay and pairs naturally with capabilities/headless providers;
   analyze after those land.
 
 ### Permissions / capabilities
 
-- **Host permission catalogs** — hosts may register known permissions so the
+- **Host permission catalogs** -- hosts may register known permissions so the
   loader can warn (not fail) on unknown/typo'd requests, keeping the set open.
-- **Cross-plugin capabilities (deferred until a real 2-plugin use case)** —
-  never direct plugin→plugin; always host-brokered, mirroring how slots broker
+- **Cross-plugin capabilities (deferred until a real 2-plugin use case)** --
+  never direct plugin->plugin; always host-brokered, mirroring how slots broker
   UI. Shape agreed: provider declares `provides(capability("notes.search"))`
   in its manifest, consumer declares `requires`, host routes a
   `cap.invoke` host call to a new `plugin_provide` ABI export with the
@@ -250,36 +250,36 @@ plugin source (`plugins/counter`). Remaining:
 Identified in design review as likely-necessary for a truly generic, safe
 plugin system; none has a decided shape yet.
 
-1. **Async host calls / long operations** — the biggest architectural gap.
+1. **Async host calls / long operations** -- the biggest architectural gap.
    Every boundary call today is synchronous request/response; `http.fetch`
    (an already-named permission) cannot work that way in a browser. Needs an
-   async model — WIT async when stable, or callback-style re-dispatch
-   ("host performs, then re-dispatches with the result") — plus loading-state
+   async model -- WIT async when stable, or callback-style re-dispatch
+   ("host performs, then re-dispatches with the result") -- plus loading-state
    conventions in the protocol.
-2. **Resource limits** — CPU (fuel/epoch interruption: the TUI loader already
+2. **Resource limits** -- CPU (fuel/epoch interruption: the TUI loader already
    carries `enable_fuel_metering`, unused), per-instance memory caps, call
    timeouts, host-call rate limiting, and render output size limits (an
    unbounded ScreenNode JSON is a DoS). Essential for "safe in any app".
-3. **State namespacing** — state paths are a shared global map by convention;
+3. **State namespacing** -- state paths are a shared global map by convention;
    plugin A can write plugin B's `routeTabs.shipCount` today. Host-enforced
    per-plugin namespaces with explicit shared scopes (permission-gated).
-4. **Crash isolation policy** — trap/panic in a plugin must never take the
+4. **Crash isolation policy** -- trap/panic in a plugin must never take the
    host down: quarantine, restart with backoff, and a systematic error
    surface (the playground's error panel, promoted to contract).
-5. **Persistent storage** — `ctx.storage` (session/persistent, namespaced,
+5. **Persistent storage** -- `ctx.storage` (session/persistent, namespaced,
    quota'd) exists only in vision docs; any real app needs it.
-6. **Plugin lifecycle events** — install/enable/disable/uninstall hooks and
+6. **Plugin lifecycle events** -- install/enable/disable/uninstall hooks and
    state/storage cleanup on uninstall; plus a state-migration story across
    plugin versions (v2 reading v1's writes).
-7. **Distribution & trust** — artifact signing/content hashes in the
+7. **Distribution & trust** -- artifact signing/content hashes in the
    manifest, provenance verification at load, and an update channel format.
-8. **Host conformance kit** — generalize the raw-vs-component golden test
+8. **Host conformance kit** -- generalize the raw-vs-component golden test
    into a suite any host implementation runs to prove it implements the
    contract (the "certified Unode host" story).
-9. **Accessibility contract** — node semantics (labels, roles, descriptions)
+9. **Accessibility contract** -- node semantics (labels, roles, descriptions)
    sufficient for hosts to render accessible UI; partially covered by roles,
    no systematic story.
-10. **Form validation contract** — `input`/`form` nodes exist; validation
+10. **Form validation contract** -- `input`/`form` nodes exist; validation
     rules, error display, and submit semantics are undefined.
 
 ### Cleanups

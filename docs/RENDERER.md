@@ -2,19 +2,22 @@
 
 ## Renderer role
 
-The renderer is the platform adapter and the trust boundary. It receives a
-canonical JSON AST and decides how to draw it, how users interact with it,
-and what capabilities the plugin is allowed to use.
+The renderer is the platform adapter. It receives trusted host output
+(`IrScreen`, `IrNode`, and `IrPatchOp`) and decides how semantic intent becomes
+native UI: DOM, framework portals, terminal widgets, focus behavior, keyboard
+mapping, and platform accessibility.
 
-The renderer is the last line of defense. Even if a plugin declares a
-permission it was not granted, the host function is not injected and the
-capability is unavailable.
+The renderer is not the security authority. The trusted host runtime loads
+plugin WASM, injects or withholds host functions, enforces permissions, owns
+state and resource policy, and recovers crashed plugin sessions. Renderer specs
+do not receive plugin internals, raw WASM access, permission profiles, or
+capability-enforcement hooks.
 
 ---
 
 ## Declaring a renderer (Rust hosts)
 
-Rust hosts declare their renderer with the `unode-renderer` crate — the same
+Rust hosts declare their renderer with the `unode-renderer` crate -- the same
 recipe model as the web `defineRenderer()`. The core crate is presentation-
 stack agnostic (a `Backend` picks the surface type), so the recipe machinery
 also serves hand-rolled terminal writers. `unode-ratatui-renderer` ships the ratatui
@@ -48,20 +51,18 @@ nodes and the focus cursor for interactive elements. Prefer `wrap` /
 
 ## Shared renderer responsibilities
 
-Both renderers — Web and TUI — must:
+Both host integrations -- Web and TUI -- must provide a renderer with:
 
-1. Instantiate the plugin WASM module with filtered host functions
-2. Call `plugin_load()` → receive data JSON → merge into StateStore
-3. Call `plugin_render()` → receive `CanonicalScreen` JSON
-4. Call `normalizeScreen()` on the JSON
-5. Call `trackReactiveBindings()` to wire state → node subscriptions
-6. Mount the canonical screen
-7. On state change: call `resolver.subscribers_of(path)` → patch only affected nodes
-8. On action: dispatch to plugin via `plugin_dispatch()`
-9. On navigation: teardown, reset StateStore, repeat from step 2
+1. An initial `IrScreen` produced by the trusted runtime
+2. `IrPatchOp`s produced after state writes
+3. Action dispatch callbacks supplied by the host runtime
+4. Host-slot/portal hooks where the app intentionally renders native components
+5. Focus and interaction state that never bypasses runtime permission checks
 
-Neither renderer calls `render()` again in response to state changes. Only
-navigation or explicit refresh triggers a new load/render cycle.
+Neither renderer calls plugin `render()` directly. Only the host runtime may
+call lifecycle exports, and `render()` is not called again in response to
+ordinary state changes. Navigation, locale changes, or explicit refresh trigger
+a new load/render cycle.
 
 ---
 
@@ -77,7 +78,7 @@ The target split is now starting to exist in `packages/`:
 - **Web runtime core:** `packages/unode-web-core`, a shared TypeScript package
   for plugin WASM instantiation, host-session loading, plugin registries,
   state-write buffering, and action dispatch. This is runtime glue, not
-  renderer customization.
+  renderer customization or presentation authority.
 - **Renderer core SDK:** `packages/unode-web-renderer` is *the* renderer. It is a
   single, framework-free TypeScript package: `IrScreen`/`IrNode`/`IrPatchOp`,
   the keyed `ScreenStore`, prop normalization, the ergonomic recipe context, the
@@ -85,7 +86,7 @@ The target split is now starting to exist in `packages/`:
   nodes, and a DOM backend that walks the IR, subscribes each node to its key,
   and reconciles recipe output into real DOM. Because recipes return neutral
   VNodes and the backend targets the DOM, the same renderer runs in any web
-  context — vanilla, React, Svelte, Vue.
+  context -- vanilla, React, Svelte, Vue.
 - **Framework packages are mount targets, not renderers.** `packages/unode-react`
   and `packages/unode-svelte` are thin `<UnodeScreen>` wrappers plus portal glue.
   The wrapper mounts the DOM renderer into a host element and provides a
@@ -132,18 +133,18 @@ Mount it wherever the app lives. Frameworks supply the portal that maps
 ```
 
 ```ts
-// Vanilla — no framework, no portal needed for pure-DOM recipes
+// Vanilla -- no framework, no portal needed for pure-DOM recipes
 renderer.mount(document.getElementById("app")!, store, { onAction });
 ```
 
-### `hostSlot` — the deep-integration primitive
+### `hostSlot` -- the deep-integration primitive
 
 `hostSlot(name, props)` is a first-class VNode: a hole the renderer fills with a
 host-provided component. The DOM backend creates a placeholder element and hands
 it to the active `HostPortalAdapter`; the React wrapper turns that into a React
 portal, the Svelte wrapper mounts a Svelte component, and a plain DOM app can
 supply its own factory. This is how a plugin node becomes the host's own
-design-system `Button` — and, symmetrically, how plugin UI is placed into host
+design-system `Button` -- and, symmetrically, how plugin UI is placed into host
 chrome regions (`renderer.mountNodes(headerEl, contributions, store)` for
 `shell:header-actions`). The plugin still only expresses intent; the host owns
 presentation and keeps a single renderer to maintain.
@@ -263,8 +264,8 @@ TuiApp (Rust, main thread)
 
 Per frame:
   1. Read input events
-  2. Handle keyboard → dispatch ActionRef to plugin
-  3. Render: walk CanonicalScreen → Ratatui widgets
+  2. Handle keyboard -> dispatch ActionRef to plugin
+  3. Render: walk CanonicalScreen -> Ratatui widgets
   4. terminal.draw(frame)
 ```
 
@@ -334,11 +335,11 @@ renderer tracks expanded state in the local StateStore and recomputes layout
 when `disclosure.binding` changes:
 
 ```
-▶ Mostrar mais detalhes        ← trigger line
-                                ← nothing when collapsed
+> Mostrar mais detalhes        <- trigger line
+                                <- nothing when collapsed
 
-▼ Ocultar detalhes             ← trigger line
-  248 páginas                   ← content when expanded
+v Ocultar detalhes             <- trigger line
+  248 páginas                   <- content when expanded
   Editora Panini
 ```
 
@@ -348,9 +349,9 @@ when `disclosure.binding` changes:
 
 Host packages use the same Rust core for:
 
-- `normalizeScreen()` — fill defaults, compute `_reactivity`
-- `trackReactiveBindings()` — wire StateStore → ExprResolver subscriptions
-- `PermissionGuard` — permission checking
+- `normalizeScreen()` -- fill defaults, compute `_reactivity`
+- `trackReactiveBindings()` -- wire StateStore -> ExprResolver subscriptions
+- `PermissionGuard` -- permission checking
 
 The Web host calls these through `unode_web_host.wasm`. The TUI runtime calls
 them directly as Rust functions. Framework adapters should not port these
@@ -362,11 +363,11 @@ semantics.
 
 | Key | Web behavior | TUI behavior |
 |---|---|---|
-| Tab / Arrow ↓ | Focus next focusable | Move cursor to next item |
-| Shift+Tab / Arrow ↑ | Focus previous | Move cursor to previous item |
+| Tab / Arrow Down | Focus next focusable | Move cursor to next item |
+| Shift+Tab / Arrow Up | Focus previous | Move cursor to previous item |
 | Enter | Activate focused element | Activate focused element |
 | Escape | Close overlay / navigate back | Close overlay / navigate back |
-| Arrow ←→ | Move inside inline containers | Move inside inline containers |
+| Arrow <-> | Move inside inline containers | Move inside inline containers |
 
 No keyboard events are consumed while focus is inside an editable input.
 
@@ -380,7 +381,7 @@ Cross-platform means preserving intent, not pixel parity.
 |---|---|---|
 | `grid` with `columns: {base:1, md:3}` | CSS grid, 3 cols at ≥768px | 1 col on narrow terminals, 3 cols at ≥120 chars |
 | `media` | `<img>` with aspect ratio | Kitty/Sixel image or bordered placeholder |
-| `disclosure` | Animated chevron + collapse | `▶`/`▼` prefix + inline expand |
+| `disclosure` | Animated chevron + collapse | `>`/`v` prefix + inline expand |
 | `menu` | Popover dropdown | Modal list overlay |
 | `badge` | Rounded pill chip | `[LABEL]` prefix |
 | `value format="date"` | `Intl.DateTimeFormat` | Same via Rust `chrono` |

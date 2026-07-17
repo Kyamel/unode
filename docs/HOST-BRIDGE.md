@@ -27,21 +27,21 @@ app-sdk/
   src/
     lib.rs
     api/
-      catalog.rs    — CatalogApi trait + implementations
-      library.rs    — LibraryApi trait
-      reader.rs     — ReaderApi trait
+      catalog.rs    -- CatalogApi trait + implementations
+      library.rs    -- LibraryApi trait
+      reader.rs     -- ReaderApi trait
     models/
-      work.rs       — WorkSummary, WorkDetail
-      chapter.rs    — ChapterSummary
-      staff.rs      — StaffCredit
+      work.rs       -- WorkSummary, WorkDetail
+      chapter.rs    -- ChapterSummary
+      staff.rs      -- StaffCredit
     host_functions/
-      web.rs        — JS-facing host function registration
-      tui.rs        — Wasmtime host function registration
-    permissions.rs  — HostApiMeta: method → required permission
-    locale.rs       — locale_get host function implementation
+      web.rs        -- JS-facing host function registration
+      tui.rs        -- Wasmtime host function registration
+    permissions.rs  -- HostApiMeta: method -> required permission
+    locale.rs       -- locale_get host function implementation
     sugar/
-      work_banner.rs   — workBanner() DSL helper
-      chapter_list.rs  — chapterList() DSL helper
+      work_banner.rs   -- workBanner() DSL helper
+      chapter_list.rs  -- chapterList() DSL helper
 ```
 
 ---
@@ -84,7 +84,7 @@ pub const HOST_FN_META: &[HostFnMeta] = &[
 ];
 ```
 
-At instantiation, the renderer iterates `HOST_FN_META`, checks
+At instantiation, the host runtime iterates `HOST_FN_META`, checks
 `guard.has(required_permission)` for each entry, and only registers the
 functions whose permission was granted. Plugins cannot call un-registered functions.
 
@@ -104,7 +104,7 @@ linker.func_wrap("unode", "locale_get", |mut caller: Caller<'_, TuiState>| {
 
 The locale value is a BCP 47 tag. Plugins call `ctx.locale()` which invokes
 this host function. Plugins use the returned string to select from their own
-catalogs — the bridge does not translate for plugins.
+catalogs -- the bridge does not translate for plugins.
 
 ---
 
@@ -146,10 +146,10 @@ This sugar is app-specific and lives in the bridge crate, not in unode.
 
 These are clearly app-specific and must stay in the bridge:
 
-- `workBanner`, `chapterList`, `workMetadata` — domain sugar
-- `WorkSummary`, `ChapterSummary` — domain models
-- `catalog.read`, `library.write` — domain permission strings
-- Route tab groupings for app routes (manifest `routeGroups`) — app navigation pattern
+- `workBanner`, `chapterList`, `workMetadata` -- domain sugar
+- `WorkSummary`, `ChapterSummary` -- domain models
+- `catalog.read`, `library.write` -- domain permission strings
+- Route tab groupings for app routes (manifest `routeGroups`) -- app navigation pattern
 - Any reference to manga, anime, chapters, or works
 
 If another app wanted to use unode, it would write its own bridge with its own
@@ -167,7 +167,7 @@ domain APIs. unode would be unchanged.
 | PermissionGuard types | unode | Generic permission model |
 | `locale_get` contract | unode | Interface only |
 | `locale_get` implementation | Bridge | App owns locale state |
-| i18n catalog registry | unode | Generic, plugin-owned catalogs |
+| i18n catalog storage/lookup | Plugin SDK + plugin-owned data | Catalogs ship with plugins; the host only provides the current locale |
 | `WorkSummary` model | Bridge | app-specific |
 | `catalog_get_work` host fn | Bridge | app-specific |
 | Navigation items, commands | unode | Generic plugin registration |

@@ -9,10 +9,11 @@ sandbox boundary.
 
 ## Two-layer model
 
-### Layer 1 — Core built-in permissions
+### Layer 1 -- Core built-in permissions
 
-Gate capabilities Unode provides regardless of the app. Enforced by the renderer
-(a JS or Rust `PermissionGuard`) before each host function runs.
+Gate capabilities Unode provides regardless of the app. Enforced by the trusted
+host runtime before a host function is injected and again before sensitive
+operations run.
 
 | Permission                 | Gates                                        |
 | -------------------------- | -------------------------------------------- |
@@ -25,7 +26,7 @@ Gate capabilities Unode provides regardless of the app. Enforced by the renderer
 | `events.read`              | Subscribe to the host event bus              |
 | `events.write`             | Emit events to the host event bus            |
 
-### Layer 2 — App domain permissions
+### Layer 2 -- App domain permissions
 
 Gate app-specific APIs defined by the bridge, enforced by the bridge before it
 delegates to the real implementation. For example:
@@ -65,7 +66,7 @@ let manifest = PluginManifest {
 ## Approval and storage
 
 At install time the host presents each `PermissionRequest` to the user, who
-approves or denies it. The result is stored as a `PermissionProfile` of grants —
+approves or denies it. The result is stored as a `PermissionProfile` of grants --
 each recording the permission, whether it was granted, a timestamp, and (for
 `http.fetch`) the approved origins.
 
@@ -80,7 +81,7 @@ can additionally deny network access at the OS level.
 ## Default deny
 
 Any capability not declared in the manifest and not approved in the profile is
-denied — and the plugin **never sees the method**. The host function is simply
+denied -- and the plugin **never sees the method**. The host function is simply
 not injected into the WASM imports.
 
 Calling an un-injected import causes a WASM trap (Wasmtime) or
@@ -105,6 +106,6 @@ HostFn {
 },
 ```
 
-At instantiation the renderer iterates this list, checks
+At instantiation the host runtime iterates this list, checks
 `guard.has(required_permission)` for each, and injects only the functions whose
 permission was granted. The rest are absent from the imports object entirely.

@@ -5,7 +5,7 @@ description: Build the reactive counter plugin from scratch and understand the s
 
 This walkthrough builds the counter plugin (`plugins/counter`), the reactive plugin behind the web
 vertical slice. It renders one line bound to host state plus three buttons. The
-key idea: **state never lives in the plugin's memory** — the host owns it and
+key idea: **state never lives in the plugin's memory** -- the host owns it and
 hands it back on every dispatch. The plugin only declares intent and requests
 writes.
 
@@ -136,7 +136,7 @@ fn render_screen(_request: &PluginRenderRequest) -> ScreenNode {
 
 When the user clicks a button, the host calls `dispatch` with the current state
 snapshot. The plugin computes the next value and **requests state writes through
-host calls** — it never returns UI state in its response. The host applies the
+host calls** -- it never returns UI state in its response. The host applies the
 writes, which produces a single patch op re-rendering only the bound line.
 
 ```rust
@@ -214,6 +214,6 @@ consume.
 - A click dispatched an *intent*, not a state mutation. The plugin asked the
   host to write, and the host woke only the subscribers of the changed path.
 
-That path — intent in, targeted patch out — is the whole model. Read
+That path -- intent in, targeted patch out -- is the whole model. Read
 [Reactivity](/concepts/reactivity/) to see how the host tracks and patches, and
 [Runtime & Lifecycle](/concepts/runtime/) for the full route cycle.

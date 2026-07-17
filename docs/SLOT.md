@@ -6,10 +6,10 @@ and Web renderers.
 
 ---
 
-## System 1 — SlotNode (intra-screen injection)
+## System 1 -- SlotNode (intra-screen injection)
 
 A `SlotNode` is a named placeholder inside a plugin's rendered screen. Other
-plugins — or the host — can inject UI nodes into that placeholder at mount time.
+plugins -- or the host -- can inject UI nodes into that placeholder at mount time.
 
 ### Use case
 
@@ -29,15 +29,15 @@ exists.
 ```
 1. Plugin A renders CanonicalScreen containing SlotNode { name: "catalog.work-detail:footer" }
 
-2. Host normalizes the screen — SlotNode is present with optional fallback
+2. Host normalizes the screen -- SlotNode is present with optional fallback
 
 3. Before mounting, host queries SlotRegistry:
    slot_registry.resolve("catalog.work-detail:footer", screen_ctx)
-   → [{ plugin_id: "com.mugenx.reading-list", priority: 10 }, ...]
+   -> [{ plugin_id: "com.mugenx.reading-list", priority: 10 }, ...]
 
 4. For each contributing plugin, host calls:
    plugin_b.render_slot("catalog.work-detail:footer", ctx_json)
-   → returns UiNode JSON
+   -> returns UiNode JSON
 
 5. Host injects the returned nodes into the SlotNode position in the tree,
    replacing or wrapping the fallback if present
@@ -56,7 +56,7 @@ pub struct SlotNode {
 ```
 
 The slot name is a namespaced string by convention:
-`"<plugin-id>:<slot-identifier>"` — e.g. `"catalog.work-detail:footer"`.
+`"<plugin-id>:<slot-identifier>"` -- e.g. `"catalog.work-detail:footer"`.
 
 ### Contribution declaration
 
@@ -121,19 +121,19 @@ adapter receives an already-resolved tree rather than unresolved placeholders.
 
 ### SlotNode in the TUI renderer (Ratatui)
 
-Same model — the host injects before mounting. The Ratatui renderer sees a
+Same model -- the host injects before mounting. The Ratatui renderer sees a
 fully resolved tree with no unresolved SlotNodes. The layout engine allocates
 space for the injected nodes as if they were authored inline.
 
 If a slot has no contributions and no fallback, the layout engine treats it
-as zero-height — it occupies no terminal cells.
+as zero-height -- it occupies no terminal cells.
 
 ---
 
-## System 2 — Shell slots (host chrome injection)
+## System 2 -- Shell slots (host chrome injection)
 
 Shell slots are not AST nodes. They are a mechanism for plugins to contribute
-UI to regions of the host app's own chrome — the navigation sidebar, the header
+UI to regions of the host app's own chrome -- the navigation sidebar, the header
 action bar, the bottom navigation on mobile.
 
 These regions exist outside any plugin screen. They are owned by the app shell
@@ -158,7 +158,7 @@ ctx.navigation.register(NavigationItem {
 ```
 
 The web app sidebar queries the navigation registry and renders these items using
-its own components. The plugin does not control how the sidebar looks — it only
+its own components. The plugin does not control how the sidebar looks -- it only
 declares that it wants to be present and what navigating to it means.
 
 ### Shell slot targets
@@ -180,20 +180,20 @@ host shell components whenever they need to render.
 
 ```
 1. Plugin activates
-   → registers NavigationItem, CommandDefinition, SlotContribution
+   -> registers NavigationItem, CommandDefinition, SlotContribution
 
 2. Host shell renders sidebar
-   → queries NavigationRegistry.get_available(ctx)
-   → receives list of NavigationItems from all active plugins
-   → renders them using its own framework components
+   -> queries NavigationRegistry.get_available(ctx)
+   -> receives list of NavigationItems from all active plugins
+   -> renders them using its own framework components
 
 3. User navigates to plugin route
-   → normal route lifecycle (load, render, mount)
-   → shell stays in place, only the main content area changes
+   -> normal route lifecycle (load, render, mount)
+   -> shell stays in place, only the main content area changes
 ```
 
 The shell does not call into plugin WASM to render navigation items. The items
-are data (label string, path, icon name) — the shell decides how to render them.
+are data (label string, path, icon name) -- the shell decides how to render them.
 
 ### Shell slots that DO call into WASM
 
@@ -227,7 +227,7 @@ the header.
 | Render call per mount | Yes | No (registered once) | Yes |
 | WASM boundary crossed | Yes, per contribution | No | Yes, per contribution |
 | Renderer sees | Injected into canonical tree | Queried by shell components | Passed to CoreUiRenderer |
-| TUI equivalent | Same — injected before Ratatui render | Sidebar/nav items in TUI layout | Same — injected into TUI frame |
+| TUI equivalent | Same -- injected before Ratatui render | Sidebar/nav items in TUI layout | Same -- injected into TUI frame |
 
 ---
 
@@ -240,7 +240,7 @@ Injection happens in the runtime before the framework component tree is created:
 ```typescript
 // After normalize and before lower/mount.
 const injectedScreen = await injectSlots(canonicalScreen, slotRegistry, ctx);
-// injectedScreen has no unresolved SlotNodes — all replaced with contributions
+// injectedScreen has no unresolved SlotNodes -- all replaced with contributions
 mountScreen(injectedScreen);
 ```
 
@@ -259,14 +259,14 @@ function Sidebar() {
 }
 ```
 
-This is pure data rendering — no WASM call per render, no `CoreUiRenderer`.
+This is pure data rendering -- no WASM call per render, no `CoreUiRenderer`.
 
 ### Shell slots (UI contributions)
 
 ```typescript
 // In PluginScreenHost, reads header action contributions
 const headerActions = await slotRegistry.resolve("shell:header-actions", ctx);
-// headerActions: CanonicalUiNode[] — each came from a plugin_render_slot call
+// headerActions: CanonicalUiNode[] -- each came from a plugin_render_slot call
 ```
 
 ```tsx
@@ -281,7 +281,7 @@ function HeaderActions({ actions }: { actions: IrNode[] }) {
 
 ### SlotNode
 
-Same injection model as Web — happens before Ratatui render:
+Same injection model as Web -- happens before Ratatui render:
 
 ```rust
 // In TuiApp, after normalize
@@ -341,11 +341,11 @@ for node in &header_nodes {
 | Shell UI slots | Contributors render their part; host places it in the frame | WASM call per contribution |
 
 The navigation sidebar in both Web and TUI is always rendered by the host using
-its own visual style. A plugin cannot change how the sidebar looks — it can only
+its own visual style. A plugin cannot change how the sidebar looks -- it can only
 say "I want to be in the sidebar with this label and this path." The host decides
 whether that becomes a rounded button, a flat list item, or a tab bar entry.
 
-This is the same "intent over presentation" principle that governs the AST — it
+This is the same "intent over presentation" principle that governs the AST -- it
 applies to shell slot contributions just as much as to screen nodes.
 
 ---
@@ -395,4 +395,6 @@ namespaced before normalization.
 Raw ABI `0.2.0` makes `plugin_render_slot` and
 `plugin_render_slot_result_len` required exports. Plugins that do not declare
 slot contributions normally return `{ "nodes": [] }`; the Rust SDK macro
-generates that default handler when no `render_slot` function is supplied.
+generates that default handler when no `render_slot` function is supplied. The
+Component Model path mirrors this as `lifecycle.render-slot` in
+`unode:plugin@0.3.0`.

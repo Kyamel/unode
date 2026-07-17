@@ -17,9 +17,9 @@ the web host bindings and `pnpm` for the runtime demos.
   rustup target add wasm32-unknown-unknown
   ```
 
-- **wasm-bindgen CLI** — generates the browser bindings for
+- **wasm-bindgen CLI** -- generates the browser bindings for
   `unode_web_host.wasm`.
-- **pnpm** — installs and runs the React/Svelte web runtime demos.
+- **pnpm** -- installs and runs the React/Svelte web runtime demos.
 
 :::tip[Nix users]
 The repo ships a `shell.nix` that provides `cargo`, `wasm-bindgen`, and the rest
@@ -52,7 +52,7 @@ This produces artifacts for the TUI playground TUI app and both web examples
 
 ## Build pieces individually
 
-Compile a plugin to WebAssembly — the same artifact both the web and TUI
+Compile a plugin to WebAssembly -- the same artifact both the web and TUI
 packages consume:
 
 ```sh

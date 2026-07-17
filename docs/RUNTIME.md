@@ -5,11 +5,11 @@
 A plugin is a WASM module that exports:
 
 ```
-plugin_manifest()           → manifest JSON string
-plugin_load(request_json)    → data JSON string
-plugin_render(request_json)  → ScreenNode JSON string
-plugin_render_slot(request_json) → PluginRenderSlotResponse JSON string
-plugin_dispatch(request_json) → PluginDispatchResponse JSON string
+plugin_manifest()           -> manifest JSON string
+plugin_load(request_json)    -> data JSON string
+plugin_render(request_json)  -> ScreenNode JSON string
+plugin_render_slot(request_json) -> PluginRenderSlotResponse JSON string
+plugin_dispatch(request_json) -> PluginDispatchResponse JSON string
 ```
 
 In Rust, plugin authors use `unode-plugin-sdk` which hides the WASM export
@@ -68,26 +68,27 @@ fn render_browse(data: &BrowseData, ctx: &PluginContext) -> ScreenNode {
 
 The plugin runtime maintains registries that plugins populate at activation:
 
-- **Routes** — pattern → (load fn, render fn). Declared in the manifest as
+- **Routes** -- pattern -> (load fn, render fn). Declared in the manifest as
   `routes: [RouteDecl]` (`pattern`, optional `screenKind`, `priority`, plus
   navigation metadata: `label`, `badge`, `group`). Hosts register them at load
   time (`RouteRegistry::register_manifest_routes`) so a single plugin can own
   multiple screens; the matched pattern and params come back to the plugin in
-  `PluginRenderRequest.route`. Plugins without declared routes keep whatever
-  route the host assigns them.
-- **Route groups** — `routeGroups: [{ id, intent }]` name a set of declared
+  `PluginRenderRequest.route`. Plugins with zero declared routes have no
+  screen surface of their own; they may still contribute through slots, host
+  dispatched actions, and future service/capability surfaces.
+- **Route groups** -- `routeGroups: [{ id, intent }]` name a set of declared
   routes and hint at their presentation (`tabs` | `pages`). The renderer
   decides: hosts with tab support call `route_tabs_view(manifest, pattern,
   state)` (Rust) / `routeTabsView(...)` (TS) to derive a ready-to-render tab
-  set — active tab comes from the matched route, and labels/badges may be
+  set -- active tab comes from the matched route, and labels/badges may be
   state bindings for dynamic values. Hosts without tabs treat the group as
   separate routes. Screens carry no tab metadata; navigation chrome is
   host-derived.
-- **Actions** — type string → handler fn
-- **Commands** — id → (title, category, handler)
-- **Navigation** — id → (label, path, priority)
-- **Providers** — capability → provider fn
-- **Slots** — target slot name → contribution fn
+- **Actions** -- type string -> handler fn
+- **Commands** -- id -> (title, category, handler)
+- **Navigation** -- id -> (label, path, priority)
+- **Providers** -- capability -> provider fn
+- **Slots** -- target slot name -> contribution fn
 
 These registries are generic (no domain knowledge). The host queries them to
 build navigation menus, command palettes, and slot contributions.
@@ -98,13 +99,13 @@ build navigation menus, command palettes, and slot contributions.
 
 ```
 1. Route match
-   RouteRegistry.resolve(pathname) → (plugin_id, pattern, params)
+   RouteRegistry.resolve(pathname) -> (plugin_id, pattern, params)
 
 2. Plugin instantiation (if not cached)
    WasmRuntime.get_or_instantiate(plugin_id, permission_profile)
-   → validates required permissions
-   → injects host functions gated by PermissionProfile
-   → calls plugin.init() if exported
+   -> validates required permissions
+   -> injects host functions gated by PermissionProfile
+   -> creates or reuses a host-managed plugin session
 
 3. Fresh StateStore
    MemoryStateStore::new()
@@ -112,54 +113,54 @@ build navigation menus, command palettes, and slot contributions.
 
 4. load()
    plugin.load(route_json)
-   → receives { pattern, params, query }
-   → returns data_json
-   → host calls state.merge_data(data_json)
+   -> receives { pattern, params, query }
+   -> returns data_json
+   -> host calls state.merge_data(data_json)
 
 5. render()
    plugin.render(data_json)
-   → receives the data from step 4
-   → returns raw CanonicalScreen JSON (before normalization)
+   -> receives the data from step 4
+   -> returns raw CanonicalScreen JSON (before normalization)
 
 6. Normalize
    normalize_screen(raw_json)
-   → fills defaults
-   → computes _reactivity, _subtreeReactivity, _staticFields
-   → validates id uniqueness
-   → assigns structural _key fallbacks
+   -> fills defaults
+   -> computes _reactivity, _subtreeReactivity, _staticFields
+   -> validates id uniqueness
+   -> assigns structural _key fallbacks
    // Also merges screen.initialState into StateStore
 
 7. Resolve slots
    resolve_slots(canonical_screen, slot_registry, ctx, renderer)
-   → evaluates manifest-declared slot contribution `when` expressions
-   → calls contributing plugins through plugin_render_slot()
-   → normalizes returned UiNodes
-   → preserves contributor origin for action/capability routing
+   -> evaluates manifest-declared slot contribution `when` expressions
+   -> calls contributing plugins through plugin_render_slot()
+   -> normalizes returned UiNodes
+   -> preserves contributor origin for action/capability routing
 
 8. Track bindings
    track_reactive_bindings(screen, resolver, state, on_patch)
-   → walks static-skipping tree
-   → registers path subscriptions
+   -> walks static-skipping tree
+   -> registers path subscriptions
 
 9. Lower + mount
    lower_screen(canonical_screen)
    renderer.mount(ir_screen)
-   → Web: keyed framework adapter (React in the current vertical slice)
-   → TUI: Ratatui widget layout
+   -> Web: keyed framework adapter (React in the current vertical slice)
+   -> TUI: Ratatui widget layout
 
 10. Reactive loop
    on user interaction:
-     → dispatch ActionRef to plugin.dispatch()
-     → plugin calls host functions (state.set, navigate, etc.)
-     → host applies buffered state writes
-     → resolver.subscribers_of(path) finds dirty node keys
-     → plan_patch_ops(...) produces targeted patch ops
-     → renderer applies only those patches
+     -> dispatch ActionRef to plugin.dispatch()
+     -> plugin calls host functions (state.set, navigate, etc.)
+     -> host applies buffered state writes
+     -> resolver.subscribers_of(path) finds dirty node keys
+     -> plan_patch_ops(...) produces targeted patch ops
+     -> renderer applies only those patches
 
 11. Teardown on navigation
     subscriptions.teardown()
     state.reset()
-    // WASM instance may be kept in a pool for reuse
+    // compiled modules may be cached; mounted guest sessions are disposable
 ```
 
 ---
@@ -216,7 +217,7 @@ let last = ctx.storage.get("persistent", "last_read_chapter")?;
 ## Action handler context
 
 Plugin action handlers receive a context that includes the current state and
-route, but NOT the host API directly — they access it via host functions:
+route, but NOT the host API directly -- they access it via host functions:
 
 ```rust
 #[unode::action("catalog.addFavorite")]
@@ -242,8 +243,11 @@ async fn add_favorite(ctx: &PluginContext, params: &ActionParams) {
 
 ## Plugin caching
 
-WASM modules are expensive to instantiate (parse + compile + link). The runtime
-keeps a pool of instantiated modules:
+WASM modules are expensive to parse and compile. Hosts should cache compiled
+modules, while treating mounted plugin sessions as disposable isolation units.
+TUI hosts currently use a session-per-mounted-screen model; web hosts keep
+activation/session ownership in the browser runtime. A future pool may exist
+only behind an explicit reset and crash-isolation contract:
 
 ```rust
 struct PluginPool {
@@ -264,5 +268,6 @@ impl PluginPool {
 }
 ```
 
-Instances are reset between uses. Only the StateStore is recreated per
-navigation — the WASM module itself is reused.
+Only the StateStore is recreated per navigation. Compiled module reuse is safe;
+cross-activation instance reuse requires proven reset semantics and fault
+containment.

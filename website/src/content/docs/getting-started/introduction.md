@@ -31,18 +31,20 @@ whatever shape fits the environment it runs in.
 ## Core principles
 
 **Intent over presentation.** A plugin declares that something *is* a heading or
-a danger action — never how many pixels it occupies or what color it should be.
+a danger action -- never how many pixels it occupies or what color it should be.
 
-**Protocol first.** The canonical AST is JSON. Every component — plugin, host,
-renderer — communicates through this JSON protocol. No component ever receives a
+**Protocol first.** The canonical AST is JSON. Every component -- plugin, host,
+renderer -- communicates through this JSON protocol. No component ever receives a
 live object from another; only serialized data crosses boundaries.
 
 **WASM as the execution boundary.** Plugins compile to `.wasm`. The host
 instantiates the module, provides host functions, and receives the AST as a JSON
 string. Isolation is enforced without a separate process.
 
-**Renderer as trust boundary.** The renderer owns sandboxing, theming, focus,
-keyboard behavior, and permission enforcement. The plugin only declares intent.
+**Trusted host runtime as security boundary.** The host runtime owns sandboxing,
+capability injection, permission enforcement, resource policy, and plugin fault
+handling. Renderers own presentation, focus, keyboard behavior, and platform
+accessibility. The plugin only declares intent.
 
 **Domain isolation.** The core knows nothing about any app's concepts. Domain
 knowledge lives entirely in the app bridge.
@@ -50,20 +52,20 @@ knowledge lives entirely in the app bridge.
 ## How the pieces fit
 
 ```text
-Plugin (Rust → .wasm)
-  └── uses unode-plugin-sdk (DSL builders → CanonicalScreen JSON, host calls)
+Plugin (Rust -> .wasm)
+  └── uses unode-plugin-sdk (DSL builders -> CanonicalScreen JSON, host calls)
 
-unode core (Rust → .wasm / native)
+unode core (Rust -> .wasm / native)
   ├── AST types + normalization
   ├── StateStore + ExprResolver (reactive binding tracking)
   ├── PermissionGuard
   └── Transport (JSON serialization)
 
-App Bridge (Rust → .wasm)
+App Bridge (Rust -> .wasm)
   ├── Domain host API + models
   └── Permission metadata per method
 
-Host + Renderer (per platform)
+Host runtime + renderer (per platform)
   ├── Web: loads plugin.wasm + unode_web_host.wasm; React/Svelte adapters
   └── TUI: loads plugin.wasm via Wasmtime; Ratatui renderer
 ```

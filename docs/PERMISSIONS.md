@@ -4,7 +4,7 @@
 
 Permissions have two orthogonal categories that are enforced at different points.
 
-### Layer 1 — Core built-in permissions
+### Layer 1 -- Core built-in permissions
 
 Gate access to capabilities that unode provides regardless of the app:
 
@@ -19,10 +19,12 @@ Gate access to capabilities that unode provides regardless of the app:
 | `events.read` | Subscribe to host event bus |
 | `events.write` | Emit events to host event bus |
 
-Enforced by: the renderer (JS PermissionGuard or Rust PermissionGuard before
-each host function executes).
+Enforced by: the trusted host runtime before a host function is injected and
+again before sensitive operations execute. Web enforcement lives in the
+JavaScript/runtime bridge plus `unode-web-runtime`; TUI enforcement lives in the
+Wasmtime host-call layer.
 
-### Layer 2 — App domain permissions
+### Layer 2 -- App domain permissions
 
 Gate access to app-specific APIs defined by the bridge. Examples for Mugen:
 
@@ -41,7 +43,7 @@ Enforced by: the host bridge before delegating to the real implementation.
 
 Permissions are typed at the authoring edges and plain strings on the wire.
 The core ships its builtins as constants (`permissions::builtin::*`); apps
-declare their own domain permissions with `Permission::new` — the core never
+declare their own domain permissions with `Permission::new` -- the core never
 enumerates or limits them. `Permission::scoped` applies the `resource:scope`
 convention.
 
@@ -125,7 +127,7 @@ impl PermissionGuard {
 
 Any method or capability not explicitly declared in the manifest and not
 approved in the `PermissionProfile` is denied. The plugin never sees the
-method — the host function is simply not injected into the WASM imports.
+method -- the host function is simply not injected into the WASM imports.
 
 Attempting to call an un-injected import causes a WASM trap (Wasmtime) or
 `WebAssembly.RuntimeError` (browser) before any permission check code runs.
@@ -138,13 +140,13 @@ the plugin's execution environment.
 
 HTTP permissions are enforced twice:
 
-1. **Denylist at instantiation** — host functions for `http_fetch` are only
+1. **Denylist at instantiation** -- host functions for `http_fetch` are only
    injected if `http.fetch` was granted.
-2. **Origin check at call time** — when `http_fetch` is called, the URL is
+2. **Origin check at call time** -- when `http_fetch` is called, the URL is
    checked against `allowed_origins` before the request is made.
 
-In the TUI renderer, the Wasmtime sandbox also enforces network access at the
-OS level — if the Wasmtime instance has no network capability, no host function
+In the TUI runtime, the Wasmtime sandbox can also enforce network access at the
+OS level -- if the Wasmtime instance has no network capability, no host function
 can make a network request regardless of what the Rust code does.
 
 ---
@@ -172,7 +174,7 @@ pub fn catalog_host_functions() -> HostApiFunctions {
 }
 ```
 
-The renderer iterates this list at instantiation time, checks
-`guard.has(required_permission)` for each function, and only injects
-the functions whose permission was granted. Functions without a granted
-permission are not present in the imports object at all.
+The host runtime iterates this list at instantiation time, checks
+`guard.has(required_permission)` for each function, and only injects the
+functions whose permission was granted. Functions without a granted permission
+are not present in the imports object at all.

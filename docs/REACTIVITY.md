@@ -18,24 +18,24 @@ After `normalizeScreen()`, the host calls `trackReactiveBindings()`:
 
 ```
 normalizeScreen(raw_json)
-  → CanonicalScreen with _reactivity metadata per node
+  -> CanonicalScreen with _reactivity metadata per node
 
 trackReactiveBindings(screen, resolver, state, on_patch)
-  → walks the tree once
-  → calls resolver.track(node_key, path) for each binding found
-  → subscribes to each path in StateStore
-  → returns BindingSubscriptions { path_to_nodes, teardown }
+  -> walks the tree once
+  -> calls resolver.track(node_key, path) for each binding found
+  -> subscribes to each path in StateStore
+  -> returns BindingSubscriptions { path_to_nodes, teardown }
 ```
 
 When a state path changes:
 
 ```
 state.set("ui.favorited", true)
-  → StateStore notifies subscribers of "ui.favorited"
-  → resolver.subscribers_of("ui.favorited") → [node_key_A, node_key_B]
-  → on_patch({node_key_A, node_key_B}) called
-  → renderer re-evaluates ONLY those nodes
-  → renderer patches only the affected output (DOM nodes / terminal cells)
+  -> StateStore notifies subscribers of "ui.favorited"
+  -> resolver.subscribers_of("ui.favorited") -> [node_key_A, node_key_B]
+  -> on_patch({node_key_A, node_key_B}) called
+  -> renderer re-evaluates ONLY those nodes
+  -> renderer patches only the affected output (DOM nodes / terminal cells)
 ```
 
 `render()` is never called again. The AST structure is fixed for the load cycle.
@@ -59,18 +59,18 @@ Key operations:
 
 ```
 track(node_key, path)
-  → adds node_key → path and path → node_key to both maps
+  -> adds node_key -> path and path -> node_key to both maps
 
 clear_tracking(node_key)
-  → removes node_key from both maps
-  → called before re-evaluating a node so stale subscriptions are cleaned up
+  -> removes node_key from both maps
+  -> called before re-evaluating a node so stale subscriptions are cleaned up
 
-dependencies_of(node_key) → [path, ...]
-  → used after initial walk to set up StateStore subscriptions
+dependencies_of(node_key) -> [path, ...]
+  -> used after initial walk to set up StateStore subscriptions
 
-subscribers_of(path) → [node_key, ...]
-  → called on state change to find affected nodes
-  → includes ancestor prefix matching:
+subscribers_of(path) -> [node_key, ...]
+  -> called on state change to find affected nodes
+  -> includes ancestor prefix matching:
      a change at "work.title" wakes nodes subscribed to "work" or "work.title"
 ```
 
@@ -144,7 +144,7 @@ plugin screens where the majority of content is static text and media.
 ```
 walk(screen):
   if node._subtreeReactivity == "static":
-    return  // skip — nothing reactive in this subtree
+    return  // skip -- nothing reactive in this subtree
 
   if node._reactivity != "static":
     resolve_node_expressions(node, resolver, ctx)
@@ -163,12 +163,12 @@ this crosses the WASM boundary via a host function:
 ```
 Plugin WASM
   ctx.state.set("ui.favorited", true)
-    → host function: state_set("ui.favorited", "true")
+    -> host function: state_set("ui.favorited", "true")
 
 Host (Rust or JS)
-  → StateStore.set("ui.favorited", true)
-  → subscriber notifications
-  → renderer patches affected nodes
+  -> StateStore.set("ui.favorited", true)
+  -> subscriber notifications
+  -> renderer patches affected nodes
 ```
 
 This means each `set()` call in an action handler is a WASM host function call.
@@ -176,7 +176,7 @@ For typical interactions (one to three state writes per action), this overhead
 is imperceptible. Tight loops with many writes should batch them:
 
 ```rust
-// Plugin side — batch multiple writes
+// Plugin side -- batch multiple writes
 ctx.dispatch(ActionRef {
     type_: "unode.batchState".into(),
     params: json!({ "isFavorited": true, "favoriteCount": 42 }),
@@ -188,7 +188,7 @@ ctx.dispatch(ActionRef {
 
 ## Locale reactivity
 
-The locale is not stored in the StateStore — it is part of the `ResolverContext`
+The locale is not stored in the StateStore -- it is part of the `ResolverContext`
 and exposed to plugins via the app bridge (see `I18N.md`). When the locale
 changes, the host triggers a full re-render of the current screen by calling
 `render()` again with updated context. This is intentional: locale changes are

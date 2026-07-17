@@ -65,8 +65,8 @@ wires the boundary.
 
 ### `unode-tui-runtime`
 
-Validates the same ABI contract, but is the place where Wasmtime integration
-will live for terminal hosts.
+Validates the same ABI contract and owns Wasmtime integration for terminal
+hosts.
 
 ## Build flow
 
@@ -215,23 +215,25 @@ The lowest-risk path is:
 ## Component Model compatibility
 
 Unode should evolve toward Component Model/WIT compatibility without breaking the
-raw ABI above. The current JSON-preserving WIT contract mirrors the complete
-raw ABI lifecycle:
+raw ABI above. The current WIT contract is `unode:plugin@0.3.0`: it types
+manifests, routes, permissions, lifecycle requests, dispatch outcomes, and core
+capability imports, while keeping the recursive `ScreenNode` tree as JSON.
 
 ```wit
-package unode:plugin@0.2.0;
+package unode:plugin@0.3.0;
 
-manifest: func() -> string
-load: func(request-json: string) -> string
-render: func(request-json: string) -> string
-render-slot: func(request-json: string) -> string
-dispatch: func(request-json: string) -> string
+world unode-plugin {
+    import state;
+    import navigation;
+    import host;
+    export lifecycle;
+}
 ```
 
-This keeps `ScreenNode`, request envelopes, host-call envelopes, and dispatch
-responses as the same JSON shapes the host already validates and normalizes.
-Component Model support can then be added as a second loading path, not as an
-immediate replacement for pointer/length raw modules.
+This keeps the AST itself in the Rust/JSON protocol while giving toolchains a
+typed boundary for the stable envelopes around it. Component Model support is a
+second loading path, not an immediate replacement for pointer/length raw
+modules.
 
 See `COMPONENT-MODEL.md` and `../wit/unode-plugin.wit` for the staged plan.
 

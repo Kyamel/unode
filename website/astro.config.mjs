@@ -56,6 +56,7 @@ export default defineConfig({
 						{ label: 'Monorepo Layout', slug: 'reference/monorepo' },
 						{ label: 'Plugin WASM ABI', slug: 'reference/plugin-abi' },
 						{ label: 'Roadmap', slug: 'reference/roadmap' },
+						{ label: 'Architectural Gaps', slug: 'reference/architectural-gaps' },
 					],
 				},
 			],

@@ -63,26 +63,17 @@ Keep today's ABI as the production path:
 
 Rust plugins keep using `unode-plugin-sdk::export_plugin!()`.
 
-### Phase 1: JSON-preserving WIT
+### Phase 1: typed envelopes with JSON AST
 
-Add an experimental WIT contract that preserves today's JSON envelopes:
+The current WIT contract (`unode:plugin@0.3.0`) types the stable envelopes
+around plugin UI while preserving `ScreenNode` as JSON:
 
 ```wit
-package unode:plugin@0.2.0;
-
-interface lifecycle {
-    manifest: func() -> string;
-    load: func(request-json: string) -> string;
-    render: func(request-json: string) -> string;
-    render-slot: func(request-json: string) -> string;
-    dispatch: func(request-json: string) -> string;
-}
-
-interface host {
-    call: func(envelope-json: string) -> string;
-}
+package unode:plugin@0.3.0;
 
 world unode-plugin {
+    import state;
+    import navigation;
     import host;
     export lifecycle;
 }
@@ -90,13 +81,14 @@ world unode-plugin {
 
 The working draft lives in `wit/unode-plugin.wit`.
 
-This phase deliberately avoids modeling every AST node in WIT. The canonical
-JSON protocol remains the source of truth. Component hosts only gain a cleaner
-way to call lifecycle functions and host capabilities.
+This phase deliberately avoids modeling every AST node in WIT because the tree
+is recursive and still evolving. The canonical JSON protocol remains the source
+of truth. Component hosts gain a cleaner way to call lifecycle functions and
+typed core capabilities.
 
 Benefits:
 
-- both Rust and TypeScript SDKs can target the same lifecycle shape;
+- both Rust and TypeScript-family SDKs can target the same lifecycle shape;
 - the host can support raw modules and components in parallel;
 - the AST can keep evolving without rewriting WIT records for every node;
 - golden tests can compare raw-ABI Rust plugins and component plugins by their
@@ -104,26 +96,22 @@ Benefits:
 
 Costs:
 
-- WIT does not yet validate the structure of `ScreenNode` or `ActionRef`;
+- WIT does not yet validate the structure of `ScreenNode`;
 - SDKs still need JSON schema/types generated from Rust or maintained alongside
   Rust;
 - host packages need component-loading paths in addition to raw module loading.
 
-### Phase 2: typed WIT for stable envelopes
+### Phase 2: loader parity and generated SDK types
 
-Once the lifecycle has proven itself, type the stable outer envelopes first:
+The typed-envelope contract exists, but hosts still need parity:
 
-- `resolved-route`;
-- `plugin-manifest`;
-- `permission-request`;
-- `dispatch-outcome`;
-- `host-call-envelope`.
+- Web host: `jco transpile` pipeline for browser-consumable components.
+- TUI host: detect raw module vs component bytes and route both through the same
+  `PluginInstance` abstraction.
+- SDK/tooling: generate TypeScript manifest and request/response types from WIT.
 
-Keep `screen-json`, `data-json`, `params-json`, and arbitrary metadata as JSON
-strings until those shapes are stable enough to justify WIT records.
-
-This gives better generated bindings while avoiding premature type churn in the
-semantic UI tree.
+Keep `screen-json`, `data-json`, and arbitrary metadata as JSON strings until
+those shapes are stable enough to justify WIT records.
 
 ### Phase 3: typed WIT for AST subsets
 
@@ -180,7 +168,7 @@ TypeScript SDK:
 
 - start with generated TypeScript types for the JSON protocol;
 - provide builders that mirror the Rust DSL;
-- target the JSON-preserving WIT lifecycle first;
+- target the typed-envelope WIT lifecycle first;
 - choose one toolchain profile explicitly:
   - AssemblyScript for small TypeScript-like WASM;
   - JS-engine-backed WASM for fuller JavaScript/npm compatibility.

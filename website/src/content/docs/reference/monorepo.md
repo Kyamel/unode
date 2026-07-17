@@ -38,7 +38,7 @@ model described in [Architecture](/concepts/architecture/).
 | `examples/tui-ratatui` | Minimal ratatui host demo mirroring the web examples. |
 
 React and Svelte are maintained adapters over the same framework-agnostic
-boundary — neither leaks into core semantics. A Vue or custom adapter consumes
+boundary -- neither leaks into core semantics. A Vue or custom adapter consumes
 the same IR and patch ops.
 
 ## Other directories
@@ -46,7 +46,7 @@ the same IR and patch ops.
 | Path                | Purpose                                                                    |
 | ------------------- | -------------------------------------------------------------------------- |
 | `plugins/`          | Rust WASM example plugins, including `counter` and `sanity-check`.      |
-| `docs/`             | Source English project documentation (this site is generated alongside it). |
+| `docs/`             | Engineering design docs; the website carries the public curated subset. |
 | `website/`          | This Starlight documentation site.                                          |
 | `ts-implementation/`| Deprecated legacy TypeScript prototype, kept only as migration reference.   |
 
@@ -62,11 +62,11 @@ already native Rust: `unode-tui-runtime` calls `crates/unode` directly while it
 manages Wasmtime instances, host calls, and terminal session lifecycle.
 
 `crates/tui-playground` lives under `crates/` because it is a workspace binary that
-integrates Unode for one app — it is **not** the reusable TUI runtime. That role
+integrates Unode for one app -- it is **not** the reusable TUI runtime. That role
 belongs to `crates/unode-tui-runtime` plus `crates/unode-ratatui-renderer`.
 
 ## Do not add work under `ts-implementation/`
 
 `ts-implementation/` is deprecated reference material. Promote current web work
-into `packages/` or runnable demos under `examples/` — never back into the
+into `packages/` or runnable demos under `examples/` -- never back into the
 legacy prototype.
