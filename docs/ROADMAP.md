@@ -199,6 +199,40 @@ plugin source (`plugins/counter`). Remaining:
 - The node set stays **closed**: no `UiNode::Custom`. Hosts specialize by
   overriding recipes, never by inventing node types (portability guarantee).
 
+### Plugin surfaces
+
+- **Headless (service) plugins** — today UI is mandatory twice: `plugin_render`
+  is a required export (raw ABI and WIT world) and hosts assign a fallback
+  route to plugins that declare none (the counter relies on it). Decided
+  direction:
+  - Short term: convention *zero declared routes = no surface of its own* —
+    hosts stop assigning fallback routes/nav entries (refactor: remove the
+    fallback in `tui-playground::plugin_registry` and make `counter` declare
+    its route); SDK sugar `export_headless_plugin! { manifest, dispatch }`
+    filling `render`/`load` with empty defaults. Headless plugins act through
+    slot contributions, host-dispatched actions, and (later) capabilities.
+  - Long term: a second WIT world `unode:plugin/service` without the `render`
+    export — the natural shape for the *provider* role in the deferred
+    cross-plugin capability design (optional exports don't exist in a single
+    world; profiles are separate worlds).
+  - Security note: headless means no obvious user-consent moment — install
+    time is the only permission gate, so host policy matters more.
+
+- **Hover / contextual UI (LSP-style) — to analyze** — e.g. a language plugin
+  contributing a dialog when hovering content another plugin rendered.
+  Viability sketch: it is the slot mechanism with a *dynamic* target — instead
+  of a named slot, the target is the node under the cursor. Ingredients:
+  - a `render_hover(node-id, context)`-shaped export (same envelope family as
+    `render_slot`), called by the host **debounced/async** — hover is
+    high-frequency and must never cross the sandbox per mousemove;
+  - manifest declaration of the provider (`hover for <node kinds / plugin>`),
+    permission-gated like slot contributions;
+  - the **Overlay node** (already on this roadmap) as the presentation layer;
+  - intent, not command: TUI has no hover — hosts map it to focus + a peek
+    key, exactly like tabs degrade to pages.
+  Depends on Overlay and pairs naturally with capabilities/headless providers;
+  analyze after those land.
+
 ### Permissions / capabilities
 
 - **Host permission catalogs** — hosts may register known permissions so the
