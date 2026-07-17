@@ -5,10 +5,17 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import starlight from '@astrojs/starlight';
 
+const monorepoRoot = fileURLToPath(new URL('..', import.meta.url));
+
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://unode.dev',
 	vite: {
+		server: {
+			fs: {
+				allow: [monorepoRoot],
+			},
+		},
 		resolve: {
 			alias: {
 				'unode-web-core': fileURLToPath(new URL('../packages/unode-web-core/src/index.ts', import.meta.url)),
