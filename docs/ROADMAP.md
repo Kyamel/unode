@@ -147,6 +147,23 @@ Decisions taken in design discussions but not yet implemented, in rough
 priority order. Each entry records the agreed direction so implementation can
 start without re-litigating the design.
 
+### Component Model (WIT) — vertical slice DONE, web pending
+
+The typed contract lives in `wit/unode-plugin.wit` (`unode:plugin@0.3.0`) and
+is real on the TUI path: `unode-plugin-sdk` exposes
+`export_plugin_component!` behind the `component` feature (same plugin
+functions as `export_plugin!`), `unode-tui-runtime::ComponentTuiPlugin` loads
+components via wasmtime, and a golden test proves raw ABI and component
+produce identical JSON and identical host-call side effects for the same
+plugin source (`plugins/counter`). Remaining:
+
+- Web host: `jco transpile` pipeline (browsers cannot instantiate components
+  natively) — the long pole.
+- Componentize the remaining plugins + wire the component build into
+  `build.sh`; teach the TUI loader to detect module vs component bytes.
+- Generate TS manifest types from the WIT (`jco types`) so non-Rust tooling
+  builds correct manifests.
+
 ### Renderer
 
 - **Theme layer (tokens)** — the first customization layer, below

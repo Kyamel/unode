@@ -1,37 +1,222 @@
-package unode:plugin@0.2.0;
+package unode:plugin@0.3.0;
 
-/// Initial Component Model shape for Unode plugins.
+/// The Unode plugin contract.
 ///
-/// This intentionally preserves JSON at the boundary. The canonical Unode AST,
-/// lifecycle envelopes, and host-call envelopes remain the source of truth while
-/// hosts learn how to load WebAssembly components in parallel with today's raw
-/// pointer/length ABI.
-interface lifecycle {
-    /// Returns PluginManifestEnvelope JSON.
-    manifest: func() -> string;
+/// Design rules:
+///
+/// - Everything AROUND the UI tree is fully typed: manifests, routes,
+///   expressions, lifecycle requests, dispatch outcomes, host capabilities.
+///   Generators (wit-bindgen, jco) can therefore produce TS/Rust/Go types
+///   that make an invalid manifest unrepresentable.
+/// - The UI tree itself (`ScreenNode`) stays JSON: WIT has no recursive
+///   types, and the canonical AST in `crates/unode` remains the source of
+///   truth. Typing AST subsets is a later phase.
+/// - Every lifecycle function returns `result<_, plugin-error>` so failures
+///   cross the boundary as values, never traps.
+/// - Host capabilities are separate typed imports; granting a permission is
+///   linker wiring, not a runtime string check. `call` stays as the escape
+///   hatch for app-defined (domain) capabilities.
+interface types {
+    /// A serializable value expression — the protocol's reactivity primitive.
+    /// `binding` points into the host state store; `param` into route params.
+    variant text-value {
+        literal(string),
+        binding(string),
+        param(string),
+    }
 
-    /// Receives PluginLoadRequest JSON and returns arbitrary plugin data JSON.
-    load: func(request-json: string) -> string;
+    variant bool-value {
+        literal(bool),
+        binding(string),
+        param(string),
+    }
 
-    /// Receives PluginRenderRequest JSON and returns ScreenNode JSON.
-    render: func(request-json: string) -> string;
+    /// Open permission set: the core ships builtin names ("http.fetch",
+    /// "storage.session.read", ...) and apps declare their own. Scoping uses
+    /// the `resource:scope` convention (e.g. "state.write:tasks").
+    record permission-request {
+        permission: string,
+        required: bool,
+        reason: option<string>,
+        allowed-origins: list<string>,
+    }
 
-    /// Receives PluginRenderSlotRequest JSON and returns PluginRenderSlotResponse JSON.
-    render-slot: func(request-json: string) -> string;
+    /// How a route group would like to be presented. A hint, not a command:
+    /// the renderer decides (hosts without tabs show plain screens).
+    enum nav-intent {
+        tabs,
+        pages,
+    }
 
-    /// Receives PluginDispatchRequest JSON and returns PluginDispatchResponse JSON.
-    dispatch: func(request-json: string) -> string;
+    record route-group {
+        id: string,
+        intent: nav-intent,
+    }
+
+    /// A screen the plugin renders. Hosts register declared routes and pass
+    /// the matched route back through `render`, so one plugin owns many
+    /// screens. `label`/`badge` may be bindings — dynamic navigation chrome.
+    record route {
+        pattern: string,
+        screen-kind: option<string>,
+        priority: s32,
+        label: option<text-value>,
+        badge: option<text-value>,
+        group: option<string>,
+    }
+
+    record slot-contribution {
+        id: string,
+        target: string,
+        priority: s32,
+        when: option<bool-value>,
+    }
+
+    record manifest {
+        id: string,
+        name: string,
+        version: string,
+        api-version: string,
+        description: option<string>,
+        author: option<string>,
+        permissions: list<permission-request>,
+        requires: list<string>,
+        host-id: option<string>,
+        slot-contributions: list<slot-contribution>,
+        routes: list<route>,
+        route-groups: list<route-group>,
+    }
+
+    record manifest-envelope {
+        abi-version: string,
+        manifest: manifest,
+    }
+
+    /// WIT has no maps; key/value pairs are the canonical encoding.
+    record kv {
+        key: string,
+        value: string,
+    }
+
+    /// State snapshot entry; values are JSON documents.
+    record state-entry {
+        path: string,
+        value-json: string,
+    }
+
+    record resolved-route {
+        pattern: string,
+        params: list<kv>,
+        query: list<kv>,
+    }
+
+    /// Core actions are host-handled; custom actions reach `dispatch`.
+    variant action-kind {
+        core(string),
+        custom(string),
+    }
+
+    record action-ref {
+        kind: action-kind,
+        params-json: option<string>,
+        confirm-json: option<string>,
+    }
+
+    record load-request {
+        route: resolved-route,
+        state: list<state-entry>,
+        locale: option<string>,
+    }
+
+    record render-request {
+        route: resolved-route,
+        data-json: string,
+        state: list<state-entry>,
+        locale: option<string>,
+    }
+
+    record render-slot-request {
+        contribution-id: string,
+        slot-name: string,
+        route: resolved-route,
+        state: list<state-entry>,
+        locale: option<string>,
+    }
+
+    record dispatch-request {
+        route: resolved-route,
+        action: action-ref,
+        state: list<state-entry>,
+        locale: option<string>,
+    }
+
+    /// What the host should do after a dispatch. State writes are NOT here —
+    /// they already happened through the `state` capability import.
+    variant dispatch-outcome {
+        none,
+        refresh-current-screen,
+        navigate(string),
+    }
+
+    record dispatch-response {
+        handled: bool,
+        outcome: dispatch-outcome,
+        message: option<string>,
+        data-json: option<string>,
+    }
+
+    record plugin-error {
+        message: string,
+        details-json: option<string>,
+    }
 }
 
+/// Typed core capabilities. Each import is granted individually by the host
+/// linker — a plugin without `state.write` simply never gets the function.
+interface state {
+    /// Writes one state path; the host applies it to its store and patches
+    /// every bound node.
+    set: func(path: string, value-json: string);
+}
+
+interface navigation {
+    navigate: func(to: string);
+}
+
+/// Escape hatch for app-defined capabilities (domain APIs). Operation names
+/// follow the same open convention as permissions.
 interface host {
-    /// Receives HostCallEnvelope JSON and returns a host-defined response JSON.
-    ///
-    /// Capability checks still belong to the host runtime. Plugins should not
-    /// infer capability access from the presence of this import alone.
-    call: func(envelope-json: string) -> string;
+    use types.{plugin-error};
+
+    call: func(operation: string, params-json: string) -> result<string, plugin-error>;
 }
 
+interface lifecycle {
+    use types.{
+        manifest-envelope, load-request, render-request, render-slot-request,
+        dispatch-request, dispatch-response, plugin-error,
+    };
+
+    manifest: func() -> manifest-envelope;
+
+    /// Returns arbitrary plugin data JSON, merged into host state.
+    load: func(request: load-request) -> result<string, plugin-error>;
+
+    /// Returns ScreenNode JSON (the canonical AST; typed in a later phase).
+    render: func(request: render-request) -> result<string, plugin-error>;
+
+    /// Returns PluginRenderSlotResponse JSON (a list of UI nodes).
+    render-slot: func(request: render-slot-request) -> result<string, plugin-error>;
+
+    dispatch: func(request: dispatch-request) -> result<dispatch-response, plugin-error>;
+}
+
+/// The target world. The raw pointer/length C ABI remains supported while
+/// hosts learn to load components; both must produce identical JSON for the
+/// same plugin source.
 world unode-plugin {
+    import state;
+    import navigation;
     import host;
     export lifecycle;
 }

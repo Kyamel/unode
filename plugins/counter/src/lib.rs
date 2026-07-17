@@ -140,7 +140,19 @@ fn dispatch_response(request: &PluginDispatchRequest) -> PluginDispatchResponse 
     }
 }
 
+// One plugin source, two boundaries: the raw ptr/len ABI by default, the
+// typed Component Model (WIT) boundary behind the `component` feature. Hosts
+// golden-test that both produce identical JSON.
+#[cfg(not(feature = "component"))]
 unode_plugin_sdk::export_plugin! {
+    manifest: manifest_envelope,
+    load: load_response,
+    render: render_screen,
+    dispatch: dispatch_response,
+}
+
+#[cfg(feature = "component")]
+unode_plugin_sdk::export_plugin_component! {
     manifest: manifest_envelope,
     load: load_response,
     render: render_screen,

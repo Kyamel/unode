@@ -1,4 +1,6 @@
 pub mod abi;
+#[cfg(feature = "component")]
+pub mod component;
 pub mod host;
 pub mod i18n;
 pub mod manifest;

@@ -13,3 +13,7 @@ serde_json = "1.0.149"
 unode-plugin-sdk = { path = "../../crates/unode-plugin-sdk" }
 
 [workspace]
+
+[features]
+## Build as a Component Model plugin instead of the raw ptr/len ABI.
+component = ["unode-plugin-sdk/component"]

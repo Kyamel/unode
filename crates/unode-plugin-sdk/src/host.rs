@@ -16,8 +16,16 @@ pub fn call_host(envelope: HostCallEnvelope) {
 pub fn try_call_host(envelope: HostCallEnvelope) -> Result<(), AbiError> {
     let bytes = encode_json_bytes(&envelope)?;
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", not(feature = "component")))]
     wasm::send(&bytes);
+
+    // Component builds route the same envelope through the typed capability
+    // imports instead of the raw `unode.host_call` import.
+    #[cfg(all(target_arch = "wasm32", feature = "component"))]
+    {
+        drop(bytes);
+        crate::component::send_host_call(&envelope);
+    }
 
     #[cfg(not(target_arch = "wasm32"))]
     drop(bytes);
@@ -50,7 +58,7 @@ fn state_set_envelope(path: &str, value: JsonValue) -> HostCallEnvelope {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", not(feature = "component")))]
 mod wasm {
     #[link(wasm_import_module = "unode")]
     unsafe extern "C" {

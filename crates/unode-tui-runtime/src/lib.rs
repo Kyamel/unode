@@ -1,4 +1,5 @@
 pub mod bridge;
+pub mod component_guest;
 pub mod host_call;
 pub mod loader;
 pub mod memory;
@@ -6,6 +7,7 @@ pub mod session;
 pub mod state;
 pub mod wasmtime_guest;
 
+pub use component_guest::ComponentTuiPlugin;
 pub use state::{PluginState, resolve_screen_state};
 use unode::core::permissions::PermissionProfile;
 use unode_runtime::{HostedRuntime, RuntimeTarget};

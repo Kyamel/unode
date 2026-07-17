@@ -11,4 +11,4 @@ thiserror.workspace = true
 unode-plugin-sdk = { path = "../unode-plugin-sdk" }
 unode = { path = "../unode" }
 unode-runtime = { path = "../unode-runtime" }
-wasmtime = "43"
+wasmtime = { version = "43", features = ["component-model"] }
